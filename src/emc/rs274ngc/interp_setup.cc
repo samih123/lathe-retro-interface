@@ -150,6 +150,7 @@ setup_struct::setup_struct() :
     lathe_diameter_mode(0),
     mdi_interrupt(0),
     feature_set(0),
+    enable_fanuc_style_sub(true),
     on_abort_command(NULL),
     init_once(0)
 {

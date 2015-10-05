@@ -110,6 +110,92 @@ parameters.
 
 (((Subroutines, Looping)))
 
+=== Fanuc-Style Subroutines[[sec:Fanuc-Style-Subroutines]] ===
+(((Fanuc Subroutines)))
+(((M98)))(((M99)))
+
+Fanuc-style subroutine syntax and semantics are an alternative to the
+rs274ngc subroutines described above, provided for compatibility with
+Fanuc-style code.
+
+Fanuc-style subroutines are enabled by default, and may be disabled by
+placing `ENABLE_FANUC_STYLE_SUB = false` in the `[RS274NGC]` section
+of the `.ini` file.
+
+[NOTE]
+Subroutine call and subroutine definition start and
+end blocks all differ from traditional rs274ngc syntax, and mixing the
+two styles results in an error.
+
+.Fanuc-style Subroutine Simple Example
+[source,{ngc}]
+----
+o100
+  G53 G0 X0 Y0 Z0 (rapid move to machine home)
+M99
+...
+M98 P100
+----
+
+.`O-` subroutine definition start
+Marks the start of a Fanuc-style subroutine definition.  The block `O100` is
+equivalent to the traditional `o100 sub` syntax.
+
+.`M99` subroutine definition end
+End a Fanuc-style subroutine definition.  The block `M99` is
+equivalent to the traditional `o100 endsub` syntax, but may only be
+used after the Fanuc-style `o100`, and not mixed with the traditional
+`o100 sub`.
+
+.`M98 P- <L\->`
+Call a Fanuc-style subroutine.  The block `M98 P100` is analogous to
+the traditional `o100 call` syntax, but may only be used after a
+Fanuc-style subroutine defined with `o100`...`M99`.
+
+Fanuc-style subroutine calls differ from traditional rs274ngc
+equivalents in the following ways:
+
+* Parameters `#1`, `#2`, ..., `#30` are passed to Fanuc-style subroutine
+calls as global parameters, similar to higher-numbered parameters in
+traditional style calls.  If these parameters are modified within the
+subroutine, they will be modified globally.
+
+* Fanuc-style subroutine calls have no return value, but any parameter
+changes (including to `#30` and lower-numbered parameters) will be
+visible to the calling code.
+
+* Fanuc-style subroutine calls support an optional L-word, used to
+specify a repeat count.  Without the L-word, the subroutine will
+execute once only.
+
+.Fanuc-style Subroutine Full Example
+[source,{ngc}]
+----
+O1
+  #1 = [#1 + 0.1]
+  (PRINT,X >>>> LOOP (O2.O1):  #1)
+M99
+
+O2
+  M98 P1 L5
+  #1 = [FIX[#1] + 1]
+  (PRINT,X O2 END:  1=#1)
+M99
+
+  #1 = 0
+  (PRINT,X MAIN BEGIN:  1=#1)
+  M98 P2 L5
+  (PRINT,X MAIN END:  1=#1)
+M30
+----
+
+In this example, parameter `#1` is initialized to `0`.  Subroutine
+`O2` is called five times in a loop.  Nested within each call to `O2`,
+subroutine `O1` is called five times in a loop.
+
+Note that parameter `#1` is global.  At the end of the main program,
+after updates within `O2` and `O1`, its value will equal `5`.
+
 == Looping
 
 The 'while loop' has two structures: 'while/endwhile', and 'do/while'. In

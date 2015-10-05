@@ -999,6 +999,21 @@ int Interp::init()
               Error("invalid [RS275NGC]CENTER_ARC_RADIUS_TOLERANCE_MM in ini file\n");
           }
 
+          if(NULL != (inistring = inifile.Find("ENABLE_FANUC_STYLE_SUB",
+					       "RS274NGC")))
+          {
+	      if (strcmp(inistring,"True") == 0 ||
+		  strcmp(inistring, "true") == 0 ||
+		  strcmp(inistring, "YES") == 0) {
+		  logDebug("init:  ENABLE_FANUC_STYLE_SUB = TRUE");
+		  _setup.enable_fanuc_style_sub = true;
+	      } else {
+		  logDebug("init:  ENABLE_FANUC_STYLE_SUB = FALSE");
+		  _setup.enable_fanuc_style_sub = false;
+	      }
+          } else
+	      logDebug("init:  ENABLE_FANUC_STYLE_SUB = TRUE (default)");
+
           // close it
           inifile.Close();
       }
@@ -1503,11 +1518,15 @@ int Interp::_read(const char *command)  //!< may be NULL or a string to read
    
   block_pointer eblock = &EXECUTING_BLOCK(_setup);
 
-  if ((_setup.call_state > CS_NORMAL) && 
-      (eblock->call_type > CT_NGC_OWORD_SUB)  && 
+  if ((_setup.call_state > CS_NORMAL) &&
+      (eblock->call_type != CT_NGC_OWORD_SUB)  &&
+      (eblock->call_type != CT_NGC_M98_SUB)  &&
+      (eblock->call_type != CT_NONE)  &&
       ((eblock->o_type == O_call) ||
+       (eblock->o_type == M_98) ||
        (eblock->o_type == O_return) ||
-       (eblock->o_type == O_endsub))) {
+       (eblock->o_type == O_endsub) ||
+       (eblock->o_type == M_99))) {
 
       logDebug("read(): skipping read");
       _setup.line_length = 0;
@@ -1600,10 +1619,11 @@ int Interp::unwind_call(int status, const char *file, int line, const char *func
 	    sub->subName = 0;
 	}
 
-	for(i=0; i<INTERP_SUB_PARAMS; i++) {
-	    _setup.parameters[i+INTERP_FIRST_SUBROUTINE_PARAM] =
-		sub->saved_params[i];
-	}
+	if (sub->call_type != CT_NGC_M98_SUB) // M98:  pass #1..#30 from parent
+	    for(i=0; i<INTERP_SUB_PARAMS; i++) {
+		_setup.parameters[i+INTERP_FIRST_SUBROUTINE_PARAM] =
+		    sub->saved_params[i];
+	    }
 
 	// When called from Interp::close via Interp::reset, this one is NULL
 	if (!_setup.file_pointer) continue;
@@ -2513,9 +2533,9 @@ const char *strstore(const char *s)
 }
 
 context_struct::context_struct()
-: position(0), sequence_number(0), filename(""), subName(""),
-context_status(0), call_type(0), py_return_type(0), py_returned_double(0),
-py_returned_int(0)
+    : position(0), sequence_number(0), filename(""), subName(""),
+      m98_loop_counter(-1), context_status(0), call_type(0),
+      py_return_type(0), py_returned_double(0), py_returned_int(0)
 {
     memset(saved_params, 0, sizeof(saved_params));
     memset(saved_g_codes, 0, sizeof(saved_g_codes));

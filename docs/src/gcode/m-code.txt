@@ -610,6 +610,11 @@ o<showstate> call
 m2
 ----
 
+== M98 M99 Fanuc-Style Subroutine Call/Return[[sec:M98-M99-Fanuc-Style-Subroutine-Call-Return]] ==
+
+The interpreter supports Fanuc-style subroutines.  See
+<<sec:Fanuc-Style-Subroutines,Fanuc subroutines>>.
+
 === Selectively Restoring Modal State
 
 Executing an 'M72' or returning from a subroutine which contains an
