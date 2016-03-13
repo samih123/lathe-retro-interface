@@ -72,6 +72,7 @@ void draw_statusbar( const char *s )
 {
     char *istat = (char*)"unknow";
     char *mode = (char*)"unknow";
+    char *state = (char*)"unknow";
     
     switch( emcStatus->task.interpState )
     {
@@ -88,7 +89,15 @@ void draw_statusbar( const char *s )
         case EMC_TASK_MODE_MDI: mode = (char *)"mdi"; break;
     }
     
-    sprintf( strbuf, " %s mode:%s intr:%s " , s, mode, istat );
+    switch( emcStatus->task.state )
+    {
+        case EMC_TASK_STATE_ESTOP: state = (char *)"Estop"; break;
+        case EMC_TASK_STATE_ESTOP_RESET: state = (char *)"Estop reset"; break;
+        case EMC_TASK_STATE_OFF: state = (char *)"Off"; break;
+        case EMC_TASK_STATE_ON: state = (char *)"On"; break;
+    }    
+    
+    sprintf( strbuf, " %s mode:%s intr:%s state:%s" , s, mode, istat, state );
     print( strbuf ,0,19,15);
     
     glBegin(GL_LINES);

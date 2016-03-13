@@ -460,6 +460,7 @@ void  parse_serialdata()
     // clean error message & estop
     if( isprefix( "START" ,NULL ) )
     {
+        printf("task.state = %d\n", (int)emcStatus->task.state );
         if( emcStatus->task.state == EMC_TASK_STATE_OFF )
         {
             printf("sendMachineOn\n");
