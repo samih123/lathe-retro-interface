@@ -322,8 +322,18 @@ bool readserial()
 void  parse_serialdata()
 {
     int n;
+    int old_screenmode = status.screenmode; 
     
     parseagain: // handle potentiometers & increment here:
+    
+    if( isprefix( "MO=" ,&n ) )
+    {
+        status.screenmode = n;
+        if( readserial() )
+        {
+            goto parseagain;
+        } 
+    }
     
     if( isprefix( "P2=" ,&n ) )
     {
@@ -370,12 +380,12 @@ void  parse_serialdata()
     {
         status.axis = n;
     }
-    else if( isprefix( "MO=" ,&n ) )
+    
+    
+    if( status.screenmode != old_screenmode )
     {
         
-        status.screenmode = n;
-        
-        switch(n)
+        switch(status.screenmode)
         {
             case SCREENMANUAL:
                 manual_init();
