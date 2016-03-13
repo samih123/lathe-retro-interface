@@ -130,6 +130,7 @@ static std::list<struct mov> roughpath;
 static std::list<struct mov> undercutpath;
 static std::list<struct mov> threadpath;
 static std::list<struct mov> toolpath[2];
+static bool draw_toolpath = false;
 
 void create_line( std::list<struct mov> &ml, const vec2 &v , int t, const char *comment = NULL )
 {
@@ -477,9 +478,9 @@ void wizards_init()
    
    scale = 2;
    retract = 1;
-   finish_count = 4;
+   finish_count = 2;
    
-    wizards_load( "/home/sami/linuxcnc/nc_files/sotilas.wiz" );
+    //wizards_load( "/home/sami/linuxcnc/nc_files/sotilas.wiz" );
     if( cuts.size() == 0 ) add_cut(10,0);
     scale = 1;
     create_contour();
@@ -1111,8 +1112,7 @@ void rapid_to_next_path( list<struct mov> &p1, list<struct mov> &p2, list<struct
 static std::list<struct mov> temp;
 void create_toolpath()
 {
-    
-    
+
     create_contour();
      //   make_rough_path( roughpath, contour );
         
@@ -1134,7 +1134,8 @@ void create_toolpath()
     {
         rapid_to_next_path( finepath[i], finepath[i-1], finepath[i-1], finish );
     }
-
+    
+    draw_toolpath = true;
 }
 
 
@@ -1170,25 +1171,37 @@ void wizards_parse_serialdata()
         if( menuselect == MENUTOOLPATH )
         {
              create_toolpath();
-             
-             sprintf(strbuf,"%s/%s.ngc", programPrefix, Name );
-             save_program( strbuf );
-             edit_load( strbuf );
-             auto_load( strbuf );
+             char path[LINELEN];
+             sprintf( path, "%s/%s.ngc", programPrefix, Name );
+             save_program( path );
+             edit_load( path );
+             auto_load( path );
         }    
                
-        if( Menu.edited( &diameter ) ) currentcut->dim.x = diameter/2.0;
-        
-        double dx =  currentcut->start.x - currentcut->dim.x;
-        double dz =  currentcut->dim.z;
-        double l =  sqrt( dx*dx + dz*dz ) + 0.00001f;
-        if( currentcut->r < l/2.0f )  currentcut->r = l/2.0f;
-        
-        CLAMP( currentcut->type, 0, 3 );
-        
-        if( Menu.edited( &currentcut->pitch ) ) currentcut->depth =currentcut->pitch * 0.61343;
-        if( currentcut->pitch < 0.1f ) currentcut->pitch = 0.1f;
-        if( currentcut->depth < 0.1f ) currentcut->depth = 0.1f;
+        if( Menu.edited( &diameter ) || 
+            Menu.edited( &currentcut->dim.z ) ||
+            Menu.edited( &currentcut->pitch ) || 
+            Menu.edited( &currentcut->r ) || 
+            Menu.edited( &currentcut->depth ) || 
+            Menu.edited( &currentcut->type ) )
+        {
+            
+            draw_toolpath = false;
+            
+            currentcut->dim.x = diameter/2.0;
+            
+            double dx =  currentcut->start.x - currentcut->dim.x;
+            double dz =  currentcut->dim.z;
+            double l =  sqrt( dx*dx + dz*dz ) + 0.00001f;
+            if( currentcut->r < l/2.0f )  currentcut->r = l/2.0f;
+            
+            CLAMP( currentcut->type, 0, 3 );
+            
+            if( Menu.edited( &currentcut->pitch ) ) currentcut->depth = currentcut->pitch * 0.61343;
+            if( currentcut->pitch < 0.1f ) currentcut->pitch = 0.1f;
+            if( currentcut->depth < 0.1f ) currentcut->depth = 0.1f;   
+                     
+        }     
 
         if( scale < 0.1f ) scale = 0.1f; 
         
@@ -1207,7 +1220,7 @@ void wizards_parse_serialdata()
 
     create_contour();
     if( stockdiameter < contour_max.x *2.0f ) stockdiameter = contour_max.x *2.0f;
-    create_toolpath();
+    //create_toolpath();
 
 }
 
@@ -1277,14 +1290,17 @@ void wizards_draw()
 
     draw_contour( contour, true );
 
-    for( int i=0; i < finish_count; i++ )
+    if( draw_toolpath )
     {
-        draw_contour( finepath[i], false );
+        for( int i=0; i < finish_count; i++ )
+        {
+            draw_contour( finepath[i], false );
+        }
+        draw_contour( temp, false );
+        draw_contour( roughpath, false );
+        draw_contour( undercutpath, false );  
     }
-    draw_contour( temp, false );
-    draw_contour( roughpath, false );
-    draw_contour( undercutpath, false );  
-          
+    
     glPopMatrix();
     
     //glDisable(GL_LINE_STIPPLE);
