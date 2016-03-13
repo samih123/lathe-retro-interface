@@ -352,6 +352,7 @@ void manual_draw();
 void mdi_init();
 void mdi_parse_serialdata();
 void mdi_draw();
+void mdicommand( const char *c );
 
 void set_init();
 void set_parse_serialdata();

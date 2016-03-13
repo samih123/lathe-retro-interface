@@ -264,6 +264,7 @@ void initstatus()
     status.mode = EMC_TASK_MODE_MANUAL;
     status.axis = AXISX;
     status.jogfeedrate = 50;
+    status.incr = 1.0;
     status.feedoverride = 100;
     status.singleblock = false;
     status.skipblock = false;
@@ -298,7 +299,7 @@ bool readserial()
 {
     int n = 0;
     
-    if( ser_emul.size() > 0 )
+    if( serport == -1 && ser_emul.size() > 0 )
     {
         strcpy( buf, ser_emul.back().c_str() );
         n = strlen( buf ); 
@@ -581,6 +582,7 @@ int main ( int argc, char **argv )
          printf("arg%d=%s\n", i, argv[i]);
     }
     
+    initstatus();
     init_opengl(argc, argv);
     initemc();
     
