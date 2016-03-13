@@ -16,7 +16,7 @@ int _task = 0; // control preview behaviour when remapping
 
 char buf[BUFFSIZE] = {0};
 char strbuf[BUFFSIZE];
-char programPrefix[LINELEN] = "";
+char programPrefix[LINELEN+1] = "";
 list<string> errors;
 bool show_last_msg = false; 
 
@@ -26,7 +26,7 @@ int screenw, screenh;
 int timer = 0;
 bool flasher;
     
-char *ttfile = (char *)"/home/sami/linuxcnc/configs/sorvi/tool.tbl";
+char ttfile[LINELEN+1];
 char *ttcomments[CANON_POCKETS_MAX];
 
 
@@ -472,6 +472,7 @@ void loadinifile( char *f )
     const char *inistring;
     printf("open inifile %s\n", f);
     if (inifile.Open( f )) {
+        
         if (NULL != (inistring = inifile.Find("PROGRAM_PREFIX", "DISPLAY"))) {
             if (1 != sscanf(inistring, "%s", programPrefix)) {
                 programPrefix[0] = 0;
@@ -487,14 +488,21 @@ void loadinifile( char *f )
         {
             programPrefix[0] = 0;
         }
-        printf("PROGRAM_PREFIX = %s\n", programPrefix);
+        
+        if (NULL != (inistring = inifile.Find("TOOL_TABLE","EMCIO"))) {
+            if (1 != sscanf(inistring, "%s", ttfile)) {
+                ttfile[0] = 0;
+            }
+        }
+       
+        printf("PROGRAM_PREFIX = %s\n", programPrefix );
+        printf("TOOL_TABLE = %s\n", ttfile );
+        
         inifile.Close();
-        
         iniLoad( f );
-        
+    
     }
 
-   
 }
 
 static void initemc()
@@ -522,13 +530,15 @@ static void initemc()
     int i=0;
     while( tryNml(2,1) != 0)
     {
-       if( i++ > 50 )
+       if( i++ > 5 )
        {
            printf("can't connect to emc\n");
            exit(1);
        }
        printf("tryNml...\n");
     }
+    
+   
 
     for(int i=0; i<CANON_POCKETS_MAX; i++) ttcomments[i] = (char*)malloc(BUFFSIZE);
     
@@ -561,13 +571,15 @@ int main ( int argc, char **argv )
 {
     
     for (int i=1; i < argc; i++) {
-         printf("\narg%d=%s", i, argv[i]);
+         printf("arg%d=%s\n", i, argv[i]);
     }
     
     init_opengl(argc, argv);
     initemc();
-    loadinifile( "/home/sami/linuxcnc/configs/sorvi/sorvi.ini" );
+    
+   // loadinifile( "/home/sami/linuxcnc/configs/sorvi/sorvi.ini" );
     loadinifile( argv[2] );
+
 
     while ( 1 )
     {
