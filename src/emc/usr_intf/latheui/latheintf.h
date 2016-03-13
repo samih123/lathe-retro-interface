@@ -267,6 +267,7 @@ struct menuitem
         hidden = false;
         edited = false;
         shortcut = NULL;
+        color = GREEN;
     };
     ~menuitem()
     {
@@ -283,6 +284,7 @@ struct menuitem
     menuitem *up;
     bool hidden;
     bool edited;
+    int color;
 }; 
 
 
@@ -293,8 +295,11 @@ class menu
     void clear();
     void begin( const char *name );
     void end();
+    
     void hiddenvalue();
+    void color( int c );
     void shortcut( const char *shortcut );
+    
     void edit( int *i, const char *n);
     void select( int *i, int num, const char *n );
     void edit( double *d, const char *n );
@@ -302,10 +307,12 @@ class menu
     void edit( bool *b, const char *n );
     void back( const char *n );
     void show( const char *n );
+    
     bool edited( void *v );
     bool current_menu( const char *n );
     void draw( int x, int y);
     bool parse();
+    
     private:
     bool edited( menuitem &m, void *v );
     char strbuf[BUFFSIZE];
@@ -313,14 +320,16 @@ class menu
     menuitem *cmi; // current menuitem
     bool usewheel;
     bool point;
+    int maxlines;
 };
 
 void init_opengl( int argc, char **argv );
 void setcolor( int color );
 void print(const char *s, int x, int y ,int size);
 void print(const char *s, int x, int y ,int size, int color );
-void println(const char *s, int x, int y,int size);
-void println(const char *s);
+void println(const char *s, int x, int y, int size = 10 , int color = GREEN );
+void println(const char *s, int color = GREEN);
+
 void draw_dro();
 void draw_statusbar( const char *s );
 void updatescreen();

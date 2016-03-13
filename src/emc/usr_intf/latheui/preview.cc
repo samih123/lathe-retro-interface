@@ -49,7 +49,7 @@ InterpBase *pinterp;
 #define interp_task_init interp_new.task_init
 
 
-extern char *ttfile;
+extern char ttfile[LINELEN];
 static float xmax,ymax,xmin,ymin;
 
 struct line

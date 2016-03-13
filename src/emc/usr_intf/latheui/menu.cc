@@ -38,6 +38,7 @@ void menu::clear()
     cmi = &rm;
     rm.up = &rm;
     usewheel = true;
+    maxlines = 24;
 }
 
 void menu::begin( const char *n )
@@ -59,6 +60,11 @@ void menu::hiddenvalue()
 {
     cmi->ml.back().hidden = true;
 }  
+
+void menu::color( int c )
+{
+    cmi->ml.back().color = c;
+}
 
 void menu::end()
 {
@@ -125,41 +131,59 @@ void menu::show( const char *n )
     strcpy( cmi->ml.back().name, n);   
 }
  
+
  
 void menu::draw( int x, int y)
 {
-   println( cmi->name, x, y, 20 );
-   for(list<struct menuitem>::iterator i = cmi->ml.begin(); i != cmi->ml.end(); i++)
+    println( cmi->name, x, y, 20 );
+   
+    int selected = std::distance( cmi->ml.begin(), cmi->it);
+    int line = 0, drawedline = 0;
+    for(list<struct menuitem>::iterator i = cmi->ml.begin(); i != cmi->ml.end(); i++)
     {
-        const char *arrow =   i == cmi->it ? "->":"  ";
-        if( ! i->hidden ){
-            switch( i->type )
+        line++;
+        if( line > selected - maxlines + 1 )
+        {
+
+            if( ++drawedline > maxlines )
             {
-                case TYPESHOW:
-                case TYPEBACK:
-                case TYPESELECT:
-                case TYPEBEGIN:
-                    sprintf(strbuf,"%s%s", arrow, i->name ); println( strbuf );
-                break;                 
-                case TYPEINT:
-                    sprintf(strbuf,"%s%s %i", arrow, i->name, *(int *)i->val ); println( strbuf );
                 break;
-                case TYPESTR:
-                    sprintf(strbuf,"%s%s %s", arrow, i->name, (char *)i->val ); println( strbuf );
-                break;                
-                case TYPEDOUBLE:
-                    sprintf(strbuf,"%s%s%g%s", arrow, i->name, *(double *)i->val, point ? ".":"" ); println( strbuf );
-                break;      
-                case TYPEBOOL:
-                    sprintf(strbuf,"%s%s %s", arrow, i->name, *(bool *)i->val ? "On":"Off" ); println( strbuf );
-                break;                                     
+            }
+            
+            const char *arrow = (i == cmi->it ? "->":"  ");
+            if( ! i->hidden ){
+                switch( i->type )
+                {
+                    case TYPESHOW:
+                    case TYPEBACK:
+                    case TYPESELECT:
+                    case TYPEBEGIN:
+                        sprintf(strbuf,"%s%s", arrow, i->name );
+                        println( strbuf, i->color );
+                    break;                 
+                    case TYPEINT:
+                        sprintf(strbuf,"%s%s %i", arrow, i->name, *(int *)i->val );
+                        println( strbuf, i->color );
+                    break;
+                    case TYPESTR:
+                        sprintf(strbuf,"%s%s %s", arrow, i->name, (char *)i->val );
+                        println( strbuf,i->color );
+                    break;                
+                    case TYPEDOUBLE:
+                        sprintf(strbuf,"%s%s%g%s", arrow, i->name, *(double *)i->val, point ? ".":"" );
+                        println( strbuf, i->color );
+                    break;      
+                    case TYPEBOOL:
+                        sprintf(strbuf,"%s%s %s", arrow, i->name, *(bool *)i->val ? "On":"Off" );
+                        println( strbuf, i->color );
+                    break;                                     
+                }
+            }
+            else
+            {
+                sprintf(strbuf,"%s%s", arrow, i->name ); println( strbuf );
             }
         }
-        else
-        {
-            sprintf(strbuf,"%s%s", arrow, i->name ); println( strbuf );
-        }
-        
     }        
 }
 
@@ -193,7 +217,7 @@ bool menu::parse()
     {
         if( cmi->it != --cmi->ml.end() ) cmi->it++;
     }
-    else if( isprefix( "UP" ,NULL ) || (usewheel && isprefix( "JG+" ,NULL )) )
+    else if( isprefix( "UP" ,NULL ) || (usewheel && isprefix( "JG-" ,NULL )) )
     {
         if( cmi->it != cmi->ml.begin() ) cmi->it--;
     }

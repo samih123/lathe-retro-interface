@@ -10,7 +10,7 @@
 extern char strbuf[BUFFSIZE];
 extern struct machinestatus status;
 
-extern char *ttfile;
+extern char ttfile[LINELEN];
 extern char *ttcomments[CANON_POCKETS_MAX];
 extern int screenw, screenh;
 int currentline = 0;

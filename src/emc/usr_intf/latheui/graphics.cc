@@ -53,25 +53,18 @@ void print(const char *s, int x, int y ,int size, int color )
     if(s) printStringUsingGlutVectorFont(s,x,y, (float)size / glutStrokeHeight(GLUT_STROKE_MONO_ROMAN), color );
 }
 
-
-void print(const char *s, int x, int y)
+void println(const char *s, int x, int y, int size, int color )
 {
-    print(s, x, y , 10);
-}
-
-
-void println(const char *s, int x, int y,int size)
-{
-    print(s, x, y , size);
+    print( s, x, y, size, color );
     print_y = y;
     print_x = x;
     print_s = size;
 }
 
-void println(const char *s)
+void println(const char *s, int color )
 {
     print_y += print_s + print_s/8;
-    print(s, print_x, print_y , print_s);
+    print(s, print_x, print_y , print_s, color);
 }
 
 
