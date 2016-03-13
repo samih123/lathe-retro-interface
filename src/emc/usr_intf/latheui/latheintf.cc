@@ -460,12 +460,19 @@ void  parse_serialdata()
     // clean error message & estop
     if( isprefix( "START" ,NULL ) )
     {
-        if( emcStatus->task.state == EMC_TASK_STATE_OFF ) sendMachineOn();
-        if( emcStatus->task.state == EMC_TASK_STATE_ESTOP ) sendEstopReset();
+        if( emcStatus->task.state == EMC_TASK_STATE_OFF )
+        {
+            printf("sendMachineOn\n");
+            sendMachineOn();
+        }
+        else if( emcStatus->task.state == EMC_TASK_STATE_ESTOP )
+        {
+            printf("sendEstopReset\n");
+            sendEstopReset();
+        }
         show_last_msg = false;
     }
     
-
 }
 
 
