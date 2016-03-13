@@ -457,20 +457,9 @@ void  parse_serialdata()
               
     }
     
-    // clean error message & estop
+    // clean error message 
     if( isprefix( "START" ,NULL ) )
     {
-        printf("task.state = %d\n", (int)emcStatus->task.state );
-        if( emcStatus->task.state == EMC_TASK_STATE_OFF )
-        {
-            printf("sendMachineOn\n");
-            sendMachineOn();
-        }
-        else if( emcStatus->task.state == EMC_TASK_STATE_ESTOP )
-        {
-            printf("sendEstopReset\n");
-            sendEstopReset();
-        }
         show_last_msg = false;
     }
     
@@ -603,8 +592,17 @@ int main ( int argc, char **argv )
     {
         
         if( readserial() ) parse_serialdata();
+        
         updateStatus();
         
+        if( emcStatus->task.state == EMC_TASK_STATE_ESTOP_RESET )
+        {
+            show_last_msg = false;
+            sendMachineOn();
+            emcCommandWaitDone();
+            updateStatus();
+        }
+
         operator_display_string[0] = 0;
         operator_text_string[0] = 0;
         error_string[0] = 0;
