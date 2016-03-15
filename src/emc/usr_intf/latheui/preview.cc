@@ -105,7 +105,7 @@ void preview_draw()
     float xmin2 = xmin;
     float ymax2 = ymax;
     float ymin2 = ymin;
-    float s=10.0f; 
+    float s=1.0f; 
     if( xmax2 < x+s ) xmax2 = x+s;
     if( ymax2 < y+s ) ymax2 = y+s;
     if( xmin2 > x-s ) xmin2 = x-s;

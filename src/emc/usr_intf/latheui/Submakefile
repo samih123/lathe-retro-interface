@@ -8,4 +8,4 @@ USERSRCS += $(LATHEI)
 ../bin/latheui: $(call TOOBJS, $(LATHEI)) ../lib/librs274.so.0 ../lib/liblinuxcnc.a ../lib/libnml.so.0 \
 	../lib/liblinuxcnchal.so.0 ../lib/liblinuxcncini.so.0 ../lib/libpyplugin.so.0
 	$(ECHO) Linking $(notdir $@)
-	$(Q)$(CXX) $(LDFLAGS) -o $@ $^ $(ULFLAGS) $(BOOST_PYTHON_LIBS) -l$(LIBPYTHON) $(LIBREADLINE) -lGL -lglut
+	$(Q)$(CXX) $(LDFLAGS) -o $@ $^ $(ULFLAGS) $(BOOST_PYTHON_LIBS) -l$(LIBPYTHON) -lGL -lglut

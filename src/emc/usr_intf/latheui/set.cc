@@ -25,9 +25,11 @@ static menu Menu;
 static int menuselect;
 bool show_messages;
 
+list<string> updatelog;
+
 #define MODE_SELECT_TOOL 1
 #define MODE_SET_TOOL 2
-#define MODE_SET 3
+
 #define MAXTOOLS 15
 
 static int saveToolTable(const char *filename,
@@ -81,6 +83,7 @@ static int saveToolTable(const char *filename,
 }
 
 #define MENU_SHUTDOWN -666
+#define MENU_UPDATE -2
 #define MENU_BACK      -1
 
 static void createmenu()
@@ -96,6 +99,11 @@ static void createmenu()
                 Menu.select( &menuselect, MENU_SHUTDOWN, "Ok" );
             Menu.end(); 
             
+            Menu.begin("Update from github");
+                Menu.back("Chancel");
+                Menu.select( &menuselect, MENU_UPDATE, "Ok" );
+            Menu.end(); 
+                        
             Menu.begin("System messages");
                 Menu.back("back");
                 for(list<string>::iterator i = errors.begin(); i != errors.end(); i++)
@@ -104,12 +112,6 @@ static void createmenu()
                 }
             Menu.end(); 
 
-
-            Menu.begin("Tool touch off G54");
-                Menu.back("Back");
-                Menu.edit( &offsetX, "X");
-                Menu.edit( &offsetZ, "Z");
-            Menu.end();
             for( int i=1; i <= MAXTOOLS; i++ )
             {
                 sprintf(strbuf,"Tool %i %s", i,ttcomments[i]);
@@ -163,6 +165,50 @@ int shutdown()
     return system("shutdown -P now");
 }
 
+void update()
+{
+    
+    const char *commands =
+    "cd /home/sami/retro-lathe-interface\n\
+    ls\n\
+    git pull\n\
+    cd src\n\
+    make\n";
+    FILE *pp;
+    
+    pp = popen( commands, "r");
+    
+    if (pp != NULL)
+    {
+        for(;;)
+        {
+            char *line;
+            char buf[1000];
+            line = fgets(buf, sizeof buf, pp);
+            if (line == NULL) break;
+            
+            updatelog.push_back( line );
+            if( updatelog.size() > 40 ) updatelog.pop_front();
+            
+            glClearColor ( 0.0f, 0.0f, 0.0f, 1.0f );
+            glClear( GL_COLOR_BUFFER_BIT );
+            
+            println( "", 0, 0, 12, GREEN );
+            for(std::list<string>::iterator i = updatelog.begin(); i!= updatelog.end(); i++)
+            {
+                println( i->c_str() );
+                printf("%s",i->c_str());
+            }
+            
+            glutSwapBuffers();
+        }
+        pclose(pp);
+        sleep( 5 );
+    }
+
+    
+}
+
 void set_parse_serialdata()
 {
     show_messages = false;
@@ -174,20 +220,14 @@ void set_parse_serialdata()
             shutdown();
         }
         
+        if( menuselect == MENU_UPDATE )
+        {
+            update();
+        }        
+        
         if( mode == MODE_SELECT_TOOL )
         {
         
-            if( Menu.edited( &offsetZ ) )
-            {
-                sprintf(strbuf,"G10 L20 P1 Z%3.2f", offsetZ );
-                mdicommand( strbuf );
-            }
-            if( Menu.edited( &offsetX ) )
-            {
-                sprintf(strbuf,"G10 L20 P1 X%3.2f", offsetX );
-                mdicommand( strbuf );
-            } 
-            
             if( Menu.edited( &menuselect ) && menuselect > 0 )
             {
                 tool = menuselect;
