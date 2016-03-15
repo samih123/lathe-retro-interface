@@ -214,9 +214,15 @@ void create_arc( struct cut *c, std::list<struct mov> &ml, const vec2 v1, const 
 
 void add_cut(double x,double z)
 {
+    vec2 start(0,0);
+    if( ! cuts.empty() )
+    {
+       start = cuts.back().end;
+    }
     cuts.push_back( cut( cuts.back().dim.x + x, z) );
     currentcut = --cuts.end();
     currentcut->type = LINE;
+    currentcut->start = start;
 }
 
 
