@@ -305,6 +305,11 @@ void save( const char *name )
 
     if (fp == NULL) return;
 
+     fprintf(fp, "%d %d %d\n",
+            rough.tool,
+            undercut.tool,
+            finish.tool
+         );
     for(list<struct cut>::iterator i = cuts.begin(); i != cuts.end(); i++)
     {
          fprintf(fp, "%d %f %f %f %f %f\n",
@@ -439,6 +444,14 @@ void wizards_load( const char *name )
 
    if (fp == NULL) return;
 
+    if((read = getline( &line, &len, fp)) != -1)
+    {
+         sscanf(line, "%d %d %d\n",
+            &rough.tool,
+            &undercut.tool,
+            &finish.tool
+         );
+    }
     while ((read = getline( &line, &len, fp)) != -1)
     {
 
@@ -474,21 +487,24 @@ void wizards_load( const char *name )
 
 void wizards_init()
 {
+    
    rough.depth = 2.0;
-   rough.tool = 1;
-   
    undercut.depth = 2.0;
-   undercut.tool = 1;
-      
    finish.depth  = 0.2;
-   finish.tool  = 1;
    
    scale = 2;
    retract = 1;
    finish_count = 2;
    
     //wizards_load( "/home/sami/linuxcnc/nc_files/sotilas.wiz" );
-    if( cuts.size() == 0 ) add_cut(10,0);
+    if( cuts.size() == 0 )
+    {
+         add_cut(10,0);
+         
+         rough.tool = 1;
+         finish.tool  = 1;
+         undercut.tool = 1;
+    }
     scale = 1;
     create_contour();
     createmenu();
@@ -1078,9 +1094,8 @@ void make_rough_path( std::list<struct mov> &ml, std::list<struct mov> &cl )
     double max_z = max.z + rough.tool_r + retract*3.0 ;
     double len = fabs( min_z - max_z );
     ml.clear();
-    
-    //if( stockdiameter < max.x*2.0 ) stockdiameter = max.x*2.0 ; 
-    x = max.x + rough.depth + rough.tool_r ;
+
+    x = stockdiameter/2.0 + rough.depth + rough.tool_r ;
     
     vec2 start( x, max_z );
     
@@ -1137,7 +1152,9 @@ void rapid_to_next_path( list<struct mov> &p1, list<struct mov> &p2, list<struct
 }
 
 
-static std::list<struct mov> temp;
+static std::list<struct mov> temp1;
+static std::list<struct mov> temp2;
+
 void create_toolpath()
 {
 
@@ -1155,17 +1172,18 @@ void create_toolpath()
         create_finepath( finepath[i],finepath[i-1], finish.tool_r + finish.depth );
     }
     
-    create_finepath( temp, finepath[ finish_count-1 ] ,rough.tool_r );
+    create_finepath( temp1, finepath[ finish_count-1 ] ,rough.tool_r );
+    create_finepath( temp2, finepath[ finish_count-1 ] ,undercut.tool_r ); 
     
-    make_rough_path( roughpath, temp );
-    make_undercut_path( undercutpath, temp );
+    make_rough_path( roughpath, temp1 );
+    make_undercut_path( undercutpath, temp2 );
     
-    rapid_to_next_path( roughpath, undercutpath, temp, undercut );
-    rapid_to_next_path( undercutpath, finepath[finish_count-1], temp, finish );
+    rapid_to_next_path( roughpath, undercutpath, temp1, undercut );
+    rapid_to_next_path( undercutpath, finepath[finish_count-1], temp2, finish );
    
     for( int i=1; i < finish_count; i++ )
     {
-        rapid_to_next_path( finepath[i], finepath[i-1], finepath[i-1], finish );
+        rapid_to_next_path( finepath[i], finepath[i-1], finepath[i], finish );
     }
     
     draw_toolpath = true;
@@ -1348,7 +1366,8 @@ void wizards_draw()
         {
             draw_contour( finepath[i], false );
         }
-        draw_contour( temp, false );
+        draw_contour( temp1, false );
+        draw_contour( temp2, false );
         draw_contour( roughpath, false );
         draw_contour( undercutpath, false );  
     }
