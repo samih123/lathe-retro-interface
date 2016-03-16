@@ -30,8 +30,6 @@ list<string> updatelog;
 #define MODE_SELECT_TOOL 1
 #define MODE_SET_TOOL 2
 
-#define MAXTOOLS 15
-
 static int saveToolTable(const char *filename,
              CANON_TOOL_TABLE toolTable[])
 {

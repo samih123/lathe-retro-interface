@@ -51,6 +51,11 @@ void menu::begin( const char *n )
     cmi = &cmi->ml.back();
 }
 
+void menu::setmaxlines( int l )
+{
+    maxlines = l;
+}
+ 
 void menu::shortcut( const char *n )
 {
     cmi->ml.back().shortcut = n; 

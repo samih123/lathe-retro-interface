@@ -65,6 +65,8 @@ using namespace std;
 #define WHITE 7
 #define MAGENTA 8
 
+#define MAXTOOLS 20
+
 class vec2
 {
 public:
@@ -295,6 +297,7 @@ class menu
     void clear();
     void begin( const char *name );
     void end();
+    void setmaxlines( int l );
     
     void hiddenvalue();
     void color( int c );

@@ -417,7 +417,11 @@ void createmenu()
         Menu.edit( &scale, "Scale " );  
         Menu.edit( &X, "X " );
         Menu.edit( &Y, "Y " );
-    Menu.end();    
+        Menu.edit( &rough.tool, "Rough tool " );
+        Menu.edit( &finish.tool, "Finish tool " );
+        Menu.edit( &undercut.tool, "Undercut tool " );
+    Menu.end(); 
+    Menu.setmaxlines( 10 );   
 }
 
 void wizards_load( const char *name )
@@ -1164,6 +1168,10 @@ void wizards_parse_serialdata()
     if( Menu.parse() )
     {
         
+        CLAMP( rough.tool, 1, MAXTOOLS );
+        CLAMP( finish.tool, 1, MAXTOOLS );
+        CLAMP( undercut.tool, 1, MAXTOOLS );
+        
         if( menuselect == MENUNEW && currentcut->dim.length() > 0 )
         {
              add_cut( 0,0 );
@@ -1228,6 +1236,21 @@ void wizards_parse_serialdata()
     if( stockdiameter < contour_max.x *2.0f ) stockdiameter = contour_max.x *2.0f;
     //create_toolpath();
 
+}
+
+void show_tool( int x,int y, int t, const char* name )
+{
+     draw_tool( t );
+    glPushMatrix();
+    glTranslatef( 0,0 , 0);
+ 
+    glTranslatef( x ,screenh-y , 0);
+    glScalef(3.0f, 3.0f, 3.0f);
+
+    draw_tool( t );
+    glPopMatrix();
+    println( name ,x-25,y+50,16);
+     
 }
 
 
@@ -1311,12 +1334,15 @@ void wizards_draw()
     
     //glDisable(GL_LINE_STIPPLE);
 
-    Menu.draw(5,250);
+    Menu.draw(0,25);
     
     double angle = atan2( fabs( currentcut->start.x - currentcut->end.x) , fabs(currentcut->dim.z) )* 180.0f / M_PI;
     sprintf(strbuf,"Angle %g", angle );
     println( strbuf );   
     
+    show_tool( 500, 70 , rough.tool, "Rough" );
+    show_tool( 600, 70 , finish.tool, "Finish" );
+    show_tool( 700, 70 , undercut.tool, "Undercut" );
 }
 
 

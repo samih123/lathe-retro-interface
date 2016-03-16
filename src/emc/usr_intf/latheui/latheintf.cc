@@ -545,26 +545,21 @@ static void initemc()
        }
        printf("tryNml...\n");
     }
-    
-   
 
     for(int i=0; i<CANON_POCKETS_MAX; i++) ttcomments[i] = (char*)malloc(BUFFSIZE);
     
     print("Load tooltable",100,100+30*1,30);
-    glutPostRedisplay();
+    glutPostRedisplay();glutSwapBuffers();
     usleep(500);
     
-    loadToolTable(ttfile, _tools, 0, ttcomments, 0);
-    sendLoadToolTable(ttfile);
-    
     print("send EstopReset",100,100+30*2,30);
-    glutPostRedisplay();
+    glutPostRedisplay();glutSwapBuffers();
     usleep(500);
     
     sendEstopReset();
     
     print("send MachineOn",100,100+30*3,30);
-    glutPostRedisplay();
+    glutPostRedisplay();glutSwapBuffers();
     usleep(500);
     
     sendMachineOn();
@@ -585,11 +580,11 @@ int main ( int argc, char **argv )
     initstatus();
     init_opengl(argc, argv);
     initemc();
-    
-   // loadinifile( "/home/sami/linuxcnc/configs/sorvi/sorvi.ini" );
     loadinifile( argv[2] );
-
-
+    sendLoadToolTable(ttfile);
+    loadToolTable(ttfile, _tools, 0, ttcomments, 0);
+    
+    
     while ( 1 )
     {
         
