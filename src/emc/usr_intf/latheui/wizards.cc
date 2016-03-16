@@ -474,16 +474,13 @@ void wizards_load( const char *name )
 
 void wizards_init()
 {
-   rough.depth = 1.0;
-   rough.tool_r = 1.0;
+   rough.depth = 2.0;
    rough.tool = 1;
    
-   undercut.depth = 1.0;
-   undercut.tool_r = 1.0;
+   undercut.depth = 2.0;
    undercut.tool = 1;
       
    finish.depth  = 0.2;
-   finish.tool_r  = 0.1;
    finish.tool  = 1;
    
    scale = 2;
@@ -841,7 +838,20 @@ double Segment_to_Segment( vec2 a1, vec2 a2, vec2 b1, vec2 b2)
 
     return dP.length();   // return the closest distance
 }
-//===================================================================
+//===================================================================void
+
+void find_max( std::list<struct mov> &ml , vec2 &m )
+{
+    m.z = m.x = -1000000;
+    
+    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
+    {
+        if( m.z < i->end.z ) m.z = i->end.z;
+        if( m.z < i->start.z ) m.z = i->start.z;
+        if( m.x < i->end.x ) m.x = i->end.x;
+        if( m.x < i->start.x ) m.x = i->start.x;        
+    }
+} 
 
 double distance( std::list<struct mov> &ml, const vec2 p1, const vec2 p2)
 {
@@ -874,6 +884,8 @@ void rapid_move( std::list<struct mov> &ml, std::list<struct mov> &contour, cons
     else
     {
         double r = max( stockdiameter/2.0f, ml.back().end.x ) + retract;
+        if( r < ml.back().end.x ) r = ml.back().end.x;
+        if( r < v.x ) r = v.x;
         create_line( ml, vec2( r, ml.back().end.z ), RAPID ,"rapid start");
         create_line( ml, vec2( r, v.z ), RAPID );
         create_line( ml, v, RAPID  ,"rapid end");
@@ -1057,13 +1069,19 @@ void feed_to_left(
 
 void make_rough_path( std::list<struct mov> &ml, std::list<struct mov> &cl )
 {
-
+        
+    vec2 max;
+    find_max( cl, max );
+    
     double x;
     double min_z = contour_min.z;
-    double max_z = contour_max.z + finish.depth * finish_count + retract*2.0;
+    double max_z = max.z + rough.tool_r + retract*3.0 ;
     double len = fabs( min_z - max_z );
     ml.clear();
-    x = stockdiameter/2.0f + rough.depth + rough.tool_r ;
+    
+    //if( stockdiameter < max.x*2.0 ) stockdiameter = max.x*2.0 ; 
+    x = max.x + rough.depth + rough.tool_r ;
+    
     vec2 start( x, max_z );
     
     while( x > 1 )
@@ -1123,6 +1141,11 @@ static std::list<struct mov> temp;
 void create_toolpath()
 {
 
+ 
+   rough.tool_r = _tools[ rough.tool ].diameter/2.0f;
+   undercut.tool_r = _tools[ undercut.tool ].diameter/2.0f;
+   finish.tool_r  = _tools[ finish.tool ].diameter/2.0f;
+   
     create_contour();
      //   make_rough_path( roughpath, contour );
         

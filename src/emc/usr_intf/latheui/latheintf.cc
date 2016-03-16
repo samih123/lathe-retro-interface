@@ -263,7 +263,7 @@ void initstatus()
     status.screenmode = SCREENMANUAL;
     status.mode = EMC_TASK_MODE_MANUAL;
     status.axis = AXISX;
-    status.jogfeedrate = 50;
+    status.jogfeedrate = 500;
     status.incr = 1.0;
     status.feedoverride = 100;
     status.singleblock = false;
