@@ -265,7 +265,8 @@ void initstatus()
     status.axis = AXISX;
     status.jogfeedrate = 500;
     status.incr = 1.0;
-    status.feedoverride = 100;
+    status.feedoverride_new = status.feedoverride == 100;
+    
     status.singleblock = false;
     status.skipblock = false;
     status.optionalstop = false;

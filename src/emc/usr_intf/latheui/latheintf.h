@@ -36,8 +36,8 @@
 #include <list>
 using namespace std;
 
-
-#define CLAMP( a, l , h ) (a=min( max(a, (l)), (h)))
+#define CLAMP(x, l, h) (x = (((x) > (h)) ? (h) : (((x) < (l)) ? (l) : (x))))
+//#define CLAMP( a, l , h ) (a=min( max(a, (l)), (h)))
 
 #define AXISX 0
 #define AXISZ 2
