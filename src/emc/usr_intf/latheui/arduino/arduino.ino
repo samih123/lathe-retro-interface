@@ -401,7 +401,7 @@ void loop()
   {
     if ( buttons[i].pressed )
     {
-      if ( ! buttons[i].bsend || mode != oldmode )
+      if ( ! buttons[i].bsend )
       {
         Serial.println( buttons[i].text );
         buttons[i].bsend = true;
@@ -409,7 +409,7 @@ void loop()
     }
     else
     {
-      if ( buttons[i].bsend || mode != oldmode )
+      if ( buttons[i].bsend )
       {
         Serial.print( "RL" );
         Serial.println( buttons[i].text );
@@ -434,7 +434,8 @@ void loop()
       Serial.println(pot1);
 
       Serial.print("P2=");
-      Serial.println(pot2);*/
+      Serial.println(pot2);
+      */
 
   }
 
