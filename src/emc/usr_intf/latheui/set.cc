@@ -160,7 +160,7 @@ int shutdown()
 {
     sendMachineOff();
     emcCommandWaitDone();
-    return system("shutdown -P now");
+    return system("/home/sami/power.sh shutdown");
 }
 
 void update()
@@ -168,9 +168,10 @@ void update()
     
     const char *commands =
     "cd /home/sami/retro-lathe-interface\n\
-    ls\n\
+    echo pulling from github...\n\
     git pull\n\
     cd src\n\
+    echo make...\n\
     make\n";
     FILE *pp;
     
