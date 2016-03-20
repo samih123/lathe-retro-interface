@@ -14,6 +14,7 @@ extern int screenw, screenh;
 static menu Menu;
 static double diameter = 0,z = 0;
 static int oldaxis; 
+static bool jogcont;
 
 static void createmenu()
 {
@@ -34,7 +35,8 @@ static void createmenu()
 
 
 void manual_init()
-{
+{   
+    jogcont = false;
     sendAbort();
     sendManual();
     emcCommandWaitDone();
@@ -44,6 +46,45 @@ void manual_init()
 
 void manual_parse_serialdata()
 { 
+    
+    if( jogcont )
+    {
+        jogcont = false;
+        sendJogStop( AXISX );
+        sendJogStop( AXISZ );
+        printf("stop\n");
+        return;
+    }
+    else
+    {
+       if( isprefix( "LEFT" ,NULL ) )
+       {
+           sendJogCont( AXISZ, -2000 );
+           printf("left\n");
+           jogcont = true;
+           return;
+       } 
+       if( isprefix( "RIGHT" ,NULL ) )
+       {
+           sendJogCont( AXISZ, 2000 );
+           jogcont = true;
+           return;
+       }         
+       if( isprefix( "UP" ,NULL ) )
+       {
+           sendJogCont( AXISX, -2000 );
+           printf("left\n");
+           jogcont = true;
+           return;
+       } 
+       if( isprefix( "DOWN" ,NULL ) )
+       {
+           sendJogCont( AXISX, 2000 );
+           jogcont = true;
+           return;
+       }            
+    }
+     
     
     if( isprefix( "JG+" ,NULL ) )
     {

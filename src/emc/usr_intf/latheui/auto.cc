@@ -11,6 +11,7 @@ extern char strbuf[BUFFSIZE];
 extern struct machinestatus status;
 extern int screenw, screenh;
 
+
 void auto_init()
 {
     sendAuto();
@@ -31,6 +32,8 @@ void auto_load( char *n )
     emcCommandWaitDone();
     preview( emcStatus->task.file );
 }
+
+
 
 void auto_parse_serialdata()
 {
