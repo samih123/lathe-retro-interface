@@ -167,12 +167,12 @@ void update()
 {
     
     const char *commands =
-    "cd /home/sami/retro-lathe-interface\n\
+    "cd /home/sami/lathe-retro-interface 2>&1\n\
     echo pulling from github...\n\
-    git pull\n\
-    cd src\n\
+    git pull 2>&1\n\
+    cd src 2>&1\n\
     echo make...\n\
-    make\n";
+    make 2>&1\n";
     FILE *pp;
     
     pp = popen( commands, "r");
