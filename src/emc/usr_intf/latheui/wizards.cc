@@ -52,6 +52,7 @@ struct cutparam
     double tool_r;
     int tool;
     int count;
+    int speed;
 };
 
 #define ROUGH 0
@@ -310,10 +311,10 @@ void save( const char *name )
 
     if (fp == NULL) return;
 
-     fprintf(fp, "%d %d %f %f\n%d %d %f %f\n%d %d %f %f\n",
-            tp[ROUGH].tool, tp[ROUGH].count, tp[ROUGH].feed, tp[ROUGH].depth,
-            tp[UNDERCUT].tool, tp[UNDERCUT].count, tp[UNDERCUT].feed, tp[UNDERCUT].depth,
-            tp[FINISH].tool, tp[FINISH].count, tp[FINISH].feed, tp[FINISH].depth
+     fprintf(fp, "%d %d %d %f %f\n%d %d %d %f %f\n%d %d %d %f %f\n",
+            tp[ROUGH   ].tool, tp[ROUGH   ].count, tp[ROUGH   ].speed, tp[ROUGH   ].feed, tp[ROUGH   ].depth,
+            tp[UNDERCUT].tool, tp[UNDERCUT].count, tp[UNDERCUT].speed, tp[UNDERCUT].feed, tp[UNDERCUT].depth,
+            tp[FINISH  ].tool, tp[FINISH  ].count, tp[FINISH  ].speed, tp[FINISH  ].feed, tp[FINISH  ].depth
          );
     for(list<struct cut>::iterator i = cuts.begin(); i != cuts.end(); i++)
     {
@@ -331,63 +332,6 @@ void save( const char *name )
 }
 
 
-void save_path( list<struct mov> ml,FILE *fp ,cutparam &cp)
-{
-
-    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
-    {
-        
-        strbuf[0] = 0;
-        if( ! i->comment.empty() )
-        {
-            sprintf( strbuf, "( %s )", i->comment.c_str() );
-        }
-        fprintf(fp, "G%s X%.4f Z%.4f%s\n",
-            i->type == FEED ? "1":"0" ,
-            fabs( i->end.x ) < 0.001 ? 0:i->end.x,
-            fabs( i->end.z ) < 0.001 ? 0:i->end.z,
-            strbuf
-        );
-        
-        if( i->toolchange )
-        {
-            sprintf( strbuf, "T%d M6 F%f\n", i->toolchange, cp.feed );
-            fprintf(fp, "%s", strbuf );
-        }        
-
-    }
-
-}
-
- void save_program(const char *name )
-{
-    FILE *fp;
-    printf("save_program:%s\n",name);
-    fp = fopen( name, "w");
-
-    if (fp == NULL) return;
-
-    fprintf(fp, "G18 G8 G21 G94 G40\n");
-    fprintf(fp, "G64 P0.01\n");
-    fprintf(fp, "( Rough )\n");
-
-    save_path( roughpath, fp, tp[ROUGH] );
-
-    fprintf(fp, "( undercut )\n");
-    save_path( undercutpath,fp, tp[UNDERCUT] );
-
-
-    fprintf(fp, "( Finish )\n");
-    for( int i = tp[FINISH].count-1 ; i >= 0; i-- )
-    {
-      save_path( finepath[i], fp, tp[FINISH] );
-    }
-
-    fprintf(fp, "M2");
-    fclose( fp );
-
-
-}
 
 static char Dstr[BUFFSIZE];
 static char Zstr[BUFFSIZE];
@@ -397,14 +341,15 @@ static double diameter;
 static double stockdiameter;
 static double X;
 static double Y;
-
+static int maxrpm;
 
 void toolmenu( int t, const char *n )
 {
     Menu.begin( n );
         Menu.back("back");
         Menu.edit( &tp[t].tool, "Tool number " );
-        Menu.edit( &tp[t].feed, "Feedrate " );
+        Menu.edit( &tp[t].feed, "Feedrate mm/min" );
+        Menu.edit( &tp[t].speed, "Surface speed m/s " );
         Menu.edit( &tp[t].depth, "Depth " );
         if( t== FINISH )
         {
@@ -440,6 +385,7 @@ void createmenu()
         Menu.edit( &currentcut->depth, "Depth " );
         }
         Menu.edit( &stockdiameter, "Stock diameter " );
+        Menu.edit( &maxrpm, "Max spindle rpm " );
         Menu.select( &menuselect, MENUTOOLPATH, "Create toolpath" );
         Menu.select( &menuselect, MENUSAVE, "Save program" );
         Menu.edit( Name, "Program name:" );
@@ -453,6 +399,69 @@ void createmenu()
         Menu.edit( &dynamic_toolpath, "dynamic toolpath calculation " );
     Menu.end();
     Menu.setmaxlines( 10 );
+}
+
+
+void save_path( list<struct mov> ml,FILE *fp ,cutparam &cp)
+{
+
+    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
+    {
+        
+        strbuf[0] = 0;
+        if( ! i->comment.empty() )
+        {
+            sprintf( strbuf, "( %s )", i->comment.c_str() );
+        }
+        fprintf(fp, "G%s X%.4f Z%.4f%s\n",
+            i->type == FEED ? "1":"0" ,
+            fabs( i->end.x ) < 0.001 ? 0:i->end.x,
+            fabs( i->end.z ) < 0.001 ? 0:i->end.z,
+            strbuf
+        );
+        
+        if( i->toolchange )
+        {
+            sprintf( strbuf, "T%d M6 F%f\n", i->toolchange, cp.feed );
+            fprintf(fp, "%s", strbuf );
+            sprintf( strbuf, "G96 D%d S%d\n", maxrpm, cp.speed );
+            fprintf(fp, "%s", strbuf );
+            sprintf( strbuf, "M4\n" );
+            fprintf(fp, "%s", strbuf );
+        }        
+
+    }
+
+}
+
+ void save_program(const char *name )
+{
+    FILE *fp;
+    printf("save_program:%s\n",name);
+    fp = fopen( name, "w");
+
+    if (fp == NULL) return;
+
+    fprintf(fp, "G18 G8 G21 G94 G40\n");
+    fprintf(fp, "G64 P0.01\n");
+    fprintf(fp, "( Rough )\n");
+
+    save_path( roughpath, fp, tp[ROUGH] );
+
+    fprintf(fp, "( undercut )\n");
+    save_path( undercutpath,fp, tp[UNDERCUT] );
+
+
+    fprintf(fp, "( Finish )\n");
+    for( int i = tp[FINISH].count-1 ; i >= 0; i-- )
+    {
+      save_path( finepath[i], fp, tp[FINISH] );
+    }
+    
+    fprintf(fp, "M5 (stop spindle)\n");
+
+    fprintf(fp, "M2\n");
+    fclose( fp );
 }
 
 
@@ -475,8 +484,8 @@ void wizards_load( const char *name )
     {
         if((read = getline( &line, &len, fp)) != -1)
         {
-            sscanf(line, "%d %d %lf %lf",
-                &tp[i].tool, &tp[i].count, &tp[i].feed, &tp[i].depth
+            sscanf(line, "%d %d %d %lf %lf",
+                &tp[i].tool, &tp[i].count, &tp[i].speed, &tp[i].feed, &tp[i].depth
             );
         }
     }
@@ -524,6 +533,7 @@ void wizards_init()
 
     scale = 2;
     retract = 1;
+    maxrpm = status.maxrpm;
 
     //wizards_load( "/home/sami/linuxcnc/nc_files/sotilas.wiz" );
     if( cuts.size() == 0 )
@@ -531,6 +541,7 @@ void wizards_init()
          add_cut(10,0);
          tp[ROUGH].tool = tp[FINISH].tool = tp[UNDERCUT].tool = 1;
          tp[ROUGH].feed = tp[FINISH].feed = tp[UNDERCUT].feed = 50;
+         tp[ROUGH].speed = tp[FINISH].speed = tp[UNDERCUT].speed = 20;
     }
     scale = 1;
     create_contour();

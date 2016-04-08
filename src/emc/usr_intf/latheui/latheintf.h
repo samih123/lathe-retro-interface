@@ -246,12 +246,12 @@ public:
 
 struct machinestatus
 {
-    char homingseq[6];
     int screenmode;
     int mode;
     int axis;
     int feedoverride, feedoverride_new;
     int jogfeedrate;
+    int maxrpm;
     double incr;
     bool singleblock;
     bool skipblock;

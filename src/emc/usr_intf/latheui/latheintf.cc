@@ -271,6 +271,8 @@ void initstatus()
     status.skipblock = false;
     status.optionalstop = false;
     status.slowrapid = false;
+    
+    status.maxrpm = 3000;
 }
 
 const char* isprefix( const char*  prefix, int* n)
