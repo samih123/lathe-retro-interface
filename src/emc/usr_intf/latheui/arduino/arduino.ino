@@ -15,7 +15,7 @@ unsigned int pot2_sum = 0;
 unsigned int pot1_old = 0;
 unsigned int pot2_old = 0;
 unsigned char pot_counter = 0;
-#define POT_READS 8
+#define POT_READS 64
 
 #define MODEPIN1 4
 unsigned char mode = 1;
