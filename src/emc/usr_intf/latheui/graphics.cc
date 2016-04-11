@@ -429,6 +429,8 @@ void init_opengl( int argc, char **argv )
     glutInitWindowPosition(0,0);
     glutInitWindowSize(800,600);
     glutCreateWindow("SAMICNC 0.0");
+    //glutFullScreen();
+    //glutPositionWindow(0,0);
     glutDisplayFunc( updatescreen );
     glutKeyboardFunc( keyboardfunc );
     glutSpecialFunc( specialfunc );

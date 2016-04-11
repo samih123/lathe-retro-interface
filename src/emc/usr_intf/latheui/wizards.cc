@@ -284,6 +284,10 @@ bool create_contour()
         }
         else printf("error:unknow type %i\n",i->type);
     }
+    
+    // add small line to the end;
+    struct cut c = cut(0,0); 
+    create_line( &c, contour, vec2( start.x, start.z - 0.01 ) );
 
     //remove_short_lines( contour ,0.01 );
 
