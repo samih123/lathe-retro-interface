@@ -284,10 +284,6 @@ bool create_contour()
         }
         else printf("error:unknow type %i\n",i->type);
     }
-    
-    // add small line to the end;
-    struct cut c = cut(0,0); 
-    create_line( &c, contour, vec2( start.x, start.z - 0.01 ) );
 
     //remove_short_lines( contour ,0.01 );
 
@@ -484,6 +480,7 @@ void wizards_load( const char *name )
 
    if (fp == NULL) return;
 
+    // read tool parameters
     for( int i=0 ; i<3 ; i++ )
     {
         if((read = getline( &line, &len, fp)) != -1)
@@ -494,6 +491,7 @@ void wizards_load( const char *name )
         }
     }
     
+    // read contour
     while ((read = getline( &line, &len, fp)) != -1)
     {
 
@@ -529,11 +527,6 @@ void wizards_load( const char *name )
 
 void wizards_init()
 {
-
-    tp[ROUGH].depth = 2.0;
-    tp[UNDERCUT].depth = 2.0;
-    tp[FINISH].depth  = 0.2;
-    tp[FINISH].count = 2;
 
     scale = 2;
     retract = 1;
@@ -1215,11 +1208,10 @@ void create_toolpath()
     startposition += tp[ROUGH].depth + tp[ROUGH].tool_r;
     startposition.z += 5;
     
-    create_finepath( finepath[0],contour, tp[FINISH].tool_r );
-    for( int i=1; i < tp[FINISH].count; i++ )
+    for( int i=0; i < tp[FINISH].count; i++ )
     {
-        create_finepath( finepath[i],finepath[i-1], tp[FINISH].tool_r + tp[FINISH].depth );
-    }
+        create_finepath( finepath[i],contour, tp[FINISH].tool_r + tp[FINISH].depth * i );
+    }   
     
     create_finepath( temp1, finepath[ tp[FINISH].count-1 ] ,tp[ROUGH].tool_r );
     create_finepath( temp2, finepath[ tp[FINISH].count-1 ] ,tp[UNDERCUT].tool_r );
