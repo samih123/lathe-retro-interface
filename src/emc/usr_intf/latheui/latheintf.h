@@ -280,6 +280,7 @@ struct menuitem
     int type;
     int num;
     char name[BUFFSIZE];
+    char str[BUFFSIZE];
     const char *shortcut;     
     list<struct menuitem> ml;
     list<struct menuitem>::iterator it;
