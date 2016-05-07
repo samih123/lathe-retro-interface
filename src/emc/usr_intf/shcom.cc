@@ -674,6 +674,33 @@ int sendJogIncr(int axis, double speed, double incr)
     return 0;
 }
 
+int sendJogAbs(int axis, double speed, double pos)
+{
+    EMC_AXIS_ABS_JOG emc_axis_abs_jog_msg;
+
+    if (axis < 0 || axis >= EMC_AXIS_MAX) {
+	return -1;
+    }
+
+    if (0 == jogPol[axis]) {
+	speed = -speed;
+    }
+
+    emc_axis_abs_jog_msg.axis = axis;
+    emc_axis_abs_jog_msg.vel = speed / 60.0;
+    emc_axis_abs_jog_msg.pos = pos;
+    emcCommandSend(emc_axis_abs_jog_msg);
+
+    if (emcWaitType == EMC_WAIT_RECEIVED) {
+	return emcCommandWaitReceived();
+    } else if (emcWaitType == EMC_WAIT_DONE) {
+	return emcCommandWaitDone();
+    }
+    axisJogging = -1;
+
+    return 0;
+}
+
 int sendMistOn()
 {
     EMC_COOLANT_MIST_ON emc_coolant_mist_on_msg;

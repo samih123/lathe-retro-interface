@@ -63,7 +63,7 @@ void println(const char *s, int x, int y, int size, int color )
 
 void println(const char *s, int color )
 {
-    print_y += print_s + print_s/8;
+    print_y += print_s + print_s/16;
     print(s, print_x, print_y , print_s, color);
 }
 
@@ -154,7 +154,7 @@ int axiscolor( int n )
 }
 
 
-void draw_dro()
+void draw_dro( vec2 *cpos )
 {
             
     char label[10];
@@ -167,16 +167,50 @@ void draw_dro()
     double z = emcStatus->motion.traj.actualPosition.tran.z;
     double c = 0;
     
+    double cx = 0; 
+    double cz = 0;
+    double cc = 0;
+    
+    if( cpos != NULL )
+    {
+        cx = cpos->x;
+        cz = cpos->z;
+    }
+    
     x -= emcStatus->task.g5x_offset.tran.x;
     z -= emcStatus->task.g5x_offset.tran.z;
-    
     x -= emcStatus->task.g92_offset.tran.x;
     z -= emcStatus->task.g92_offset.tran.z;
-    
+    x -= emcStatus->task.toolOffset.tran.x;
+    z -= emcStatus->task.toolOffset.tran.z;
+
+    cx -= emcStatus->task.g5x_offset.tran.x;
+    cz -= emcStatus->task.g5x_offset.tran.z;
+    cx -= emcStatus->task.g92_offset.tran.x;
+    cz -= emcStatus->task.g92_offset.tran.z;
+    cx -= emcStatus->task.toolOffset.tran.x;
+    cz -= emcStatus->task.toolOffset.tran.z;        
+/*    
     sprintf(strbuf,"X%4.3f", x     ); print( strbuf ,550,55+40*0,40, axiscolor( AXISX ));  
     sprintf(strbuf,"D%4.3f", x*2.0f); print( strbuf ,550,55+40*1,40, axiscolor( AXISX ));  
     sprintf(strbuf,"Z%4.3f", z     ); print( strbuf ,550,55+40*2,40, axiscolor( AXISZ ));  
     sprintf(strbuf,"C%4.3f", c     ); print( strbuf ,550,55+40*3,40, axiscolor( AXISC ));  
+*/
+    if( cpos != NULL )
+    {
+        sprintf(strbuf,"X%4.2f %4.2f", x, cx           ); println( strbuf, 400, 55, 40, axiscolor( AXISX ));  
+        sprintf(strbuf,"D%4.2f %4.2f", x*2.0f, cx*2.0f ); println( strbuf, axiscolor( AXISX ));  
+        sprintf(strbuf,"Z%4.2f %4.2f", z, cz           ); println( strbuf, axiscolor( AXISZ ));  
+        sprintf(strbuf,"C%4.2f %4.2f", c, cc           ); println( strbuf, axiscolor( AXISC ));
+    }
+    else
+    {
+        sprintf(strbuf,"X%4.2f", x      ); println( strbuf, 550, 55, 40, axiscolor( AXISX ));  
+        sprintf(strbuf,"D%4.2f", x*2.0f ); println( strbuf, axiscolor( AXISX ));  
+        sprintf(strbuf,"Z%4.2f", z      ); println( strbuf, axiscolor( AXISZ ));  
+        sprintf(strbuf,"C%4.2f", c     ); println( strbuf, axiscolor( AXISC ));
+    }   
+
 
     sprintf(strbuf,"%s X %4.3f",label, emcStatus->task.g5x_offset.tran.x );                          print( strbuf ,550,200+20*0,20 );
     sprintf(strbuf,"%s Z %4.3f",label, emcStatus->task.g5x_offset.tran.z );                          print( strbuf ,550,200+20*1,20 );

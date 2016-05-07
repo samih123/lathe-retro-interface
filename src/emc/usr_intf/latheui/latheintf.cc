@@ -206,7 +206,20 @@ enum EMC_TASK_INTERP_ENUM {
     double backangle;
     int orientation;
 };
-* 
+ 
+ class EMC_AXIS_ABS_JOG:public EMC_AXIS_CMD_MSG {
+  public:
+    EMC_AXIS_ABS_JOG():EMC_AXIS_CMD_MSG(EMC_AXIS_ABS_JOG_TYPE,
+					sizeof(EMC_AXIS_ABS_JOG)) {
+    };
+
+    // For internal NML/CMS use only.
+    void update(CMS * cms);
+
+    double pos;
+    double vel;
+};
+ 
 */
 
 struct machinestatus status;
@@ -263,7 +276,7 @@ void initstatus()
     status.screenmode = SCREENMANUAL;
     status.mode = EMC_TASK_MODE_MANUAL;
     status.axis = AXISX;
-    status.jogfeedrate = 500;
+    status.jogfeedrate = 50;
     status.incr = 1.0;
     status.feedoverride_new = status.feedoverride == 100;
     

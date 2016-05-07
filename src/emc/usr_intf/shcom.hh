@@ -104,6 +104,7 @@ extern int sendOverrideLimits(int axis);
 extern int sendJogStop(int axis);
 extern int sendJogCont(int axis, double speed);
 extern int sendJogIncr(int axis, double speed, double incr);
+extern int sendJogAbs(int axis, double speed, double pos);
 extern int sendMistOn();
 extern int sendMistOff();
 extern int sendFloodOn();
