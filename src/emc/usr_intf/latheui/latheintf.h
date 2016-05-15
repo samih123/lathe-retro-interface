@@ -333,6 +333,7 @@ void print(const char *s, int x, int y ,int size);
 void print(const char *s, int x, int y ,int size, int color );
 void println(const char *s, int x, int y, int size = 10 , int color = GREEN );
 void println(const char *s, int color = GREEN);
+void println( int x, int y, int size, int color );
 
 void draw_dro( vec2 *cpos = NULL );
 void draw_statusbar( const char *s );

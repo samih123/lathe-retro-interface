@@ -1434,7 +1434,7 @@ void wizards_draw()
 
     //glDisable(GL_LINE_STIPPLE);
 
-    Menu.draw(0,25);
+    Menu.draw(5,50);
 
     double angle = atan2( fabs( currentcut->start.x - currentcut->end.x) , fabs(currentcut->dim.z) )* 180.0f / M_PI;
     sprintf(strbuf,"Angle %g", angle );

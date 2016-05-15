@@ -142,7 +142,9 @@ void menu::show( const char *n )
 void menu::draw( int x, int y)
 {
 
-    println( cmi->name, x, y, 20 );
+    
+    println( x, y, 20, cmi->color );
+    if( cmi->name[0] != 0 ) println( cmi->name );
    
     int selected = std::distance( cmi->ml.begin(), cmi->it);
     int line = 0, drawedline = 0;

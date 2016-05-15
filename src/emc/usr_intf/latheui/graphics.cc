@@ -61,6 +61,13 @@ void println(const char *s, int x, int y, int size, int color )
     print_s = size;
 }
 
+void println( int x, int y, int size, int color )
+{
+    print_x = x;
+    print_s = size;
+    print_y = y - ( print_s + print_s/16 );
+}
+
 void println(const char *s, int color )
 {
     print_y += print_s + print_s/16;
