@@ -31,6 +31,7 @@ addf lut5.0 servo-thread
 addf abs.0 servo-thread
 addf scale.0 servo-thread
 addf lowpass.0 servo-thread
+
 #net spindle-cmd-rpm     <= motion.spindle-speed-out
 #net spindle-cmd-rpm-abs <= motion.spindle-speed-out-abs
 net spindle-cmd-rps     <= motion.spindle-speed-out-rps

@@ -6,7 +6,8 @@
 ********************************************************************/
 
 #include "latheintf.h"
-
+#include "motion_types.h"
+#include "motion.h"
 extern char strbuf[BUFFSIZE];
 extern struct machinestatus status;
 extern int screenw, screenh;
@@ -15,6 +16,8 @@ static menu Menu;
 static double diameter = 0,z = 0;
 static int oldaxis; 
 static bool jogcont;
+static bool jogcont_stopped;
+static vec2 pos;
 
 static void createmenu()
 {
@@ -34,25 +37,39 @@ static void createmenu()
 }
 
 
+void reset_position()
+{
+    pos.x = emcStatus->motion.traj.position.tran.x;
+    pos.z = emcStatus->motion.traj.position.tran.z;  
+}
+
 void manual_init()
 {   
     jogcont = false;
+    jogcont_stopped = false;
     sendAbort();
     sendManual();
     emcCommandWaitDone();
     createmenu();
     oldaxis = status.axis;
+    reset_position();
 }
 
 void manual_parse_serialdata()
 { 
     
+    if( jogcont_stopped && emcStatus->motion.traj.current_vel == 0 )
+    {
+        reset_position();
+        jogcont_stopped = false;
+    }
+    
     if( jogcont )
     {
         jogcont = false;
+        jogcont_stopped = true;
         sendJogStop( AXISX );
         sendJogStop( AXISZ );
-        printf("stop\n");
         return;
     }
     else
@@ -60,41 +77,49 @@ void manual_parse_serialdata()
        if( isprefix( "LEFT" ,NULL ) )
        {
            sendJogCont( AXISZ, -2000 );
-           printf("left\n");
            jogcont = true;
+           jogcont_stopped = false;
            return;
        } 
        if( isprefix( "RIGHT" ,NULL ) )
        {
            sendJogCont( AXISZ, 2000 );
            jogcont = true;
+           jogcont_stopped = false;
            return;
        }         
        if( isprefix( "UP" ,NULL ) )
        {
            sendJogCont( AXISX, -2000 );
-           printf("left\n");
            jogcont = true;
+           jogcont_stopped = false;
            return;
        } 
        if( isprefix( "DOWN" ,NULL ) )
        {
            sendJogCont( AXISX, 2000 );
            jogcont = true;
+           jogcont_stopped = false;
            return;
        }            
     }
      
     
-    if( isprefix( "JG+" ,NULL ) )
+    if( isprefix( "JG+" ,NULL ) || isprefix( "JG-" ,NULL ))
     {
-        sendJogIncr(status.axis, status.jogfeedrate, status.incr );
-        return;
-    }
-    
-    if( isprefix( "JG-" ,NULL ) )
-    {
-        sendJogIncr(status.axis, status.jogfeedrate, -status.incr );
+        
+        if( status.axis == AXISX )
+        {
+            pos.x += status.incr * (isprefix( "JG+" ,NULL ) ? 0.5:-0.5);
+            sendJogAbs(status.axis, status.jogfeedrate, pos.x );
+        }
+        else if( status.axis == AXISZ )
+        {
+            pos.z += status.incr * (isprefix( "JG+" ,NULL ) ? 1.0:-1.0);
+            sendJogAbs(status.axis, status.jogfeedrate, pos.z );
+        } 
+        
+      //  sendJogIncr(status.axis, status.jogfeedrate, status.incr * (isprefix( "JG+" ,NULL ) ? 1.0:-1.0));
         return;
     }
     
@@ -108,18 +133,19 @@ void manual_parse_serialdata()
     {
         if( Menu.edited( &diameter ) )
         {
-            sprintf(strbuf,"G10 L20 P1 X%3.2f", diameter/2.0f );
+            sprintf(strbuf,"G10 L20 P1 X%3.3f", diameter/2.0f );
             mdicommand( strbuf );
             sendManual();
-            emcCommandWaitDone();           
+            emcCommandWaitDone(); 
         }
         else if( Menu.edited( &z ) )
         {
-            sprintf(strbuf,"G10 L20 P1 Z%3.2f", z );
+            sprintf(strbuf,"G10 L20 P1 Z%3.3f", z );
             mdicommand( strbuf );
             sendManual();
             emcCommandWaitDone();
-        }        
+        }
+        reset_position();        
     }
 
 }
@@ -127,12 +153,18 @@ void manual_parse_serialdata()
 void manual_draw()
 {
     
+    if( jogcont_stopped && emcStatus->motion.traj.current_vel == 0 )
+    {
+        reset_position();
+        jogcont_stopped = false;
+    }
+    
     draw_statusbar( "MANUAL" );
     
     sprintf(strbuf, "INCR     %4.3f mm\nFEEDRATE %d mm/min",status.incr, status.jogfeedrate );
     print( strbuf ,0,60,25);
     preview_draw();
-    draw_dro();
+    draw_dro( &pos );
     Menu.draw( 5, 120 );
 
 }
