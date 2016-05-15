@@ -1219,8 +1219,15 @@ void create_toolpath()
     make_rough_path( roughpath, temp1 );
     make_undercut_path( undercutpath, temp2 );
     
-    rapid_to_next_path( roughpath, undercutpath, temp1, tp[ROUGH], tp[UNDERCUT] );
-    rapid_to_next_path( undercutpath, finepath[tp[FINISH].count-1], temp2, tp[UNDERCUT], tp[FINISH] );
+    if( undercutpath.empty() )
+    {
+        rapid_to_next_path( roughpath, finepath[tp[FINISH].count-1], temp2, tp[UNDERCUT], tp[FINISH] ); 
+    }
+    else
+    {
+        rapid_to_next_path( roughpath, undercutpath, temp1, tp[ROUGH], tp[UNDERCUT] );
+        rapid_to_next_path( undercutpath, finepath[tp[FINISH].count-1], temp2, tp[UNDERCUT], tp[FINISH] );
+    }
     
     for( int i=1; i < tp[FINISH].count; i++ )
     {
