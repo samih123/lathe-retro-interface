@@ -6,24 +6,22 @@
 ********************************************************************/
 
 #include "latheintf.h"
-#include "menu.h"
+//#include "menu.h"
 
 #include <list>
 using namespace std;
 extern char programPrefix[LINELEN];
 
-#define LINE 0
-#define ARC_OUT 1
-#define ARC_IN 2
-#define THREAD 3
-#define GROOVE 4
-#define RAPID 5
-#define FEED 6
 
 #define MENUDELETE 1
 #define MENUNEW 2
 #define MENUSAVE 3
 #define MENUTOOLPATH 4
+
+#define ROUGH 0
+#define UNDERCUT 1
+#define FINISH 2
+#define CONTOUR 3
 
 const char *typestr[] =
 {
@@ -43,125 +41,65 @@ extern char estr[BUFFSIZE];
 static menu Menu;
 
 static double scale = 2;
-static double retract = 1;
+double retract = 1;
+double stockdiameter;
 
-struct cutparam
-{
-    double depth;
-    double feed;
-    double tool_r;
-    int tool;
-    int count;
-    int speed;
-};
 
-#define ROUGH 0
-#define UNDERCUT 1
-#define FINISH 2
 
 static cutparam tp[3];
-
-struct cut
-{
-    cut( double ax,double az )
-    {
-        dim.x = ax;
-        dim.z = az;
-        type = LINE;
-        r = 1.0f;
-        pitch = 1.0f;
-        depth = 0.65f * pitch;
-    }
-    int type;
-    vec2 dim;
-    double r;
-    double pitch;
-    double depth;
-    vec2 end,start,center;
-};
 
 static list<struct cut> cuts;
 static list<struct cut>::iterator currentcut;
 
 
-
-
-
-
-struct mov
-{
-    mov( double ax,double az, int ct )
-    {
-        end.x = ax;
-        end.z = az;
-        feed = 0;
-        type = ct;
-        toolchange = 0;
-    }
-    mov( const vec2 &v, int ct )
-    {
-        end = v;
-        feed = 0;
-        type = ct;
-        toolchange = 0;
-    }
-    ~mov()
-    {
-        comment.erase();
-    }
-
-    vec2 end,start;
-    vec2 vel;
-    double pitch;
-    double depth;
-    double feed;
-    int type;
-    string comment;
-    int toolchange;
-};
-
 #define MAXFINEPASS 20
 
 
-static vec2 contour_max;
-static vec2 contour_min;
-static vec2 startposition; 
+//static vec2 contour_max;
+//static vec2 contour_min;
+vec2 startposition; 
 
-
-static std::list<struct mov> contour;
-static std::list<struct mov> finepath[MAXFINEPASS];
-static std::list<struct mov> roughpath;
-static std::list<struct mov> undercutpath;
-static std::list<struct mov> threadpath;
-static std::list<struct mov> toolpath[2];
 static bool draw_toolpath = false;
-static bool dynamic_toolpath = false;
+static bool dynamic_toolpath = true;
+
+static contour_path contour;
+static rough_path roughpath;
+static undercut_path undercutpath;
+static fine_path finepath[MAXFINEPASS];
 
 
-void create_line( std::list<struct mov> &ml, const vec2 &v , int t, const char *comment = NULL )
+/*
+static path finepath[MAXFINEPASS] = { path( FINISH ),path( FINISH ),path( FINISH ),path( FINISH ) };
+static path undercutpath;
+static path threadpath;
+*/
+
+/*
+
+void create_line( path &p, const vec2 &v , int t, const char *comment = NULL )
 {
     vec2 start;
-    if( ml.empty() )
+    if( p.ml.empty() )
     {
         start.x = start.z = 0;
     }
     else
     {
-        start = ml.back().end;
+        start = p.ml.back().end;
     }
-    ml.push_back( mov( v.x, v.z , t ) );
-    ml.back().start = start;
-    if( comment != NULL ) ml.back().comment = comment;
+    p.ml.push_back( mov( v.x, v.z , t ) );
+    p.ml.back().start = start;
+    if( comment != NULL ) p.ml.back().comment = comment;
 }
 
-void create_line( struct cut *c, std::list<struct mov> &ml, const vec2 &v )
+void create_line( struct cut *c, path &p, const vec2 &v )
 {
-    create_line( ml, v, c->type );
+    create_line( p, v, c->type );
 }
 
 
 
-void create_arc( struct cut *c, std::list<struct mov> &ml, const vec2 v1, const vec2 v2, double r, bool side)
+void create_arc( struct cut *c, path &p, const vec2 v1, const vec2 v2, double r, bool side)
 {
 
     double x1 = v1.x;
@@ -207,7 +145,7 @@ void create_arc( struct cut *c, std::list<struct mov> &ml, const vec2 v1, const 
     double y = r * sinf(start_angle);
     for(int ii = 0; ii < num_segments; ii++)
     {
-        create_line( c, ml, vec2(x + cx, y + cy) );
+        create_line( c, p, vec2(x + cx, y + cy) );
         double tx = -y;
         double ty = x;
         x += tx * tangetial_factor;
@@ -216,7 +154,7 @@ void create_arc( struct cut *c, std::list<struct mov> &ml, const vec2 v1, const 
         y *= radial_factor;
     }
 }
-
+*/
 
 void add_cut(double x,double z)
 {
@@ -233,27 +171,10 @@ void add_cut(double x,double z)
 
 
 
-void remove_short_lines(std::list<struct mov> &ml, double min )
+
+bool create_contour( contour_path &p )
 {
-    vec2 start(0,0);
-    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
-    {
-        if( start.dist_squared( i->end ) < min*min )
-        {
-           // printf("removing short line %f\n", start.dist( i->dim ) );
-            i = contour.erase( i );
-        }
-        start = i->end;
-    }
-
-}
-
-bool create_contour()
-{
-    contour.clear();
-
-    contour_max = vec2( -1000000,-1000000 );
-    contour_min = vec2( 1000000,1000000 );
+    p.ml.clear();
 
     vec2 start(0,0);
 
@@ -271,31 +192,17 @@ bool create_contour()
         {
             double l = i->start.dist( i->end ) + 0.00001f;
             if( i->r < l/2.0f )  i->r = l/2.0f;
-            create_arc( &*i, contour, i->start, i->end, i->r, i->type == ARC_IN );
-            //contour.back().end = i->end;
+            p.create_arc( *i, i->start, i->end, i->r, i->type == ARC_IN );
         }
-        else if(i->type == LINE )
+        else 
         {
-            create_line( &*i, contour, i->end );
+            p.create_line( i->end, i->type );
         }
-        else if(i->type == THREAD )
-        {
-            create_line( &*i, contour, i->end );
-        }
-        else printf("error:unknow type %i\n",i->type);
+
     }
 
-    //remove_short_lines( contour ,0.01 );
-
-    vec2(0,0).findminmax( contour_min, contour_max );
-    start.x = start.z = 0;
-    for(list<struct mov>::iterator i = contour.begin(); i != contour.end(); i++)
-    {
-        i->end.findminmax( contour_min, contour_max );
-        i->start = start;
-        start =  i->end;
-    }
-
+    //p.remove_knots();
+    p.findminmax();
 
     return true;
 }
@@ -332,16 +239,15 @@ void save( const char *name )
 }
 
 
-
 static char Dstr[BUFFSIZE];
 static char Zstr[BUFFSIZE];
 static char Name[BUFFSIZE];
 static int menuselect;
 static double diameter;
-static double stockdiameter;
+
 static double X;
 static double Y;
-static int maxrpm;
+int maxrpm;
 
 void toolmenu( int t, const char *n )
 {
@@ -362,8 +268,8 @@ void createmenu()
 {
 
     diameter = currentcut->dim.x *2.0f;
-    printf("max  %g,%g\n",contour_max.x,contour_max.z);
-    printf("min  %g,%g\n",contour_min.x,contour_min.z);
+    //printf("max  %g,%g\n",contour_max.x,contour_max.z);
+    //printf("min  %g,%g\n",contour_min.x,contour_min.z);
 
     sprintf(Dstr,"D start:%4.3g end:", currentcut->start.x*2.0f );
     sprintf(Zstr,"Z start:%4.3g lenght:", currentcut->start.z );
@@ -402,10 +308,10 @@ void createmenu()
 }
 
 
-void save_path( list<struct mov> ml,FILE *fp ,cutparam &cp)
+void save_path( path &p, FILE *fp ,cutparam &cp)
 {
-
-    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
+/*
+    for(list<struct mov>::iterator i = p.ml.begin(); i != p.ml.end(); i++)
     {
         
         strbuf[0] = 0;
@@ -431,11 +337,12 @@ void save_path( list<struct mov> ml,FILE *fp ,cutparam &cp)
         }        
 
     }
-
+*/
 }
 
  void save_program(const char *name )
 {
+    
     FILE *fp;
     printf("save_program:%s\n",name);
     fp = fopen( name, "w");
@@ -446,22 +353,23 @@ void save_path( list<struct mov> ml,FILE *fp ,cutparam &cp)
     fprintf(fp, "G64 P0.01\n");
     fprintf(fp, "( Rough )\n");
 
-    save_path( roughpath, fp, tp[ROUGH] );
+    roughpath.save( fp );
 
     fprintf(fp, "( undercut )\n");
-    save_path( undercutpath,fp, tp[UNDERCUT] );
+  //  save_path( undercutpath,fp, tp[UNDERCUT] );
 
 
     fprintf(fp, "( Finish )\n");
     for( int i = tp[FINISH].count-1 ; i >= 0; i-- )
     {
-      save_path( finepath[i], fp, tp[FINISH] );
+    //  save_path( finepath[i], fp, tp[FINISH] );
     }
     
     fprintf(fp, "M5 (stop spindle)\n");
 
     fprintf(fp, "M2\n");
     fclose( fp );
+     
 }
 
 
@@ -520,7 +428,7 @@ void wizards_load( const char *name )
     n = strstr(Name, ".wiz" );
     if( n ) *(char *)n = 0;
     scale = 3;
-    create_contour();
+    create_contour( contour );
     createmenu();
 }
 
@@ -541,15 +449,15 @@ void wizards_init()
          tp[ROUGH].speed = tp[FINISH].speed = tp[UNDERCUT].speed = 20;
     }
     scale = 1;
-    create_contour();
+    create_contour( contour );
     createmenu();
 }
 
-
-void draw_contour( std::list<struct mov> &ml ,bool both )
+/*
+void draw_contour( path &p ,bool both )
 {
 
-    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
+    for(list<struct mov>::iterator i = p.ml.begin(); i != p.ml.end(); i++)
     {
 
         //setcolor( MAGENTA );drawCross( i->vel.z,-(i->vel.x) ,2);////////////////////
@@ -576,7 +484,7 @@ void draw_contour( std::list<struct mov> &ml ,bool both )
             glVertex2f( i->start.z, -i->start.x );
             glVertex2f( i->end.z, -i->end.x );
 
-            if( i != ml.begin() && 0 ) // draw normals
+            if( i != p.ml.begin() && 0 ) // draw normals
             {
                 glVertex2f( i->end.z, -i->end.x );
                 vec2 v( i->start.z, -i->start.x );
@@ -595,7 +503,7 @@ void draw_contour( std::list<struct mov> &ml ,bool both )
     }
 
 }
-
+*/
 void draw_thread(double x1, double y1, double x2, double y2, double pitch, double depth )
 {
     double dx =  x1 - x2;
@@ -818,7 +726,7 @@ int get_line_intersection( vec2 S1P0, vec2 S1P1 , vec2 S2P0, vec2 S2P1, vec2 &I0
 }
 //===================================================================
 
-
+/*
 double Segment_to_Segment( vec2 a1, vec2 a2, vec2 b1, vec2 b2)
 {
     vec2   u = a2 - a1;//S1P1 - S1P0;
@@ -889,6 +797,7 @@ double Segment_to_Segment( vec2 a1, vec2 a2, vec2 b1, vec2 b2)
 
     return dP.length();   // return the closest distance
 }
+*/
 //===================================================================void
 
 void find_max( std::list<struct mov> &ml , vec2 &m )
@@ -903,11 +812,11 @@ void find_max( std::list<struct mov> &ml , vec2 &m )
         if( m.x < i->start.x ) m.x = i->start.x;
     }
 }
-
-double distance( std::list<struct mov> &ml, const vec2 p1, const vec2 p2)
+/*
+double distance( path &p, const vec2 p1, const vec2 p2)
 {
     double mindist = 1000000;
-    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
+    for(list<struct mov>::iterator i = p.ml.begin(); i != p.ml.end(); i++)
     {
         double d = Segment_to_Segment( p1, p2, i->start, i->end );
         if( d < mindist ) mindist = d ;
@@ -924,26 +833,28 @@ bool test_collision( std::list<struct mov> &ml, const vec2 p1, const vec2 p2, do
     }
     return false;;
 }
+*/
 
-void rapid_move( std::list<struct mov> &ml, std::list<struct mov> &contour, const vec2 v , const cutparam cp)
+/*
+void rapid_move( path &p, path &contour, const vec2 v , const cutparam cp)
 {
 
-    if( distance( contour, v, ml.back().end ) > cp.tool_r - 0.001 )
+    if( distance( contour, v, p.ml.back().end ) > cp.tool_r - 0.001 )
     {
-        create_line( ml, v, RAPID );
+        create_line( p, v, RAPID );
     }
     else
     {
-        double r = max( stockdiameter/2.0f, ml.back().end.x ) + retract;
-        if( r < ml.back().end.x ) r = ml.back().end.x;
+        double r = max( stockdiameter/2.0f, p.ml.back().end.x ) + retract;
+        if( r < p.ml.back().end.x ) r = p.ml.back().end.x;
         if( r < v.x ) r = v.x;
-        create_line( ml, vec2( r, ml.back().end.z ), RAPID );
-        create_line( ml, vec2( r, v.z ), RAPID );
-        create_line( ml, v, RAPID );
+        create_line( p, vec2( r, p.ml.back().end.z ), RAPID );
+        create_line( p, vec2( r, v.z ), RAPID );
+        create_line( p, v, RAPID );
     }
 
 }
-
+*/
 
 
 bool find_intersection( std::list<struct mov> &cl, list<struct mov>::iterator ci, const vec2 a, const vec2 b, vec2 &vi, list<struct mov>::iterator &ii, bool first = true )
@@ -965,22 +876,22 @@ bool find_intersection( std::list<struct mov> &cl, list<struct mov>::iterator ci
 }
 
 
-void remove_knots( std::list<struct mov> &ml )
+void remove_knots( path &p )
 {
     //printf("find knots...\n");
     vec2 vi(0,0);
 
     list<struct mov>::iterator i2,ie;
-    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
+    for(list<struct mov>::iterator i = p.ml.begin(); i != p.ml.end(); i++)
     {
-        if( find_intersection( ml, next(i,2), i->start, i->end, vi, i2, false ) )
+        if( find_intersection( p.ml, next(i,2), i->start, i->end, vi, i2, false ) )
         {
             //printf("intersec %f %f \n",vi.x,vi.z);
             ie = i;
             ie++;
-            if( ie != ml.end())
+            if( ie != p.ml.end())
             {
-                ml.erase( ie, i2 );
+                p.ml.erase( ie, i2 );
                 i->end = vi;
                 i2->start = vi;
             }
@@ -989,29 +900,29 @@ void remove_knots( std::list<struct mov> &ml )
 
     }
 }
-
-double create_finepath( std::list<struct mov> &ml, std::list<struct mov> &ml2, double r )
+/*
+double create_finepath( path &p, path &cont, double r )
 {
     vec2 n;
 
-    std::list<struct mov> tm;
-    ml.clear();
-    tm.clear();
+    path tp;
+    p.ml.clear();
+    tp.ml.clear();
     
     // copy to temp list
-    for(list<struct mov>::iterator i = ml2.begin(); i != ml2.end(); i++)
+    for(list<struct mov>::iterator i = cont.ml.begin(); i != cont.ml.end(); i++)
     {
         if( i->start.dist( i->end ) > 0.001 )
         {
-            create_line( tm, i->end, FEED );
-            tm.back().start = i->start;
-            tm.back().end = i->end;
+            create_line( tp, i->end, FEED );
+            tp.ml.back().start = i->start;
+            tp.ml.back().end = i->end;
         }
 
     }
 
     // move normal direction
-    for(list<struct mov>::iterator i = tm.begin(); i != tm.end(); i++)
+    for(list<struct mov>::iterator i = tp.ml.begin(); i != tp.ml.end(); i++)
     {
         n = i->start.normal( i->end ) * r;
         i->start += n;
@@ -1020,8 +931,8 @@ double create_finepath( std::list<struct mov> &ml, std::list<struct mov> &ml2, d
 
     // fix intersections
     vec2 iv(0,0);
-    list<struct mov>::iterator i2 = ++(tm.begin());
-    for( list<struct mov>::iterator i1 = tm.begin(); i2 != tm.end(); i1++,i2++)
+    list<struct mov>::iterator i2 = ++(tp.ml.begin());
+    for( list<struct mov>::iterator i1 = tp.ml.begin(); i2 != tp.ml.end(); i1++,i2++)
     {
         i1->vel.x = i1->vel.z = 0;
         if( get_line_intersection( i1->start, i1->end, i2->start, i2->end , iv ))
@@ -1032,8 +943,8 @@ double create_finepath( std::list<struct mov> &ml, std::list<struct mov> &ml2, d
     }
 
     // close small gaps;
-    i2 = ++(tm.begin());
-    for( list<struct mov>::iterator i1 = tm.begin(); i2 != tm.end(); i1++,i2++)
+    i2 = ++(tp.ml.begin());
+    for( list<struct mov>::iterator i1 = tp.ml.begin(); i2 != tp.ml.end(); i1++,i2++)
     {
         double l = i1->end.dist( i2->start ) ;
         if( l < 0.01 )
@@ -1050,15 +961,15 @@ double create_finepath( std::list<struct mov> &ml, std::list<struct mov> &ml2, d
     cut c(0,0);
     c.type = FEED;
 
-    i2 = ++(tm.begin());
-    for( list<struct mov>::iterator i1 = tm.begin(); i1 != tm.end(); i1++,i2++)
+    i2 = ++(tp.ml.begin());
+    for( list<struct mov>::iterator i1 = tp.ml.begin(); i1 != tp.ml.end(); i1++,i2++)
     {
 
-        create_line( ml, i1->end, FEED );
-        if(  i1 == tm.begin() )  start = i1->start; // first start
+        create_line( p, i1->end, FEED );
+        if(  i1 == tp.ml.begin() )  start = i1->start; // first start
 
         double l = i1->end.dist( i2->start ) ;
-        if( l > 0.01 && i2 != tm.end() )
+        if( l > 0.01 && i2 != tp.ml.end() )
         {
 
             if( l > 0.2 )
@@ -1066,49 +977,49 @@ double create_finepath( std::list<struct mov> &ml, std::list<struct mov> &ml2, d
                 double r2 = fabs(r);
                 double l = i1->end.dist( i2->start ) + 0.00001f;
                 if( r2 < l/2.0f )  r2 = l/2.0f;
-                create_arc( &c, ml, i1->end, i2->start , r2, (r < 0)  );
+                create_arc( &c, p, i1->end, i2->start , r2, (r < 0)  );
             }
             else
             {
-                create_line( ml, i2->start, FEED );
+                create_line( p, i2->start, FEED );
             }
         }
     }
 
     // calc start/ends
-    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
+    for(list<struct mov>::iterator i = p.ml.begin(); i != p.ml.end(); i++)
     {
         i->start = start;
         start =  i->end;
     }
 
-    if( ml.size() > 0 ) ml.front().start.x = -0.1;
-    remove_knots( ml );
+    if( p.ml.size() > 0 ) p.ml.front().start.x = -0.1;
+    remove_knots( p );
 
-    tm.clear();
+    tp.ml.clear();
     return 0;
 
 }
 
 void feed_to_left(
-    list<struct mov> &ml,
-    list<struct mov> &cl,
+    path &p,
+    path &colp,
     list<struct mov>::iterator ci,
     vec2 v, double len , cutparam &cp)
 {
     vec2 v2;
     list<struct mov>::iterator it;
-    bool first = (ml.size() == 0);
-    find_intersection( cl, ci, v, vec2( v.x, v.z - len ), v2, it, true );
+    bool first = (p.ml.size() == 0);
+    find_intersection( colp.ml, ci, v, vec2( v.x, v.z - len ), v2, it, true );
 
     if( v.dist( v2 ) > retract*2.0 ){
-        if( ! first ) rapid_move( ml, cl, vec2( v.x + retract + cp.depth, v.z - retract ) , cp );
-        create_line( ml, v, FEED );
-        create_line( ml, v2 , FEED );
-        create_line( ml, vec2( v2.x + retract, v2.z + retract ) , FEED );
+        if( ! first ) rapid_move( p, colp, vec2( v.x + retract + cp.depth, v.z - retract ) , cp );
+        create_line( p, v, FEED );
+        create_line( p, v2 , FEED );
+        create_line( p, vec2( v2.x + retract, v2.z + retract ) , FEED );
         if( first )
         {
-             ml.front().start = v;
+             p.ml.front().start = v;
             // ml.front().comment += "first";
         }
     }
@@ -1117,39 +1028,39 @@ void feed_to_left(
 
 
 
-void make_rough_path( std::list<struct mov> &ml, std::list<struct mov> &cl )
+void make_rough_path( path &p, path &c )
 {
 
     vec2 max;
-    find_max( cl, max );
+    find_max( c.ml, max );
 
     double x;
     double min_z = contour_min.z;
     double max_z = max.z + tp[ROUGH].tool_r + retract*3.0 ;
     double len = fabs( min_z - max_z );
-    ml.clear();
+    p.ml.clear();
     
-    create_line( ml, startposition, RAPID );
-    ml.back().toolchange = tp[ROUGH].tool;
+    create_line( p, startposition, RAPID );
+    p.ml.back().toolchange = tp[ROUGH].tool;
     
     x = startposition.x ;
 
     while( x > 1 )
     {
-        feed_to_left( ml, cl, cl.begin(), vec2( x, max_z ), len, tp[ROUGH] );
+        feed_to_left( p, c, c.ml.begin(), vec2( x, max_z ), len, tp[ROUGH] );
         x -= tp[ROUGH].depth;
     }
 
 }
 
 
-void make_undercut_path( std::list<struct mov> &ml, std::list<struct mov> &cl )
+void make_undercut_path( path &p, path &c )
 {
 
     double x = 0;
-    ml.clear();
+    p.ml.clear();
 
-    for(list<struct mov>::iterator i = cl.begin(); i != cl.end(); i++)
+    for(list<struct mov>::iterator i = c.ml.begin(); i != c.ml.end(); i++)
     {
 
         if( i->end.x > i->start.x ) // uphill
@@ -1169,7 +1080,7 @@ void make_undercut_path( std::list<struct mov> &ml, std::list<struct mov> &cl )
                     double z = i->start.z + dz * (x - i->start.x) / dx;
                     if( z > contour_min.z )
                     {
-                         feed_to_left( ml, cl, next(i,1), vec2( x, z ), fabs( contour_min.z -z ), tp[UNDERCUT] );
+                         feed_to_left( p, c, next(i,1), vec2( x, z ), fabs( contour_min.z -z ), tp[UNDERCUT] );
                     }
                     x -= tp[UNDERCUT].depth;
                 }
@@ -1180,28 +1091,46 @@ void make_undercut_path( std::list<struct mov> &ml, std::list<struct mov> &cl )
 }
 
 
-void rapid_to_next_path( list<struct mov> &p1, list<struct mov> &p2, list<struct mov> &cl, cutparam &cp1, cutparam &cp2)
+void rapid_to_next_path( path &p1, path &p2, path &cp, cutparam &cp1, cutparam &cp2)
 {
  //   rapid_move( p1, cl, vec2( p2.front().start.x + retract, p2.front().start.z + retract ) , cp );
-    rapid_move( p1, cl, startposition, cp1 );
-    p1.back().toolchange = cp2.tool;
-    rapid_move( p1, cl, vec2( p2.front().start.x + retract, p2.front().start.z + retract ) , cp2 );
-    create_line( p1, p2.front().start, FEED );
+    rapid_move( p1, cp, startposition, cp1 );
+    p1.ml.back().toolchange = cp2.tool;
+    rapid_move( p1, cp, vec2( p2.ml.front().start.x + retract, p2.ml.front().start.z + retract ) , cp2 );
+    create_line( p1, p2.ml.front().start, FEED );
 }
 
-
-static std::list<struct mov> temp1;
-static std::list<struct mov> temp2;
+*/
+static path temp1;
+static path temp2;
 
 void create_toolpath()
 {
-    startposition = 
+    
+    startposition = contour.max;
+    startposition.x = max( stockdiameter/2.0 , startposition.x );
+    startposition += tp[ROUGH].depth + tp[ROUGH].tool_r;
+    startposition.z += 5;
+    
+    roughpath.set_tool( tp[ROUGH].tool );
+    roughpath.set_cut_param( 50,50,2 );
+    roughpath.create( contour );
+    
+    undercutpath.set_tool( tp[UNDERCUT].tool );
+    undercutpath.set_cut_param( 50,50,2 );
+    undercutpath.create( contour );  
+      
+    finepath[0].set_tool( tp[FINISH].tool );
+    finepath[0].set_cut_param( 50,50,2 );
+    finepath[0].create( contour );       
+      
+    /*
     
     tp[ROUGH].tool_r = _tools[ tp[ROUGH].tool ].diameter/2.0f;
     tp[UNDERCUT].tool_r = _tools[ tp[UNDERCUT].tool ].diameter/2.0f;
     tp[FINISH].tool_r  = _tools[ tp[FINISH].tool ].diameter/2.0f;
     
-    create_contour();
+    create_contour( contour );
     
     startposition = contour_max;
     startposition.x = max( stockdiameter/2.0 , startposition.x );
@@ -1219,7 +1148,7 @@ void create_toolpath()
     make_rough_path( roughpath, temp1 );
     make_undercut_path( undercutpath, temp2 );
     
-    if( undercutpath.empty() )
+    if( undercutpath.ml.empty() )
     {
         rapid_to_next_path( roughpath, finepath[tp[FINISH].count-1], temp2, tp[UNDERCUT], tp[FINISH] ); 
     }
@@ -1237,6 +1166,7 @@ void create_toolpath()
     rapid_move( finepath[ 0 ], contour, startposition, tp[FINISH] );
     
     draw_toolpath = true;
+    */
 }
 
 
@@ -1332,8 +1262,8 @@ void wizards_parse_serialdata()
         createmenu();
     }
 
-    create_contour();
-    if( stockdiameter < contour_max.x *2.0f ) stockdiameter = contour_max.x *2.0f;
+    create_contour( contour );
+    if( stockdiameter < contour.max.x *2.0f ) stockdiameter = contour.max.x *2.0f;
     if( dynamic_toolpath) create_toolpath();
 
 }
@@ -1416,8 +1346,12 @@ void wizards_draw()
 
     }
 
-    draw_contour( contour, true );
-
+    contour.draw( true );
+    roughpath.draw( false );
+    undercutpath.draw( false );
+    finepath[0].draw( false );
+    
+/*
     if( draw_toolpath )
     {
         for( int i=0; i < tp[FINISH].count; i++ )
@@ -1429,7 +1363,7 @@ void wizards_draw()
         draw_contour( roughpath, false );
         draw_contour( undercutpath, false );
     }
-
+*/
     glPopMatrix();
 
     //glDisable(GL_LINE_STIPPLE);

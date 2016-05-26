@@ -67,6 +67,15 @@ using namespace std;
 
 #define MAXTOOLS 20
 
+#define LINE 0
+#define ARC_OUT 1
+#define ARC_IN 2
+#define THREAD 3
+#define GROOVE 4
+#define RAPID 5
+#define FEED 6
+
+
 class vec2
 {
 public:
@@ -78,7 +87,13 @@ public:
     ~vec2() {} ;
  
     double x, z;
- 
+    
+     vec2 &operator=(const double &d) {
+        x = d;
+        z = d;
+        return *this;
+    }
+    
     vec2 &operator=(const vec2 &v) {
         x = v.x;
         z = v.z;
@@ -244,6 +259,71 @@ public:
     }
 };
 
+struct cutparam
+{
+    double depth;
+    double feed;
+    double tool_r;
+    int tool;
+    int count;
+    int speed;
+};
+
+struct cut
+{
+    cut( double ax,double az )
+    {
+        dim.x = ax;
+        dim.z = az;
+        type = LINE;
+        r = 1.0f;
+        pitch = 1.0f;
+        depth = 0.65f * pitch;
+    }
+    int type;
+    vec2 dim;
+    double r;
+    double pitch;
+    double depth;
+    vec2 end,start,center;
+};
+
+
+
+struct mov
+{
+    mov( double ax,double az, int ct )
+    {
+        end.x = ax;
+        end.z = az;
+        feed = 0;
+        type = ct;
+        toolchange = 0;
+    }
+    mov( const vec2 &v, int ct )
+    {
+        end = v;
+        feed = 0;
+        type = ct;
+        toolchange = 0;
+    }
+    ~mov()
+    {
+        comment.erase();
+    }
+
+    vec2 end,start;
+    vec2 vel;
+    double pitch;
+    double depth;
+    double feed;
+    int type;
+    string comment;
+    int toolchange;
+};
+
+
+
 struct machinestatus
 {
     int screenmode;
@@ -327,6 +407,9 @@ class menu
     int maxlines;
 };
 
+int get_line_intersection( vec2 S1P0, vec2 S1P1 , vec2 S2P0, vec2 S2P1, vec2 &I0 );
+
+
 void init_opengl( int argc, char **argv );
 void setcolor( int color );
 void print(const char *s, int x, int y ,int size);
@@ -391,6 +474,8 @@ void preview_draw();
 
 void set_previewZoffset( double z );
 void set_previewXoffset( double z );
+
+#include "pathclass/path.h"
 
 
 
