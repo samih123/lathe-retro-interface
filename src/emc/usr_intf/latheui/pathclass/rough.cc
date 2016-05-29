@@ -23,7 +23,7 @@ void rough_path::create( contour_path &c )
     
     x = startposition.x ;
 
-    while( x > 0 )
+    while( x > c.ml.front().end.x )
     {
         feed_to_left( tp, vec2( x, max_z ), len );
         x -= cp.depth;

@@ -2,7 +2,8 @@ TARGETS += ../bin/latheui
 #  builtin_modules.cc
 LATHEI := $(addprefix emc/usr_intf/latheui/, preview.cc mycanon.cc dummyemcstat.cc ../shcom.cc \
 latheintf.cc file.cc home.cc manual.cc mdi.cc edit.cc auto.cc wizards.cc set.cc graphics.cc menu.cc \
-pathclass/path.cc pathclass/rough.cc pathclass/undercut.cc pathclass/fine.cc ) \
+pathclass/path.cc pathclass/rough.cc pathclass/undercut.cc pathclass/fine.cc \
+operationclass/operation.cc  ) \
 emc/rs274ngc/tool_parse.cc emc/task/taskmodule.cc emc/task/taskclass.cc
 USERSRCS += $(LATHEI)
 

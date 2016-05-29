@@ -68,4 +68,3 @@ class fine_path:public path
     void create( contour_path &c );
 };
 
-

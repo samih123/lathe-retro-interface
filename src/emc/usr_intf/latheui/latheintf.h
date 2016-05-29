@@ -476,6 +476,7 @@ void set_previewZoffset( double z );
 void set_previewXoffset( double z );
 
 #include "pathclass/path.h"
+#include "operationclass/operation.h"
 
 
 

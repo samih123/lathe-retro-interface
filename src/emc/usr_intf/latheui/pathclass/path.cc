@@ -262,7 +262,7 @@ void path::remove_knots()
 void path::draw( bool both )
 {
 
-    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
+    for(list<struct mov>::iterator i = ++ml.begin(); i != ml.end(); i++)
     {
 
         if( i->type == THREAD && both )
