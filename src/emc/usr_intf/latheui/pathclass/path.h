@@ -36,6 +36,7 @@ class path
     cutparam cp;
     int type;
     std::list<struct mov> ml;
+    
     vec2 min,max;    
     //friend class fine_path;
     //friend class rough_path;
@@ -49,22 +50,28 @@ class contour_path:public path
 
 };
 
-class rough_path:public path
-{
-    public:
-    void create( contour_path &c );
-};
-
-class undercut_path:public path
-{
-    public:
-    void create( contour_path &c );
-};
-
 class fine_path:public path
 {
     public:
     void create( contour_path &c, double r );
     void create( contour_path &c );
 };
+
+class rough_path:public path
+{
+    public:
+    void create( contour_path &c );
+    void draw( bool both );
+    fine_path tc;
+};
+
+class undercut_path:public path
+{
+    public:
+    void create( contour_path &c );
+    void draw( bool both );
+    fine_path tc;
+};
+
+
 

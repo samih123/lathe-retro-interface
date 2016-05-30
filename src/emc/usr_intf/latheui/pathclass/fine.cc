@@ -17,7 +17,6 @@ void fine_path::create( contour_path &c, double r )
     vec2 n;
     path tp;
     ml.clear();
-    //tp.ml.clear();
     
     // copy to temp list
     for(list<struct mov>::iterator i = c.ml.begin(); i != c.ml.end(); i++)
@@ -103,10 +102,9 @@ void fine_path::create( contour_path &c, double r )
         start =  i->end;
     }
 
-    if( ml.size() > 0 ) ml.front().start.x = -0.1;
+   // if( ml.size() > 0 ) ml.front().start.x = -0.1;
     remove_knots();
     findminmax();
 
-    //tp.ml.clear();
 
 }

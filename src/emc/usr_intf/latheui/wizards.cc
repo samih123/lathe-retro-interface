@@ -427,7 +427,7 @@ inSegment( vec2 P, vec2 S1, vec2 S2)
     return 0;
 }
 
-#define SMALL_NUM 0.00000001
+#define SMALL_NUM 0.000001
 //===================================================================
 // dot product (3D) which allows vector operations in arguments
 #define DOT(u,v)   (u.dot(v))  //)((u).x * (v).x + (u).z * (v).z)

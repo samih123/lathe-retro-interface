@@ -103,12 +103,12 @@ void path::feed_to_left( path &colp, list<struct mov>::iterator fi, vec2 v, doub
     list<struct mov>::iterator ci;
     colp.find_intersection( v, vec2( v.x, v.z - len ), v2, fi, ci, false );
     bool first = (ml.size() == 0);
-    if( v.dist( v2 ) > retract*2.0 ){
+  //  if( v.dist( v2 ) > retract*2.0 ){
         if( ! first ) rapid_move( vec2( v.x + retract + cp.depth, v.z - retract ) );
         create_line( v, FEED );
         create_line( v2 , FEED );
         create_line( vec2( v2.x + retract, v2.z + retract ) , FEED );
-    }
+  //  }
 }
 
 
@@ -261,8 +261,8 @@ void path::remove_knots()
 
 void path::draw( bool both )
 {
-
-    for(list<struct mov>::iterator i = ++ml.begin(); i != ml.end(); i++)
+    
+    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
     {
 
         if( i->type == THREAD && both )

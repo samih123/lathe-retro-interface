@@ -75,6 +75,29 @@ using namespace std;
 #define RAPID 5
 #define FEED 6
 
+enum cut_type
+{
+    CUT_BEGIN,
+    CUT_LINE,
+    CUT_ARC_OUT,
+    CUT_ARC_IN,
+    CUT_THREAD,
+    CUT_END
+};
+
+enum move_type
+{
+    MOV_LINE,
+    MOV_RAPID
+};
+
+enum op_type
+{
+    TURNOUT,
+    TURNIN,
+    FACE,
+    BORE 
+};
 
 class vec2
 {

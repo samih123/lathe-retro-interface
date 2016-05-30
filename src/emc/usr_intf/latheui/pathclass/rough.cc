@@ -9,8 +9,7 @@ extern const vec2 startposition;
 void rough_path::create( contour_path &c )
 {
 
-    fine_path tp;
-    tp.create( c, cp.tool_r );
+    tc.create( c, cp.tool_r );
     
     double x;
     double min_z = c.min.z;
@@ -23,11 +22,22 @@ void rough_path::create( contour_path &c )
     
     x = startposition.x ;
 
-    while( x > c.ml.front().end.x )
+    if( tc.ml.empty() )
     {
-        feed_to_left( tp, vec2( x, max_z ), len );
+        return;
+    }
+ 
+    while( x > tc.ml.front().start.x + 0.001 )
+    {
+        feed_to_left( tc, vec2( x, max_z ), len );
         x -= cp.depth;
     }
     findminmax();
-    
+        
+}
+
+void rough_path::draw( bool b )
+{
+    path::draw(b);
+    tc.draw(b);
 }
