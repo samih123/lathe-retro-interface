@@ -96,7 +96,8 @@ enum op_type
     TURNOUT,
     TURNIN,
     FACE,
-    BORE 
+    DRILL,
+    PARTING 
 };
 
 class vec2
@@ -346,7 +347,6 @@ struct mov
 };
 
 
-
 struct machinestatus
 {
     int screenmode;
@@ -372,6 +372,7 @@ struct menuitem
         hidden = false;
         edited = false;
         shortcut = NULL;
+        val = NULL;
         color = GREEN;
     };
     ~menuitem()
@@ -400,6 +401,8 @@ class menu
     menu();
     void clear();
     void begin( const char *name );
+    void begin( int *i, int num, const char *n );
+
     void end();
     void setmaxlines( int l );
     
@@ -500,6 +503,7 @@ void set_previewXoffset( double z );
 
 #include "pathclass/path.h"
 #include "operationclass/operation.h"
+
 
 
 

@@ -189,6 +189,39 @@ void operation::load( const char *name )
 
 
 
+void operation::create_contour( contour_path &p )
+{
+    p.ml.clear();
+
+    vec2 start(0,0);
+
+    for(list<struct cut>::iterator i = cl.begin(); i != cl.end(); i++)
+    {
+
+       i->start = start;
+
+       i->end.z = start.z + i->dim.z;
+       i->end.x = i->dim.x;
+
+       start =  i->end;
+
+        if( i->type == ARC_IN || i->type == ARC_OUT )
+        {
+            double l = i->start.dist( i->end ) + 0.00001f;
+            if( i->r < l/2.0f )  i->r = l/2.0f;
+            p.create_arc( *i, i->start, i->end, i->r, i->type == ARC_IN );
+        }
+        else 
+        {
+            p.create_line( i->end, i->type );
+        }
+
+    }
+
+    //p.remove_knots();
+    p.findminmax();
+    
+}
 
 
 

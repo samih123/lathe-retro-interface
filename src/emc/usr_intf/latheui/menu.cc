@@ -48,6 +48,19 @@ void menu::begin( const char *n )
     cmi->ml.back().up =  cmi;  
     cmi->ml.back().shortcut = NULL; 
     strcpy( cmi->ml.back().name, n);  
+    cmi->ml.back().val = NULL;
+    cmi = &cmi->ml.back();
+}
+
+void menu::begin( int *i, int num, const char *n )
+{
+    cmi->ml.push_back( menuitem() );
+    cmi->ml.back().type = TYPEBEGIN;   
+    cmi->ml.back().up =  cmi;  
+    cmi->ml.back().shortcut = NULL; 
+    strcpy( cmi->ml.back().name, n);  
+    cmi->ml.back().val = (void *)i;
+    cmi->ml.back().num = num;
     cmi = &cmi->ml.back();
 }
 
@@ -215,7 +228,7 @@ bool menu::parse()
     // clear selections
     for(list<struct menuitem>::iterator i = cmi->ml.begin(); i != cmi->ml.end(); i++)
     {
-        if( i->type == TYPESELECT )
+        if( i->val != NULL )
         {
              *(int *)i->val = 0;
         }
@@ -235,10 +248,18 @@ bool menu::parse()
     {
         switch( cmi->it->type )
         { 
+            
             case TYPEBEGIN:
+                if( cmi->it->val != NULL )
+                {
+                    *(int *)cmi->it->val = cmi->it->num;
+                    cmi->it->edited = true;
+                }
                 cmi = &*cmi->it;
-                cmi->it = cmi->ml.begin();  
+                cmi->it = cmi->ml.begin();
+                return true;
             break;
+            
             case TYPEBACK:
                 cmi = cmi->up;
                 cmi->it = cmi->ml.begin();
