@@ -30,14 +30,12 @@ extern int screenw, screenh;
 extern char estr[BUFFSIZE];
 static menu Menu;
 
-static double scale = 2;
-double retract = 1;
-double stockdiameter;
-
 //static list<struct cut> cuts;
 //static list<struct cut>::iterator currentcut;
 
 static list<operation> opl; 
+list<operation>::iterator cur_op;
+list<operation>::iterator cur_contour;
 
 static bool draw_toolpath = false;
 static bool dynamic_toolpath = true;
@@ -85,6 +83,10 @@ vec2 startposition;
 static double X;
 static double Y;
 int maxrpm;
+double stockdiameter;
+static double scale = 2;
+double retract = 1;
+
 /*
 void toolmenu( int t, const char *n )
 {
@@ -106,36 +108,57 @@ void toolmenu( int t, const char *n )
 
 const char* phasename( int type )
 {
-    if(type == TURNOUT ) return "Outside turning"; 
-    if(type == TURNIN ) return "Inside turning"; 
+    
+    if(type == CONTOUR_OUT ) return "Outside contour"; 
+    if(type == CONTOUR_IN ) return "Inside contour"; 
+    if(type == TURN ) return "Turning"; 
+    if(type == UNDERCUT ) return "Undercut"; 
+    if(type == FINISHING ) return "Finishing"; 
+    if(type == THREADING ) return "Thread"; 
+    if(type == FACING ) return "Facing"; 
     if(type == DRILL ) return "Drilling"; 
-    if(type == FACE ) return "Facing"; 
     if(type == PARTING ) return "Parting off";
+    
     return "ERROR"; 
 };
-
+    
+    
+void create_phase_menu( int n, int type )
+{
+    sprintf(strbuf,"phase %d:%s%s", n, type > CONTOUR_IN ? "  " : "", phasename( type ) );
+    Menu.begin( &phaseselect, n++, strbuf );
+        Menu.back("Back");
+    Menu.end(); 
+}    
+    
 void create_main_menu()
 {
-    int n = 1;
+    
     Menu.clear();
+    
     Menu.begin( "machining phases:" );
     
+        Menu.edit( &stockdiameter, "Stock diameter " );
+        Menu.edit( &maxrpm, "Max spindle rpm " );
+        
         Menu.begin( "Create new phase:" );
             Menu.back("Back");
-            Menu.select( &phasecreate, TURNOUT, phasename( TURNOUT ) );
-            Menu.select( &phasecreate, TURNIN, phasename( TURNIN ) );
+            Menu.select( &phasecreate, CONTOUR_OUT, phasename( CONTOUR_OUT ) );
+            Menu.select( &phasecreate, CONTOUR_IN, phasename( CONTOUR_IN ) );
+            Menu.select( &phasecreate, TURN, phasename( TURN ) );
+            Menu.select( &phasecreate, UNDERCUT, phasename( UNDERCUT ) );
+            Menu.select( &phasecreate, FINISHING, phasename( FINISHING ) );
+            Menu.select( &phasecreate, THREADING, phasename( THREADING ) );
+            Menu.select( &phasecreate, FACING, phasename( FACING ) );
             Menu.select( &phasecreate, DRILL, phasename( DRILL ) );
-            Menu.select( &phasecreate, FACE, phasename( FACE ) );
             Menu.select( &phasecreate, PARTING, phasename( PARTING ) );
+            
         Menu.end(); 
         
-        for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
+        int n = 1;
+        for( auto i: opl )
         {
-            sprintf(strbuf,"  phase %d:%s", n, phasename( i->get_type() ) );
-            Menu.begin( &phaseselect, n++, strbuf );
-                Menu.back("Back");
-            Menu.end(); 
-            
+            create_phase_menu( n++ ,i.get_type() );
         }
     
     Menu.end();
@@ -526,9 +549,26 @@ void wizards_parse_serialdata()
             create_main_menu();
         }
         
-        if( Menu.edited( &phaseselect ) )
+        else if( Menu.edited( &phaseselect ) )
         {
             printf("select %d\n", phaseselect );
+            
+            int n = 1;
+            cur_contour = cur_op = opl.end();
+            
+            for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
+            {
+                if( i->get_type() == CONTOUR_OUT || i->get_type() == CONTOUR_OUT )
+                {
+                    cur_contour = i;
+                }
+                if( n++ == phaseselect )
+                {
+                    cur_op = i;
+                    break;
+                }
+            }
+
         }
         
     }

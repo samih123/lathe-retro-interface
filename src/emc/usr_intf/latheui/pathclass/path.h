@@ -36,8 +36,8 @@ class path
     cutparam cp;
     int type;
     std::list<struct mov> ml;
-    
     vec2 min,max;    
+    bool inside;
     //friend class fine_path;
     //friend class rough_path;
     //friend class undercut_path;

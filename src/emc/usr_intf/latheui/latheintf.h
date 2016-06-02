@@ -93,9 +93,13 @@ enum move_type
 
 enum op_type
 {
-    TURNOUT,
-    TURNIN,
-    FACE,
+    CONTOUR_OUT,
+    CONTOUR_IN,
+    TURN,
+    UNDERCUT,
+    FINISHING,
+    THREADING,
+    FACING,
     DRILL,
     PARTING 
 };
