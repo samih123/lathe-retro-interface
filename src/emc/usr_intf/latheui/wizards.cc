@@ -109,15 +109,16 @@ void toolmenu( int t, const char *n )
 const char* phasename( int type )
 {
     
-    if(type == CONTOUR_OUT ) return "Outside contour"; 
-    if(type == CONTOUR_IN ) return "Inside contour"; 
-    if(type == TURN ) return "Turning"; 
-    if(type == UNDERCUT ) return "Undercut"; 
-    if(type == FINISHING ) return "Finishing"; 
-    if(type == THREADING ) return "Thread"; 
-    if(type == FACING ) return "Facing"; 
-    if(type == DRILL ) return "Drilling"; 
-    if(type == PARTING ) return "Parting off";
+    if(type == TOOL_CHANGE ) return "Tool change"; 
+    else if(type == CONTOUR_OUT ) return "Outside contour"; 
+    else if(type == CONTOUR_IN ) return "Inside contour"; 
+    else if(type == TURN ) return "Turning"; 
+    else if(type == UNDERCUT ) return "Undercut"; 
+    else if(type == FINISHING ) return "Finishing"; 
+    else if(type == THREADING ) return "Thread"; 
+    else if(type == FACING ) return "Facing"; 
+    else if(type == DRILL ) return "Drilling"; 
+    else if(type == PARTING ) return "Parting off";
     
     return "ERROR"; 
 };
@@ -129,7 +130,12 @@ void create_phase_menu( int n, int type )
     Menu.begin( &phaseselect, n++, strbuf );
         Menu.back("Back");
     Menu.end(); 
-}    
+}   
+ 
+ void create_new_phase_menu( int type )
+{
+    Menu.select( &phasecreate, type, phasename( type ) );
+}   
     
 void create_main_menu()
 {
@@ -143,15 +149,16 @@ void create_main_menu()
         
         Menu.begin( "Create new phase:" );
             Menu.back("Back");
-            Menu.select( &phasecreate, CONTOUR_OUT, phasename( CONTOUR_OUT ) );
-            Menu.select( &phasecreate, CONTOUR_IN, phasename( CONTOUR_IN ) );
-            Menu.select( &phasecreate, TURN, phasename( TURN ) );
-            Menu.select( &phasecreate, UNDERCUT, phasename( UNDERCUT ) );
-            Menu.select( &phasecreate, FINISHING, phasename( FINISHING ) );
-            Menu.select( &phasecreate, THREADING, phasename( THREADING ) );
-            Menu.select( &phasecreate, FACING, phasename( FACING ) );
-            Menu.select( &phasecreate, DRILL, phasename( DRILL ) );
-            Menu.select( &phasecreate, PARTING, phasename( PARTING ) );
+            create_new_phase_menu( TOOL_CHANGE );
+            create_new_phase_menu( CONTOUR_OUT );
+            create_new_phase_menu( CONTOUR_IN );
+            create_new_phase_menu( TURN );
+            create_new_phase_menu( UNDERCUT );
+            create_new_phase_menu( FINISHING );
+            create_new_phase_menu( THREADING );
+            create_new_phase_menu( FACING );
+            create_new_phase_menu( DRILL );
+            create_new_phase_menu( PARTING );
             
         Menu.end(); 
         
@@ -162,7 +169,7 @@ void create_main_menu()
         }
     
     Menu.end();
-    Menu.setmaxlines( 10 );
+    Menu.setmaxlines( 15 );
 }
 
 /*
