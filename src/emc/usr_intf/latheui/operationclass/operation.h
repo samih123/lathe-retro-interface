@@ -1,19 +1,28 @@
 
+
+static const char *typestr[] =
+{
+    "cut_Begin",
+    "straight line",
+    "Outside arch",
+    "Inside arch",
+    "Thread",
+    "cut_end"
+};
+
 class operation
 {
     public:
 
-    operation( int t )
-    {
-       scale = 1;
-       pos.x = pos.z = 0;
-       type = t;
-    }
+    operation( int t );
+    ~operation();
     
-    ~operation()
-    {
-       
-    }
+    void setz( double z );
+    void setdiam( double d );
+    double getdiam();
+    double getz();
+    const char* getcutname(){ if( type == CONTOUR_OUT ){ return typestr[ currentcut->type ] ;} return "error"; };
+    
     
     
     void draw( int x1,int y1,int x2,int y2);
@@ -27,16 +36,17 @@ class operation
     void create_contour( contour_path &p );
     
     int get_type(){ return type; };
-    void set_type( int t ){ type = (op_type)CLAMP(t,CUT_BEGIN,CUT_END); };
     
-    protected:
-    int type;
-    std::list<struct cut> cl;
+    private:
+    int type; 
     list<struct cut>::iterator currentcut;
+    list<struct cut>::iterator currentcut2;
+    
+    std::list<struct cut> cl;
     contour_path contour;
     double scale;
     vec2 pos;
-    vec2 min,max;    
+    vec2 min,max; 
 };
 
 

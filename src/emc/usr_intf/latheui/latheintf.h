@@ -67,11 +67,9 @@ using namespace std;
 
 #define MAXTOOLS 20
 
-#define LINE 0
-#define ARC_OUT 1
-#define ARC_IN 2
-#define THREAD 3
-#define GROOVE 4
+//#define LINE 0
+//#define THREAD 3
+//#define GROOVE 4
 #define RAPID 5
 #define FEED 6
 
@@ -300,17 +298,13 @@ struct cutparam
 
 struct cut
 {
-    cut( double ax,double az )
+    cut()
     {
-        dim.x = ax;
-        dim.z = az;
-        type = LINE;
-        r = 1.0f;
-        pitch = 1.0f;
-        depth = 0.65f * pitch;
+    }
+    ~cut()
+    {
     }
     int type;
-    vec2 dim;
     double r;
     double pitch;
     double depth;
@@ -422,7 +416,8 @@ class menu
     void edit( bool *b, const char *n );
     void back( const char *n );
     void show( const char *n );
-    
+    void clean( menuitem &m );
+
     bool edited( void *v );
     bool current_menu( const char *n );
     void draw( int x, int y);

@@ -6,6 +6,7 @@ extern char strbuf[BUFFSIZE];
 extern const int maxrpm;
 
 
+
 static void draw_thread(double x1, double y1, double x2, double y2, double pitch, double depth )
 {
     double dx =  x1 - x2;
@@ -73,9 +74,30 @@ static void draw_thread(double x1, double y1, double x2, double y2, double pitch
 
 }
 
+operation::operation( int t )
+{
+    cl.clear();
+    scale = 1;
+    pos.x = pos.z = 0;
+    type = t;
+    
+    if( type == CONTOUR_OUT )
+    {
+      //  cl.clear();
+      //  new_cut( vec2(13,12), CUT_LINE );
+    }
+    
+}
+    
+operation::~operation()
+{
+   
+}
+
 
 void operation::draw( int x,int y,int xs,int ys)
 {
+
     double x1 = 0;
     double y1 = 0;
     double x2 = 0;
@@ -102,7 +124,8 @@ void operation::draw( int x,int y,int xs,int ys)
         y1 = -i->start.x;
         x2 = i->end.z;
         y2 = -i->end.x;
-
+//printf("start  %f,%f\n",x1,y2);
+//printf("end  %f,%f type %d\n",x2,y2,i->type);
        // if( i != cuts.begin() )
         {
             glBegin(GL_LINES);
@@ -112,14 +135,23 @@ void operation::draw( int x,int y,int xs,int ys)
                 glVertex2f( x1, -y1 );
                 glVertex2f( x1, y1  );
             glEnd();
-
-            if(i->type == THREAD )
+            
+            if(i->type == CUT_LINE )
+            {
+                glBegin(GL_LINES);
+                    setcolor( GREEN );
+                    glVertex2f( x1, y1 );
+                    glVertex2f( x2, y2 );
+                glEnd();   
+            }
+            
+            if(i->type == CUT_THREAD )
             {
                 setcolor( GREEN );
                 draw_thread( x1,  y1,  x2,  y2, i->pitch, i->depth );
             }
 
-            if( i->type == ARC_IN || i->type == ARC_OUT )
+            if( i->type == CUT_ARC_IN || i->type == CUT_ARC_OUT )
             {
                 setcolor( GREEN );
                 drawCross( i->center.z, i->center.x, 3.0f / scale );
@@ -128,27 +160,37 @@ void operation::draw( int x,int y,int xs,int ys)
 
             if( i == currentcut )
             {
+//                printf("start  %f,%f\n",x1,y2);
+//                printf("end  %f,%f\n",x2,y2);
                 setcolor( RED );
                 drawCircle( x2, y2, 3.0f / scale );
             }
         }
 
     }
-
-    contour.draw( true );
+ glPopMatrix();
+    //contour.draw( true );
 }
 
 void operation::new_cut( vec2 p, cut_type t )
 {
-    vec2 start(0,0);
+    vec2 end(0,0);
+    
     if( ! cl.empty() )
     {
-       start = cl.back().end;
+       end = cl.back().end;
     }
-    cl.push_back( cut( cl.back().dim.x + p.x, p.z) );
+    
+    cl.push_back( cut() );
+    
     currentcut = --cl.end();
     currentcut->type = t;
-    currentcut->start = start;
+    currentcut->start = end;
+    currentcut->end = end+p;
+    currentcut->r = 1.0f;
+    currentcut->pitch = 1.0f;
+    currentcut->depth = 0.65f * currentcut->pitch;
+    
 }
 
 
@@ -171,12 +213,48 @@ void operation::previous()
 
 void operation::next()
 {
-    if( currentcut != cl.end() )
+    if( currentcut != --cl.end() )
     {
         currentcut++;
     }
 }
 
+
+void operation::setz( double z )
+{
+    if( type == CONTOUR_OUT )
+    {
+        currentcut->end.z = z; 
+    }
+}
+
+void operation::setdiam( double d )
+{
+    if( type == CONTOUR_OUT && d >= 0 )
+    {
+        currentcut->end.x = d/2.0f;
+    }
+}
+
+double operation::getdiam()
+{
+    if( type == CONTOUR_OUT )
+    { 
+        return currentcut->end.x*2.0f;
+    } 
+    return 0;
+}
+
+double operation::getz()
+{
+    if( type == CONTOUR_OUT )
+    {
+        return currentcut->end.z;
+    }
+    return 0; 
+}
+    
+    
 void operation::save( const char *name ) 
 {
     
@@ -193,27 +271,23 @@ void operation::create_contour( contour_path &p )
 {
     p.ml.clear();
 
-    vec2 start(0,0);
+  //  vec2 start(0,0);
 
     for(list<struct cut>::iterator i = cl.begin(); i != cl.end(); i++)
     {
 
-       i->start = start;
-
-       i->end.z = start.z + i->dim.z;
-       i->end.x = i->dim.x;
-
-       start =  i->end;
-
-        if( i->type == ARC_IN || i->type == ARC_OUT )
+        if( i->type != CUT_BEGIN )
         {
-            double l = i->start.dist( i->end ) + 0.00001f;
-            if( i->r < l/2.0f )  i->r = l/2.0f;
-            p.create_arc( *i, i->start, i->end, i->r, i->type == ARC_IN );
-        }
-        else 
-        {
-            p.create_line( i->end, i->type );
+            if( i->type == CUT_ARC_IN || i->type == CUT_ARC_OUT )
+            {
+                double l = i->start.dist( i->end ) + 0.00001f;
+                if( i->r < l/2.0f )  i->r = l/2.0f;
+                p.create_arc( *i, i->start, i->end, i->r, i->type == CUT_ARC_IN );
+            }
+            else 
+            {
+                p.create_line( i->end, i->type );
+            }
         }
 
     }

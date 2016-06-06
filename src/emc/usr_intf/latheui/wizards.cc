@@ -13,16 +13,6 @@ using namespace std;
 extern char programPrefix[LINELEN];
 
 
-const char *typestr[] =
-{
-    "straight line",
-    "Outside arch",
-    "Inside arch",
-    "Thread",
-    "Groove"
-    "Rapid move",
-    "Feed move",
-};
 
 extern char strbuf[BUFFSIZE];
 extern struct machinestatus status;
@@ -35,7 +25,7 @@ static menu Menu;
 
 static list<operation> opl; 
 list<operation>::iterator cur_op;
-list<operation>::iterator cur_contour;
+list<operation>::iterator cur_contour_op;
 
 static bool draw_toolpath = false;
 static bool dynamic_toolpath = true;
@@ -77,11 +67,11 @@ static char Zstr[BUFFSIZE];
 static char Name[BUFFSIZE];
 static int phasecreate;
 static int phaseselect;
-static double diameter;
+static int menuselect;
+
+static double diameter,z;
 vec2 startposition; 
 
-static double X;
-static double Y;
 int maxrpm;
 double stockdiameter;
 static double scale = 2;
@@ -105,6 +95,8 @@ void toolmenu( int t, const char *n )
 */
 
 #define  MENU_NEWPHASE 1
+#define  MENU_NEWCUT    2
+#define  MENU_DELETECUT 3
 
 const char* phasename( int type )
 {
@@ -128,6 +120,31 @@ void create_phase_menu( int n, int type )
 {
     sprintf(strbuf,"phase %d:%s%s", n, type > CONTOUR_IN ? "  " : "", phasename( type ) );
     Menu.begin( &phaseselect, n++, strbuf );
+        if( type == CONTOUR_OUT )
+        {
+        //    Menu.edit( &cur_contour_op->currentcut->type, typestr[ cur_contour_op->currentcut->type ] ); Menu.hiddenvalue();
+            Menu.select( &menuselect, MENU_DELETECUT, "Delete" );
+            Menu.select( &menuselect, MENU_NEWCUT, "New" );
+            
+            diameter = cur_contour_op->getdiam();
+            z = cur_contour_op->getz();
+            
+        //    sprintf(Dstr,"D start:%.20g end:", cur_contour_op->currentcut->start.x*2.0f );
+        //    sprintf(Zstr,"Z start:%.20g lenght:", cur_contour_op->currentcut->start.z );
+            Menu.edit( &diameter, Dstr ); Menu.shortcut("AX=0" );
+            Menu.edit( &z, Zstr ); Menu.shortcut("AX=2" );
+            /*
+            if( cur_contour_op->currentcut->type == ARC_IN || cur_contour_op->currentcut->type == ARC_OUT )
+            {
+                Menu.edit( &cur_contour_op->currentcut->r, "Radius" ); Menu.shortcut("AX=5" );
+            }
+            if( cur_contour_op->currentcut->type == THREAD )
+            {
+                Menu.edit( &cur_contour_op->currentcut->pitch, "Pitch" );
+                Menu.edit( &cur_contour_op->currentcut->depth, "Depth " );
+            }
+            */
+        }
         Menu.back("Back");
     Menu.end(); 
 }   
@@ -143,10 +160,9 @@ void create_main_menu()
     Menu.clear();
     
     Menu.begin( "machining phases:" );
-    
+        Menu.edit( Name, "Program name:" );
         Menu.edit( &stockdiameter, "Stock diameter " );
         Menu.edit( &maxrpm, "Max spindle rpm " );
-        
         Menu.begin( "Create new phase:" );
             Menu.back("Back");
             create_new_phase_menu( TOOL_CHANGE );
@@ -326,7 +342,7 @@ void wizards_init()
     scale = 2;
     retract = 1;
     maxrpm = status.maxrpm;
-
+    cur_contour_op = cur_op = opl.end();
     create_main_menu();
 }
 
@@ -544,16 +560,43 @@ void create_toolpath()
 }
 
 
-
 void wizards_parse_serialdata()
 {
-
+    
+    if( cur_contour_op != opl.end() )
+    {
+        
+        if( isprefix( "LEFT" ,NULL ) )
+        {
+            cur_contour_op->next();
+        }
+        else if( isprefix( "RIGHT" ,NULL ) )
+        {
+            cur_contour_op->previous();
+        }
+    }
+    
     if( Menu.parse() )
     {
+        
+        if( menuselect == MENU_NEWCUT )
+        {
+            cur_contour_op->new_cut(vec2(10,10),CUT_LINE );
+            return;
+        }
+        
         if( Menu.edited( &phasecreate ) )
         {
             opl.push_back( operation( phasecreate ) );
+            if( phasecreate == CONTOUR_OUT || phasecreate == CONTOUR_IN )
+            {
+                
+                cur_contour_op = --opl.end();
+                cur_contour_op->new_cut(vec2(10,10),CUT_BEGIN );
+                printf("new phase %d list size %d\n",phasecreate,opl.size());
+            }
             create_main_menu();
+            return;
         }
         
         else if( Menu.edited( &phaseselect ) )
@@ -561,13 +604,13 @@ void wizards_parse_serialdata()
             printf("select %d\n", phaseselect );
             
             int n = 1;
-            cur_contour = cur_op = opl.end();
+            cur_contour_op = cur_op = opl.end();
             
             for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
             {
-                if( i->get_type() == CONTOUR_OUT || i->get_type() == CONTOUR_OUT )
+                if( i->get_type() == CONTOUR_OUT || i->get_type() == CONTOUR_IN )
                 {
-                    cur_contour = i;
+                    cur_contour_op = i;
                 }
                 if( n++ == phaseselect )
                 {
@@ -576,6 +619,18 @@ void wizards_parse_serialdata()
                 }
             }
 
+        }
+        
+        if( cur_contour_op != opl.end() )
+        {
+            if( Menu.edited( &z )  ) 
+            {
+                cur_contour_op->setz(z);
+            }
+            if( Menu.edited( &diameter )  )
+            {
+                 cur_contour_op->setdiam( diameter );
+            }
         }
         
     }
@@ -603,8 +658,14 @@ void wizards_draw()
 {
     draw_statusbar( "WIZARDS" );
 
+    if( cur_contour_op != opl.end() && cur_contour_op->get_type() == CONTOUR_OUT )
+    {
+        //cur_contour_op->create_contour( cur_contour_op->contour );
+        cur_contour_op->draw( 0,100,100,100 );
+    }
+    
     Menu.draw(5,50);
-
+    
 //double angle = atan2( fabs( currentcut->start.x - currentcut->end.x) , fabs(currentcut->dim.z) )* 180.0f / M_PI;
   //  sprintf(strbuf,"Angle %g", angle );
     //println( strbuf );

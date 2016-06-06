@@ -35,6 +35,7 @@ void menu::clear()
     rm.type = TYPEBEGIN; 
     rm.it = rm.ml.begin();
     rm.shortcut = NULL;
+    rm.val = NULL;
     cmi = &rm;
     rm.up = &rm;
     usewheel = true;
@@ -210,6 +211,21 @@ void menu::draw( int x, int y)
     }        
 }
 
+// rekursive cleaning 
+void menu::clean( menuitem &m )
+{
+    for(list<struct menuitem>::iterator i = m.ml.begin(); i != m.ml.end(); i++)
+    {
+        if( (i->type == TYPEBEGIN || i->type == TYPESELECT ) && i->val != NULL )
+        {
+             *(int *)i->val = 0;
+        }
+        i->edited = false;
+        clean( *i );
+    }
+}
+
+
 bool menu::parse()
 {
     
@@ -226,15 +242,8 @@ bool menu::parse()
         }
     }
     
-    // clear selections
-    for(list<struct menuitem>::iterator i = cmi->ml.begin(); i != cmi->ml.end(); i++)
-    {
-        if( i->type == TYPEBEGIN && i->val != NULL )
-        {
-             *(int *)i->val = 0;
-        }
-        i->edited = false;
-    }  
+    // clear selections &&b edited flag
+    clean( rm );  
       
     // menu up,down,select
     if( isprefix( "DOWN" ,NULL ) || (usewheel && isprefix( "JG+" ,NULL )) )

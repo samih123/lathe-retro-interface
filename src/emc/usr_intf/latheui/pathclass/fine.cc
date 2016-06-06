@@ -67,7 +67,7 @@ void fine_path::create( contour_path &c, double r )
     // copy list & fill big gaps
 
     vec2 start(0,0);
-    cut cutp(0,0);
+    struct cut cutp;
     c.type = FEED;
 
     i2 = ++(tp.ml.begin());

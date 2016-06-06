@@ -265,11 +265,8 @@ void path::draw( bool both )
     for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
     {
 
-        if( i->type == THREAD && both )
-        {
-            setcolor( GREY );
-        }
-        else if( i->type == RAPID )
+
+        if( i->type == RAPID )
         {
             setcolor( RED );
         }
