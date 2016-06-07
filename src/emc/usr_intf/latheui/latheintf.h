@@ -92,8 +92,7 @@ enum move_type
 enum op_type
 {
     TOOL_CHANGE,
-    CONTOUR_OUT,
-    CONTOUR_IN,
+    CONTOUR,
     TURN,
     UNDERCUT,
     FINISHING,

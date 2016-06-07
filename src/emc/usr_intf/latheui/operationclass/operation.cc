@@ -80,8 +80,8 @@ operation::operation( int t )
     scale = 1;
     pos.x = pos.z = 0;
     type = t;
-    
-    if( type == CONTOUR_OUT )
+    inside = false;
+    if( type == CONTOUR )
     {
       //  cl.clear();
       //  new_cut( vec2(13,12), CUT_LINE );
@@ -97,7 +97,7 @@ operation::~operation()
 
 void operation::draw( int x,int y,int xs,int ys)
 {
-
+    if( type != CONTOUR ) return;
     double x1 = 0;
     double y1 = 0;
     double x2 = 0;
@@ -219,42 +219,60 @@ void operation::next()
     }
 }
 
-
-void operation::setz( double z )
+vec2 operation::get_cutend()
 {
-    if( type == CONTOUR_OUT )
+    if( type == CONTOUR && cl.size() > 0 )
     {
-        currentcut->end.z = z; 
+       return currentcut->end;
+    }
+    return vec2(0,0);
+}
+
+vec2 operation::get_cutstart()
+{
+    if( type == CONTOUR && cl.size() > 0 )
+    {
+       return currentcut->start;
+    }
+    return vec2(0,0);
+}
+
+void operation::set_cutend( const vec2 p )
+{
+    if( type == CONTOUR && cl.size() > 0 )
+    {
+        currentcut->end = p;
+        if( currentcut->end.x < 0 ) currentcut->end.x = 0;
     }
 }
 
-void operation::setdiam( double d )
+void operation::set_cutstart( const vec2 p )
 {
-    if( type == CONTOUR_OUT && d >= 0 )
+    if( type == CONTOUR && cl.size() > 0 )
     {
-        currentcut->end.x = d/2.0f;
+        currentcut->start = p;
     }
 }
 
-double operation::getdiam()
+
+
+int operation::getcuttype()
 {
-    if( type == CONTOUR_OUT )
+    if( type == CONTOUR && cl.size() > 0 )
     { 
-        return currentcut->end.x*2.0f;
+        return currentcut->type;
     } 
     return 0;
 }
 
-double operation::getz()
+void operation::setcuttype( int t )
 {
-    if( type == CONTOUR_OUT )
-    {
-        return currentcut->end.z;
-    }
-    return 0; 
+    if( type == CONTOUR && cl.size() > 0 )
+    { 
+        currentcut->type = CLAMP( t, CUT_BEGIN+1 , CUT_END-1 );
+    } 
 }
-    
-    
+   
 void operation::save( const char *name ) 
 {
     

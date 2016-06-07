@@ -211,7 +211,7 @@ void menu::draw( int x, int y)
     }        
 }
 
-// rekursive cleaning 
+// recursive cleaning 
 void menu::clean( menuitem &m )
 {
     for(list<struct menuitem>::iterator i = m.ml.begin(); i != m.ml.end(); i++)

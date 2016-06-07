@@ -19,12 +19,18 @@ class operation
     
     void setz( double z );
     void setdiam( double d );
-    double getdiam();
-    double getz();
-    const char* getcutname(){ if( type == CONTOUR_OUT ){ return typestr[ currentcut->type ] ;} return "error"; };
+    //double getdiam();
+    //double getz();
+    vec2 get_cutend();
+    vec2 get_cutstart();
+    void set_cutend( const vec2 p );
+    void set_cutstart( const vec2 p );
     
-    
-    
+    const char* getcutname(){ if( type == CONTOUR && ! cl.empty() ){ return typestr[ currentcut->type ] ;} return "error"; };
+    int getcuttype();
+    void setcuttype( int );
+    void set_inside( bool s ){ inside = s;} 
+    bool get_inside(){ return inside; }; 
     void draw( int x1,int y1,int x2,int y2);
     void new_cut( vec2 p, cut_type t );
     
@@ -39,10 +45,11 @@ class operation
     
     private:
     int type; 
-    list<struct cut>::iterator currentcut;
-    list<struct cut>::iterator currentcut2;
     
+    list<struct cut>::iterator currentcut;
     std::list<struct cut> cl;
+    bool inside;
+    
     contour_path contour;
     double scale;
     vec2 pos;
