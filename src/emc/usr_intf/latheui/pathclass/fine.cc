@@ -6,10 +6,6 @@ extern char strbuf[BUFFSIZE];
 extern const int maxrpm;
 extern const vec2 startposition;
 
-void fine_path::create( contour_path &c )
-{
-    create( c , cp.tool_r );
-}
 
 void fine_path::create( contour_path &c, double r )
 {
@@ -68,7 +64,6 @@ void fine_path::create( contour_path &c, double r )
 
     vec2 start(0,0);
     struct cut cutp;
-    c.type = FEED;
 
     i2 = ++(tp.ml.begin());
     for( list<struct mov>::iterator i1 = tp.ml.begin(); i1 != tp.ml.end(); i1++,i2++)

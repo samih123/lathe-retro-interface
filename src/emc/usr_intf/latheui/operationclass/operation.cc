@@ -219,60 +219,40 @@ void operation::next()
     }
 }
 
-vec2 operation::get_cutend()
-{
-    if( type == CONTOUR && cl.size() > 0 )
-    {
-       return currentcut->end;
-    }
-    return vec2(0,0);
-}
-
-vec2 operation::get_cutstart()
-{
-    if( type == CONTOUR && cl.size() > 0 )
-    {
-       return currentcut->start;
-    }
-    return vec2(0,0);
-}
-
-void operation::set_cutend( const vec2 p )
-{
-    if( type == CONTOUR && cl.size() > 0 )
-    {
-        currentcut->end = p;
-        if( currentcut->end.x < 0 ) currentcut->end.x = 0;
-    }
-}
-
-void operation::set_cutstart( const vec2 p )
-{
-    if( type == CONTOUR && cl.size() > 0 )
-    {
-        currentcut->start = p;
-    }
-}
 
 
-
-int operation::getcuttype()
+cut operation::get_cut()
 {
     if( type == CONTOUR && cl.size() > 0 )
     { 
-        return currentcut->type;
+        return *currentcut;
     } 
-    return 0;
+    return cut();
 }
 
-void operation::setcuttype( int t )
+
+void operation::set_cut( cut &c )
 {
     if( type == CONTOUR && cl.size() > 0 )
     { 
-        currentcut->type = CLAMP( t, CUT_BEGIN+1 , CUT_END-1 );
+        
+        CLAMP( c.type, CUT_BEGIN+1 , CUT_END-1 );
+        if( c.end.x < 0 ) c.end.x = 0;
+        
+        currentcut->type = c.type;
+        
+        vec2 d = c.end - currentcut->end;
+        currentcut->end += d;
+        for(list<struct cut>::iterator i = currentcut; i != cl.end(); i++)
+        {
+            i->end += d;
+            i->start += d;
+        }
+        
     } 
 }
-   
+
+
 void operation::save( const char *name ) 
 {
     

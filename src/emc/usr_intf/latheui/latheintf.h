@@ -285,14 +285,16 @@ public:
     }
 };
 
-struct cutparam
+struct tool
 {
     double depth;
-    double feed;
-    double tool_r;
-    int tool;
     int count;
+    
+    double feed;
     int speed;
+    
+    int tool;
+   
 };
 
 struct cut
@@ -320,14 +322,12 @@ struct mov
         end.z = az;
         feed = 0;
         type = ct;
-        toolchange = 0;
     }
     mov( const vec2 &v, int ct )
     {
         end = v;
         feed = 0;
         type = ct;
-        toolchange = 0;
     }
     ~mov()
     {
@@ -341,7 +341,7 @@ struct mov
     double feed;
     int type;
     string comment;
-    int toolchange;
+    
 };
 
 

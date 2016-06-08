@@ -91,20 +91,20 @@ void path::rapid_move( const vec2 v )
 }
 
 
-void path::feed_to_left( path &colp, vec2 v, double len )
+void path::feed_to_left( path &colp, vec2 v, double len , double depth)
 {
     list<struct mov>::iterator fi = colp.ml.begin();
-    feed_to_left( colp, fi, v, len );
+    feed_to_left( colp, fi, v, len, depth);
 }
 
-void path::feed_to_left( path &colp, list<struct mov>::iterator fi, vec2 v, double len )
+void path::feed_to_left( path &colp, list<struct mov>::iterator fi, vec2 v, double len , double depth)
 {
     vec2 v2;
     list<struct mov>::iterator ci;
     colp.find_intersection( v, vec2( v.x, v.z - len ), v2, fi, ci, false );
     bool first = (ml.size() == 0);
   //  if( v.dist( v2 ) > retract*2.0 ){
-        if( ! first ) rapid_move( vec2( v.x + retract + cp.depth, v.z - retract ) );
+        if( ! first ) rapid_move( vec2( v.x + retract + depth, v.z - retract ) );
         create_line( v, FEED );
         create_line( v2 , FEED );
         create_line( vec2( v2.x + retract, v2.z + retract ) , FEED );
@@ -323,16 +323,6 @@ void path::save( FILE *fp )
             strbuf
         );
 
-        if( i->toolchange )
-        {
-            sprintf( strbuf, "T%d M6 F%f\n", i->toolchange, cp.feed );
-            fprintf(fp, "%s", strbuf );
-            sprintf( strbuf, "G96 D%d S%d\n", maxrpm, cp.speed );
-            fprintf(fp, "%s", strbuf );
-            sprintf( strbuf, "M4\n" );
-            fprintf(fp, "%s", strbuf );
-        }
-
     }
 
 }
@@ -348,23 +338,6 @@ void path::findminmax()
         start =  i->end;
     }
 }
-
-void path::set_tool( int num )
-{
-    cp.tool = num;
-    cp.tool_r = _tools[ num ].diameter/2.0f;
-}
-
-
-void path::set_cut_param( double feed, double speed, double depth )
-{
-    cp.depth = depth;
-    cp.feed = feed;
-    cp.speed = speed;
-
-}
-
-
 
 
 
