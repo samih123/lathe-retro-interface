@@ -124,9 +124,7 @@ void operation::draw( int x,int y,int xs,int ys)
         y1 = -i->start.x;
         x2 = i->end.z;
         y2 = -i->end.x;
-//printf("start  %f,%f\n",x1,y2);
-//printf("end  %f,%f type %d\n",x2,y2,i->type);
-       // if( i != cuts.begin() )
+
         {
             glBegin(GL_LINES);
                 setcolor( GREY );
@@ -135,16 +133,7 @@ void operation::draw( int x,int y,int xs,int ys)
                 glVertex2f( x1, -y1 );
                 glVertex2f( x1, y1  );
             glEnd();
-            
-            if(i->type == CUT_LINE )
-            {
-                glBegin(GL_LINES);
-                    setcolor( GREEN );
-                    glVertex2f( x1, y1 );
-                    glVertex2f( x2, y2 );
-                glEnd();   
-            }
-            
+
             if(i->type == CUT_THREAD )
             {
                 setcolor( GREEN );
@@ -160,16 +149,18 @@ void operation::draw( int x,int y,int xs,int ys)
 
             if( i == currentcut )
             {
-//                printf("start  %f,%f\n",x1,y2);
-//                printf("end  %f,%f\n",x2,y2);
                 setcolor( RED );
                 drawCircle( x2, y2, 3.0f / scale );
             }
         }
 
     }
- glPopMatrix();
-    //contour.draw( true );
+    
+    create_contour( contour );
+    contour.draw( true );
+    
+    glPopMatrix();
+
 }
 
 void operation::new_cut( vec2 p, cut_type t )
@@ -236,18 +227,28 @@ void operation::set_cut( cut &c )
     if( type == CONTOUR && cl.size() > 0 )
     { 
         
-        CLAMP( c.type, CUT_BEGIN+1 , CUT_END-1 );
-        if( c.end.x < 0 ) c.end.x = 0;
+        if( currentcut->type != CUT_BEGIN )
+        {
+            CLAMP( c.type, CUT_BEGIN+1 , CUT_END-1 );
+            currentcut->type = c.type;
+        }
         
-        currentcut->type = c.type;
+       // if( c.end.x < 0 ) c.end.x = 0;
         
         vec2 d = c.end - currentcut->end;
         currentcut->end += d;
-        for(list<struct cut>::iterator i = currentcut; i != cl.end(); i++)
+        
+        list<struct cut>::iterator i = currentcut;
+        i++;
+        
+        i->start = currentcut->end;
+        /*
+        for(; i != cl.end(); i++)
         {
             i->end += d;
             i->start += d;
         }
+        */
         
     } 
 }
@@ -274,7 +275,7 @@ void operation::create_contour( contour_path &p )
     for(list<struct cut>::iterator i = cl.begin(); i != cl.end(); i++)
     {
 
-        if( i->type != CUT_BEGIN )
+      //  if( i->type != CUT_BEGIN )
         {
             if( i->type == CUT_ARC_IN || i->type == CUT_ARC_OUT )
             {

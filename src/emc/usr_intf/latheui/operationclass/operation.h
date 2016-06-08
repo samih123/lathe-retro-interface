@@ -32,6 +32,7 @@ class operation
     list<struct cut>::iterator currentcut;
     std::list<struct cut> cl;
     bool inside;
+    contour_path contour;
     
     // tool
     

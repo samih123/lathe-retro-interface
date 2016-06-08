@@ -586,18 +586,18 @@ void create_toolpath()
 void wizards_parse_serialdata()
 {
     
-    if( cur_contour_op != opl.end() )
+    if( cur_contour_op == cur_op && cur_contour_op != opl.end() )
     {
         
         if( isprefix( "LEFT" ,NULL ) )
         {
             cur_contour_op->next();
-            getzd();
+            create_phase_menu();
         }
         else if( isprefix( "RIGHT" ,NULL ) )
         {
             cur_contour_op->previous();
-            getzd();
+            create_phase_menu();
         }
     }
     
@@ -611,8 +611,8 @@ void wizards_parse_serialdata()
         }
         if( menuselect == MENU_NEWCUT )
         {
-            cur_contour_op->new_cut(vec2(10,10),CUT_LINE );
-            getzd();
+            cur_contour_op->new_cut(vec2(10,0),CUT_LINE );
+            create_phase_menu();
             return;
         }
         
@@ -621,10 +621,8 @@ void wizards_parse_serialdata()
             opl.push_back( operation( phasecreate ) );
             if( phasecreate == CONTOUR )
             {
-                
                 cur_contour_op = --opl.end();
-                cur_contour_op->new_cut(vec2(10,10),CUT_BEGIN );
-                printf("new phase %d list size %d\n",phasecreate,opl.size());
+                cur_contour_op->new_cut(vec2(0,10),CUT_BEGIN );
             }
             create_main_menu();
             return;
@@ -698,7 +696,6 @@ void wizards_draw()
 
     if( cur_contour_op != opl.end() && cur_contour_op->get_type() == CONTOUR )
     {
-        //cur_contour_op->create_contour( cur_contour_op->contour );
         cur_contour_op->draw( 0,100,100,100 );
     }
     
@@ -708,9 +705,6 @@ void wizards_draw()
   //  sprintf(strbuf,"Angle %g", angle );
     //println( strbuf );
 
-   // show_tool( 500, 70 , tp[ROUGH].tool, "Rough" );
-   // show_tool( 600, 70 , tp[FINISH].tool, "Finish" );
-   // show_tool( 700, 70 , tp[UNDERCUT].tool, "Undercut" );
 }
 
 
