@@ -97,12 +97,11 @@ operation::~operation()
 
 void operation::draw( int x,int y,int xs,int ys)
 {
-    if( type != CONTOUR ) return;
+    
     double x1 = 0;
     double y1 = 0;
     double x2 = 0;
     double y2 = 0;
-
 
     //glEnable(GL_LINE_STIPPLE);
     //glLineStipple(1,0x5555);
@@ -116,48 +115,56 @@ void operation::draw( int x,int y,int xs,int ys)
         glVertex2f( 10,0 );
         glVertex2f( -600,0 );
     glEnd();
-
-    for(list<struct cut>::iterator i = cl.begin(); i != cl.end(); i++)
-    {
-
-        x1 = i->start.z;
-        y1 = -i->start.x;
-        x2 = i->end.z;
-        y2 = -i->end.x;
-
-        {
-            glBegin(GL_LINES);
-                setcolor( GREY );
-                glVertex2f( x2, -y2 );
-                glVertex2f( x2, y2  );
-                glVertex2f( x1, -y1 );
-                glVertex2f( x1, y1  );
-            glEnd();
-
-            if(i->type == CUT_THREAD )
-            {
-                setcolor( GREEN );
-                draw_thread( x1,  y1,  x2,  y2, i->pitch, i->depth );
-            }
-
-            if( i->type == CUT_ARC_IN || i->type == CUT_ARC_OUT )
-            {
-                setcolor( GREEN );
-                drawCross( i->center.z, i->center.x, 3.0f / scale );
-                drawCross( i->center.z, -i->center.x, 3.0f / scale );
-            }
-
-            if( i == currentcut )
-            {
-                setcolor( RED );
-                drawCircle( x2, y2, 3.0f / scale );
-            }
-        }
-
-    }
     
-    create_contour( contour );
-    contour.draw( true );
+    if( type == CONTOUR )
+    {
+        for(list<struct cut>::iterator i = cl.begin(); i != cl.end(); i++)
+        {
+    
+            x1 = i->start.z;
+            y1 = -i->start.x;
+            x2 = i->end.z;
+            y2 = -i->end.x;
+    
+            {
+                glBegin(GL_LINES);
+                    setcolor( GREY );
+                    glVertex2f( x2, -y2 );
+                    glVertex2f( x2, y2  );
+                    glVertex2f( x1, -y1 );
+                    glVertex2f( x1, y1  );
+                glEnd();
+    
+                if(i->type == CUT_THREAD )
+                {
+                    setcolor( GREEN );
+                    draw_thread( x1,  y1,  x2,  y2, i->pitch, i->depth );
+                }
+    
+                if( i->type == CUT_ARC_IN || i->type == CUT_ARC_OUT )
+                {
+                    setcolor( GREEN );
+                    drawCross( i->center.z, i->center.x, 3.0f / scale );
+                    drawCross( i->center.z, -i->center.x, 3.0f / scale );
+                }
+    
+                if( i == currentcut )
+                {
+                    setcolor( RED );
+                    drawCircle( x2, y2, 3.0f / scale );
+                }
+            }
+    
+        }
+        
+        create_contour( contour );
+        contour.draw( true );
+    }    
+    
+    if( type == TURN )
+    {
+        r_path.draw( true );
+    }
     
     glPopMatrix();
 
@@ -253,6 +260,16 @@ void operation::set_cut( cut &c )
     } 
 }
 
+tool operation::get_tool()
+{
+    return tool();
+}
+
+void operation::set_tool( tool &T )
+{
+    tl.depth = 8;
+    //tl = T;
+}
 
 void operation::save( const char *name ) 
 {
@@ -295,6 +312,27 @@ void operation::create_contour( contour_path &p )
     p.findminmax();
     
 }
+
+
+void operation::create_path( operation &ccontour, const tool &ctool )
+{
+    if( type == TURN )
+    {
+        ccontour.create_contour( contour );
+        r_path.create( ccontour.contour, ctool );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 

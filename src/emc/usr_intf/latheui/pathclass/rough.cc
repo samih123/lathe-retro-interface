@@ -3,10 +3,13 @@
 extern const double retract;
 extern char strbuf[BUFFSIZE];;
 
-void rough_path::create( contour_path &c, double depth, double tool_r, double retract)
+void rough_path::create( contour_path &c, const tool &tl, bool oside )
 {
-
-    tc.create( c, tool_r );
+    
+    double tool_r = _tools[ tl.tooln ].diameter/2.0f;
+    
+    outside = oside;
+    tc.create( c, tool_r, outside );
     
     double x;
     double min_z = c.min.z;
@@ -23,8 +26,8 @@ void rough_path::create( contour_path &c, double depth, double tool_r, double re
  
     while( x > tc.ml.front().start.x + 0.001 )
     {
-        feed_to_left( tc, vec2( x, max_z ), len ,depth );
-        x -= depth;
+        feed_to_left( tc, vec2( x, max_z ), len ,tl.depth );
+        x -= tl.depth;
     }
     findminmax();
         

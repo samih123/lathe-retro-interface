@@ -4,7 +4,6 @@ class path
     public:
     path()
     {
-        //type = ROUGH;
     }
 
     ~path()
@@ -32,7 +31,7 @@ class path
    // int type;
     std::list<struct mov> ml;
     vec2 min,max;    
-    bool inside;
+    bool outside;
     //friend class fine_path;
     //friend class rough_path;
     //friend class undercut_path;
@@ -48,13 +47,13 @@ class contour_path:public path
 class fine_path:public path
 {
     public:
-    void create( contour_path &c, double r );
+    void create( contour_path &c, double r, bool outside = true );
 };
 
 class rough_path:public path
 {
     public:
-    void create( contour_path &c, double depth, double tool_r, double retract );
+    void create( contour_path &c, const tool &tl, bool outside = true );
     void draw( bool both );
     fine_path tc;
 };
@@ -62,7 +61,7 @@ class rough_path:public path
 class undercut_path:public path
 {
     public:
-    void create( contour_path &c, double depth, double tool_r, double retract );
+    void create( contour_path &c, double depth, double tool_r, double retract, bool outside = true );
     void draw( bool both );
     fine_path tc;
 };

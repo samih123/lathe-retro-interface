@@ -3,10 +3,10 @@
 
 extern char strbuf[BUFFSIZE];
 
-void undercut_path::create( contour_path &c, double depth, double tool_r, double retract )
+void undercut_path::create( contour_path &c, double depth, double tool_r, double retract, bool oside )
 {
-    
-    tc.create( c, tool_r );
+    outside = oside;
+    tc.create( c, tool_r, outside );
     
     double x = 0;
     ml.clear();

@@ -8,8 +8,13 @@ class operation
     operation( int t );
     ~operation();
     
+    // shape
     cut get_cut();
     void set_cut( cut &c );
+    
+    // tool
+    tool get_tool();
+    void set_tool( tool &c );
     
     void set_inside( bool s ){ inside = s;} 
     bool is_inside(){ return inside; }; 
@@ -22,7 +27,8 @@ class operation
     void save( const char *name ); 
     void load( const char *name );
     void create_contour( contour_path &p );
-    
+    void create_path( operation &ccontour, const tool &ctool );
+
     int get_type(){ return type; };
     
     private:
@@ -35,8 +41,10 @@ class operation
     contour_path contour;
     
     // tool
+    tool tl;
     
-    
+    // rough 
+    rough_path r_path;
     
     double scale;
     vec2 pos;

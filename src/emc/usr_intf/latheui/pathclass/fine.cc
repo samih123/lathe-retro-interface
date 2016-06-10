@@ -7,12 +7,13 @@ extern const int maxrpm;
 extern const vec2 startposition;
 
 
-void fine_path::create( contour_path &c, double r )
+void fine_path::create( contour_path &c, double r, bool oside )
 {
     
     vec2 n;
     path tp;
     ml.clear();
+    outside = oside;
     
     // copy to temp list
     for(list<struct mov>::iterator i = c.ml.begin(); i != c.ml.end(); i++)

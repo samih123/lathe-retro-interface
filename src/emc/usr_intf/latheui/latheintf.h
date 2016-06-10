@@ -91,7 +91,7 @@ enum move_type
 
 enum op_type
 {
-    TOOL_CHANGE,
+    TOOL,
     CONTOUR,
     TURN,
     UNDERCUT,
@@ -287,13 +287,24 @@ public:
 
 struct tool
 {
+    tool()
+    {
+        tooln =1;
+        depth = 2;
+        count = 2;
+        feed = 0.2;
+        speed = 200;
+    }
+    ~tool()
+    {
+    }
     double depth;
     int count;
     
     double feed;
     int speed;
     
-    int tool;
+    int tooln;
    
 };
 
