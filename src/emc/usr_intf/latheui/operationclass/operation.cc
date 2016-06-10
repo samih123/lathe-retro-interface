@@ -86,18 +86,18 @@ operation::operation( int t )
       //  cl.clear();
       //  new_cut( vec2(13,12), CUT_LINE );
     }
-    
+
 }
-    
+
 operation::~operation()
 {
-   
+
 }
 
 
 void operation::draw( int x,int y,int xs,int ys)
 {
-    
+
     double x1 = 0;
     double y1 = 0;
     double x2 = 0;
@@ -115,17 +115,17 @@ void operation::draw( int x,int y,int xs,int ys)
         glVertex2f( 10,0 );
         glVertex2f( -600,0 );
     glEnd();
-    
+
     if( type == CONTOUR )
     {
         for(list<struct cut>::iterator i = cl.begin(); i != cl.end(); i++)
         {
-    
+
             x1 = i->start.z;
             y1 = -i->start.x;
             x2 = i->end.z;
             y2 = -i->end.x;
-    
+
             {
                 glBegin(GL_LINES);
                     setcolor( GREY );
@@ -134,38 +134,38 @@ void operation::draw( int x,int y,int xs,int ys)
                     glVertex2f( x1, -y1 );
                     glVertex2f( x1, y1  );
                 glEnd();
-    
+
                 if(i->type == CUT_THREAD )
                 {
                     setcolor( GREEN );
                     draw_thread( x1,  y1,  x2,  y2, i->pitch, i->depth );
                 }
-    
+
                 if( i->type == CUT_ARC_IN || i->type == CUT_ARC_OUT )
                 {
                     setcolor( GREEN );
                     drawCross( i->center.z, i->center.x, 3.0f / scale );
                     drawCross( i->center.z, -i->center.x, 3.0f / scale );
                 }
-    
+
                 if( i == currentcut )
                 {
                     setcolor( RED );
                     drawCircle( x2, y2, 3.0f / scale );
                 }
             }
-    
+
         }
-        
+
         create_contour( contour );
         contour.draw( true );
-    }    
-    
+    }
+
     if( type == TURN )
     {
         r_path.draw( true );
     }
-    
+
     glPopMatrix();
 
 }
@@ -173,14 +173,14 @@ void operation::draw( int x,int y,int xs,int ys)
 void operation::new_cut( vec2 p, cut_type t )
 {
     vec2 end(0,0);
-    
+
     if( ! cl.empty() )
     {
        end = cl.back().end;
     }
-    
+
     cl.push_back( cut() );
-    
+
     currentcut = --cl.end();
     currentcut->type = t;
     currentcut->start = end;
@@ -188,7 +188,7 @@ void operation::new_cut( vec2 p, cut_type t )
     currentcut->r = 1.0f;
     currentcut->pitch = 1.0f;
     currentcut->depth = 0.65f * currentcut->pitch;
-    
+
 }
 
 
@@ -222,9 +222,9 @@ void operation::next()
 cut operation::get_cut()
 {
     if( type == CONTOUR && cl.size() > 0 )
-    { 
+    {
         return *currentcut;
-    } 
+    }
     return cut();
 }
 
@@ -232,22 +232,22 @@ cut operation::get_cut()
 void operation::set_cut( cut &c )
 {
     if( type == CONTOUR && cl.size() > 0 )
-    { 
-        
+    {
+
         if( currentcut->type != CUT_BEGIN )
         {
             CLAMP( c.type, CUT_BEGIN+1 , CUT_END-1 );
             currentcut->type = c.type;
         }
-        
+
        // if( c.end.x < 0 ) c.end.x = 0;
-        
+
         vec2 d = c.end - currentcut->end;
         currentcut->end += d;
-        
+
         list<struct cut>::iterator i = currentcut;
         i++;
-        
+
         i->start = currentcut->end;
         /*
         for(; i != cl.end(); i++)
@@ -256,29 +256,30 @@ void operation::set_cut( cut &c )
             i->start += d;
         }
         */
-        
-    } 
+
+    }
 }
 
 tool operation::get_tool()
 {
-    return tool();
+    if( type != TOOL ) printf( "type ERROR %s\n", __PRETTY_FUNCTION__ );
+    return tl;
 }
 
 void operation::set_tool( tool &T )
 {
-    tl.depth = 8;
-    //tl = T;
+    if( type != TOOL ) printf( "type ERROR %s\n", __PRETTY_FUNCTION__ );
+    tl = T;
 }
 
-void operation::save( const char *name ) 
+void operation::save( const char *name )
 {
-    
+
 }
 
 void operation::load( const char *name )
 {
-    
+
 }
 
 
@@ -300,7 +301,7 @@ void operation::create_contour( contour_path &p )
                 if( i->r < l/2.0f )  i->r = l/2.0f;
                 p.create_arc( *i, i->start, i->end, i->r, i->type == CUT_ARC_IN );
             }
-            else 
+            else
             {
                 p.create_line( i->end, i->type );
             }
@@ -310,7 +311,7 @@ void operation::create_contour( contour_path &p )
 
     //p.remove_knots();
     p.findminmax();
-    
+
 }
 
 
