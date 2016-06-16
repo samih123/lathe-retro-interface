@@ -262,23 +262,83 @@ void operation::set_cut( cut &c )
 
 tool operation::get_tool()
 {
-    if( type != TOOL ) printf( "type ERROR %s\n", __PRETTY_FUNCTION__ );
+    if( type != TOOL ) printf( "TYPE ERROR %s\n", __PRETTY_FUNCTION__ );
     return tl;
 }
 
 void operation::set_tool( tool &T )
 {
-    if( type != TOOL ) printf( "type ERROR %s\n", __PRETTY_FUNCTION__ );
+    if( type != TOOL ) printf( "TYPE ERROR %s\n", __PRETTY_FUNCTION__ );
     tl = T;
 }
 
-void operation::save( const char *name )
+void operation::save( FILE *fp )
 {
-
+    if (fp == NULL) return;
+    if( type == TOOL )
+    {
+        fprintf(fp, "OPERATION %i //tool\n", type );
+        fprintf(fp, "   DEPTH %.10g\n", tl.depth );
+        fprintf(fp, "   FEED %.10g\n", tl.feed );
+        fprintf(fp, "   SPEED %.10g\n", tl.speed );
+        fprintf(fp, "   TOOLN %i\n", tl.tooln );
+        fprintf(fp, "   COUNT %i\n", tl.count );
+        fprintf(fp, "END\n" );
+    }
 }
 
-void operation::load( const char *name )
+
+void findtag( const char *line, const char *tag, double &val,const double v )
 {
+    if( strcmp( tag, line ) == 0 )
+    {
+        val = v;
+    }      
+}
+
+void findtag( const char *line, const char *tag, int &val,const int v )
+{
+    if( strcmp( tag, line ) == 0 )
+    {
+        val = v;
+    }      
+}
+
+void operation::load( FILE *fp )
+{
+    if (fp == NULL) return;
+    
+    char *line = NULL;
+    size_t len = 0;   
+    ssize_t read;
+    char tag[BUFFSIZE+1];
+    double val=0;
+
+    while ((read = getline( &line, &len, fp)) != -1)
+    {
+
+        printf("load %s", line);
+        
+        sscanf(line, "%s %lf", tag, &val );
+
+        if( type == TOOL )
+        {
+            findtag( tag, "DEPTH", tl.depth, val );
+            findtag( tag, "FEED",  tl.feed, val );
+            findtag( tag, "SPEED", tl.speed, val );
+            findtag( tag, "TOOLN", tl.tooln, val );
+            findtag( tag, "COUNT", tl.count, val );
+        }
+        
+        free(line);
+        line = NULL;
+        
+        if( strcmp( tag, "END" ) == 0 )
+        {
+            break;
+        }      
+        
+    }
 
 }
 
@@ -286,8 +346,13 @@ void operation::load( const char *name )
 
 void operation::create_contour( contour_path &p )
 {
+    if( type != CONTOUR )
+    {
+         printf( "TYPE ERROR %s\n", __PRETTY_FUNCTION__ );
+         return;
+    }
+    
     p.ml.clear();
-
   //  vec2 start(0,0);
 
     for(list<struct cut>::iterator i = cl.begin(); i != cl.end(); i++)
@@ -315,13 +380,17 @@ void operation::create_contour( contour_path &p )
 }
 
 
-void operation::create_path( operation &ccontour, const tool &ctool )
+void operation::create_path( operation &ccontour, operation &ctool )
 {
-    if( type == TURN )
+    if( type != TURN || ccontour.type != CONTOUR || ctool.type != TOOL )
     {
-        ccontour.create_contour( contour );
-        r_path.create( ccontour.contour, ctool );
+         printf( "TYPE ERROR %s\n", __PRETTY_FUNCTION__ );
+         return;
     }
+
+    ccontour.create_contour( contour );
+    r_path.create( ccontour.contour, ctool.get_tool() );
+
 }
 
 

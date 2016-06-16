@@ -24,10 +24,10 @@ class operation
     void erase();
     void previous();
     void next();
-    void save( const char *name ); 
-    void load( const char *name );
+    void save( FILE *fp ); 
+    void load( FILE *fp );
     void create_contour( contour_path &p );
-    void create_path( operation &ccontour, const tool &ctool );
+    void create_path( operation &ccontour, operation &ctool );
 
     int get_type(){ return type; };
     

@@ -34,31 +34,18 @@ static bool dynamic_toolpath = true;
 void save( const char *name )
 {
     FILE *fp;
-/*
+
     sprintf(strbuf,"%s/%s.wiz", programPrefix, name );
     printf("save:%s\n",strbuf);
     fp = fopen( strbuf, "w");
-
     if (fp == NULL) return;
 
-     fprintf(fp, "%d %d %d %f %f\n%d %d %d %f %f\n%d %d %d %f %f\n",
-            tp[ROUGH   ].tool, tp[ROUGH   ].count, tp[ROUGH   ].speed, tp[ROUGH   ].feed, tp[ROUGH   ].depth,
-            tp[UNDERCUT].tool, tp[UNDERCUT].count, tp[UNDERCUT].speed, tp[UNDERCUT].feed, tp[UNDERCUT].depth,
-            tp[FINISH  ].tool, tp[FINISH  ].count, tp[FINISH  ].speed, tp[FINISH  ].feed, tp[FINISH  ].depth
-         );
-    for(list<struct cut>::iterator i = cuts.begin(); i != cuts.end(); i++)
+    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-         fprintf(fp, "%d %f %f %f %f %f\n",
-            i->type,
-            i->dim.x,
-            i->dim.z,
-            i->r,
-            i->pitch,
-            i->depth
-         );
+        i->save( fp );
     }
+
     fclose( fp );
-*/
 }
 
 
@@ -84,7 +71,8 @@ double retract = 1;
 #define  MENU_NEWPHASE 1
 #define  MENU_NEWCUT    2
 #define  MENU_DELETECUT 3
-#define  MENU_MAIN 4
+#define  MENU_SAVE 4
+#define  MENU_MAIN 5
 
 const char* phasename( int type )
 {
@@ -182,6 +170,7 @@ void create_main_menu()
     menuselect = 0;
     Menu.begin( "machining phases:" );
         Menu.edit( Name, "Program name:" );
+        Menu.select( &menuselect, MENU_SAVE, "Save" );
         Menu.edit( &stockdiameter, "Stock diameter " );
         Menu.edit( &maxrpm, "Max spindle rpm " );
         Menu.begin( "Create new phase:" );
@@ -207,57 +196,6 @@ void create_main_menu()
     Menu.setmaxlines( 15 );
 }
 
-/*
-void create_main_menu()
-{
-
-    Menu.clear();
-    Menu.begin( "machining phases:" );
-         Menu.select( &menuselect, MENU_NEWPHASE, "Create new phase" );
-    Menu.end();
-    Menu.setmaxlines( 10 );
-
-    diameter = currentcut->dim.x *2.0f;
-    //printf("max  %g,%g\n",contour_max.x,contour_max.z);
-    //printf("min  %g,%g\n",contour_min.x,contour_min.z);
-
-    sprintf(Dstr,"D start:%4.3g end:", currentcut->start.x*2.0f );
-    sprintf(Zstr,"Z start:%4.3g lenght:", currentcut->start.z );
-
-    Menu.clear();
-    Menu.begin( "" );
-        Menu.edit( &currentcut->type, typestr[ currentcut->type ] ); Menu.hiddenvalue();
-        Menu.select( &menuselect, MENUDELETE, "Delete" );
-        Menu.select( &menuselect, MENUNEW, "New" );
-        Menu.edit( &diameter, Dstr ); Menu.shortcut("AX=0" );
-        Menu.edit( &currentcut->dim.z, Zstr ); Menu.shortcut("AX=2" );
-        if( currentcut->type == ARC_IN || currentcut->type == ARC_OUT )
-        {
-        Menu.edit( &currentcut->r, "Radius" ); Menu.shortcut("AX=5" );
-        }
-        if(currentcut->type == THREAD )
-        {
-        Menu.edit( &currentcut->pitch, "Pitch" );
-        Menu.edit( &currentcut->depth, "Depth " );
-        }
-        Menu.edit( &stockdiameter, "Stock diameter " );
-        Menu.edit( &maxrpm, "Max spindle rpm " );
-        Menu.select( &menuselect, MENUTOOLPATH, "Create toolpath" );
-        Menu.select( &menuselect, MENUSAVE, "Save program" );
-        Menu.edit( Name, "Program name:" );
-        Menu.edit( &scale, "Scale " );
-        Menu.edit( &X, "X " );
-        Menu.edit( &Y, "Y " );
-
-        toolmenu( ROUGH , "Rough tool settings");
-        toolmenu( UNDERCUT , "Undercut tool settings");
-        toolmenu( FINISH , "Finish tool settings");
-        Menu.edit( &dynamic_toolpath, "dynamic toolpath calculation " );
-    Menu.end();
-    Menu.setmaxlines( 10 );
-
-}
-*/
 
 
  void save_program(const char *name )
@@ -296,50 +234,40 @@ void create_main_menu()
 
 void wizards_load( const char *name )
 {
-/*
-    cuts.clear();
 
     FILE *fp;
     char *line = NULL;
     size_t len = 0;
     ssize_t read;
-
-   printf("load:%s\n",name);
-   fp = fopen( name, "r");
+    
+    char tag[BUFFSIZE+1];
+    double val=0;
+    
+    printf("load:%s\n",name);
+    fp = fopen( name, "r");
 
    if (fp == NULL) return;
+    
+    opl.clear();
+    cur_contour = cur_op = cur_tool= opl.end();
 
-    // read tool parameters
-    for( int i=0 ; i<3 ; i++ )
-    {
-        if((read = getline( &line, &len, fp)) != -1)
-        {
-            sscanf(line, "%d %d %d %lf %lf",
-                &tp[i].tool, &tp[i].count, &tp[i].speed, &tp[i].feed, &tp[i].depth
-            );
-        }
-    }
-
-    // read contour
     while ((read = getline( &line, &len, fp)) != -1)
     {
 
         printf("%s", line);
-        cuts.push_back( cut(0,0) );
-        list<struct cut>::iterator i= --cuts.end();
-        sscanf(line, "%d %lf %lf %lf %lf %lf",
-            &i->type,
-            &i->dim.x,
-            &i->dim.z,
-            &i->r,
-            &i->pitch,
-            &i->depth
-        );
+        
+        sscanf(line, "%s %lf", tag, &val );
+        
+        if( strcmp( tag, "OPERATION" ) == 0 )
+        {
+            opl.push_back( operation( (int)val ) );
+            opl.back().load( fp );
+        }
 
         free(line);
         line = NULL;
     }
-    currentcut = --cuts.end();
+
     fclose( fp );
 
     // strip name
@@ -348,20 +276,20 @@ void wizards_load( const char *name )
     strcpy( Name, n+1 );
     n = strstr(Name, ".wiz" );
     if( n ) *(char *)n = 0;
-    scale = 3;
-    create_contour( contour );
-    createmenu();
-    */
+    
+
 }
 
 
 void wizards_init()
 {
-
-    scale = 2;
-    retract = 1;
-    maxrpm = status.maxrpm;
-    cur_contour = cur_op = cur_tool= opl.end();
+    if( opl.size() == 0 )
+    {
+        scale = 2;
+        retract = 1;
+        maxrpm = status.maxrpm;
+        cur_contour = cur_op = cur_tool= opl.end();
+    }
     create_main_menu();
 }
 
@@ -605,6 +533,14 @@ void wizards_parse_serialdata()
             create_main_menu();
             return;
         }
+        
+        if( menuselect == MENU_SAVE )
+        {
+            
+            save( Name );
+            return;
+        }
+                
         if( menuselect == MENU_NEWCUT )
         {
             cur_contour->new_cut(vec2(10,0),CUT_LINE );
@@ -716,7 +652,7 @@ void wizards_draw()
          {
             if( cur_op->get_type() == TURN )
             {
-                cur_op->create_path( *cur_contour, cur_tool->get_tool() );
+                cur_op->create_path( *cur_contour, *cur_tool );
                 cur_op->draw( 0,100,100,100 );
             }
          }

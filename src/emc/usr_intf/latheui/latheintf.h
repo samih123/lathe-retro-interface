@@ -302,7 +302,7 @@ struct tool
     int count;
     
     double feed;
-    int speed;
+    double speed;
     
     int tooln;
    
