@@ -275,6 +275,7 @@ void operation::set_tool( tool &T )
 void operation::save( FILE *fp )
 {
     if (fp == NULL) return;
+    
     if( type == TOOL )
     {
         fprintf(fp, "OPERATION %i //tool\n", type );
@@ -285,6 +286,37 @@ void operation::save( FILE *fp )
         fprintf(fp, "   COUNT %i\n", tl.count );
         fprintf(fp, "END\n" );
     }
+    
+    if( type == CONTOUR )
+    {
+        fprintf(fp, "OPERATION %i //contour\n", type );
+        fprintf(fp, "   INSIDE %i\n", (int)inside );
+        
+        for(list<struct cut>::iterator i = cl.begin(); i != cl.end(); i++)
+        {
+            vec2 dim;
+            dim = i->end - i->start;
+
+            fprintf(fp, "   CUT %i %.10g %.10g", i->type, dim.x , dim.z );
+            switch( i->type )
+            {
+                case CUT_BEGIN:
+                case CUT_LINE:
+                break;
+                case CUT_ARC_OUT:
+                case CUT_ARC_IN:
+                    fprintf(fp, " %.10g %.10g %.10g //arc", i->center.x, i->center.z, i->r);
+                break;
+                case CUT_THREAD:
+                    fprintf(fp, " %.10g %.10g //thread", i->pitch, i->depth );
+                break;
+            }
+            fprintf(fp, "\n" ); 
+        }
+        
+        fprintf(fp, "END\n" );
+    }
+    
 }
 
 
@@ -304,6 +336,14 @@ void findtag( const char *line, const char *tag, int &val,const int v )
     }      
 }
 
+void findtag( const char *line, const char *tag, bool &val,const int v )
+{
+    if( strcmp( tag, line ) == 0 )
+    {
+        val = (bool)v;
+    }      
+}
+
 void operation::load( FILE *fp )
 {
     if (fp == NULL) return;
@@ -312,23 +352,58 @@ void operation::load( FILE *fp )
     size_t len = 0;   
     ssize_t read;
     char tag[BUFFSIZE+1];
-    double val=0;
+    
+    double v1,v2,v3,v4,v5,v6;
 
     while ((read = getline( &line, &len, fp)) != -1)
     {
 
         printf("load %s", line);
+        v1 = v2 = v3 = v4 = v5 = v6 = 0;
         
-        sscanf(line, "%s %lf", tag, &val );
+        sscanf(line, "%s %lf %lf %lf %lf %lf %lf", tag, &v1, &v2, &v3, &v4, &v5, &v6 );
 
         if( type == TOOL )
         {
-            findtag( tag, "DEPTH", tl.depth, val );
-            findtag( tag, "FEED",  tl.feed, val );
-            findtag( tag, "SPEED", tl.speed, val );
-            findtag( tag, "TOOLN", tl.tooln, val );
-            findtag( tag, "COUNT", tl.count, val );
+            findtag( tag, "DEPTH", tl.depth, v1 );
+            findtag( tag, "FEED",  tl.feed, v1 );
+            findtag( tag, "SPEED", tl.speed, v1 );
+            findtag( tag, "TOOLN", tl.tooln, v1 );
+            findtag( tag, "COUNT", tl.count, v1 );
         }
+        
+        if( type == CONTOUR )
+        {
+            findtag( tag, "INSIDE", inside, v1 );
+            
+            if( strcmp( tag, "CUT") == 0 )
+            {
+                
+                new_cut( vec2( v2, v3 ), (cut_type)(int)v1 );
+                list<struct cut>::iterator i = --cl.end();
+                
+                switch( i->type )
+                {
+                    case CUT_BEGIN:
+                    case CUT_LINE:
+
+                    break;
+                    case CUT_ARC_OUT:
+                    case CUT_ARC_IN:
+                        i->center.x = v4;
+                        i->center.z = v5;
+                        i->r = v6;
+                    break;
+                    case CUT_THREAD:
+                        i->pitch = v4;
+                        i->depth = v5; 
+                    break;
+                }
+                
+            }  
+            
+        }
+               
         
         free(line);
         line = NULL;

@@ -39,7 +39,7 @@ void save( const char *name )
     printf("save:%s\n",strbuf);
     fp = fopen( strbuf, "w");
     if (fp == NULL) return;
-
+    fprintf(fp, "NAME %s\n", name );
     for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
     {
         i->save( fp );
