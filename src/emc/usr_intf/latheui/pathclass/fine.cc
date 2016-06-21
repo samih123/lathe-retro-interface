@@ -18,21 +18,30 @@ void fine_path::create( contour_path &c, double r, bool oside )
     // copy to temp list
     for(list<struct mov>::iterator i = c.ml.begin(); i != c.ml.end(); i++)
     {
-        if( i->start.dist( i->end ) > 0.001 )
+        if( i->start.dist( i->end ) > 0.001 || i == c.ml.begin() )
         {
             tp.create_line( i->end, FEED );
             tp.ml.back().start = i->start;
-          //  tp.ml.back().end = i->end;
+            tp.ml.back().end = i->end;
         }
 
     }
 
     // move normal direction
-    for(list<struct mov>::iterator i = tp.ml.begin(); i != tp.ml.end(); i++)
+    bool first = true;
+    for(list<struct mov>::iterator i = ++(tp.ml.begin()); i != tp.ml.end(); i++)
     {
         n = i->start.normal( i->end ) * r;
         i->start += n;
         i->end += n;
+        
+        if( first ) // move a start point too.
+        {
+            first = false;
+            tp.ml.front().start += n;
+            tp.ml.front().end += n;
+        }
+        
     }
 
     // fix intersections
@@ -98,9 +107,7 @@ void fine_path::create( contour_path &c, double r, bool oside )
         start =  i->end;
     }
 
-   // if( ml.size() > 0 ) ml.front().start.x = -0.1;
     remove_knots();
     findminmax();
-
 
 }

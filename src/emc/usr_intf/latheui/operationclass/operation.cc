@@ -127,6 +127,7 @@ void operation::draw( int x,int y,int xs,int ys)
             y2 = -i->end.x;
 
             {
+                
                 glBegin(GL_LINES);
                     setcolor( GREY );
                     glVertex2f( x2, -y2 );
@@ -433,18 +434,15 @@ void operation::create_contour( contour_path &p )
     for(list<struct cut>::iterator i = cl.begin(); i != cl.end(); i++)
     {
 
-      //  if( i->type != CUT_BEGIN )
+        if( i->type == CUT_ARC_IN || i->type == CUT_ARC_OUT )
         {
-            if( i->type == CUT_ARC_IN || i->type == CUT_ARC_OUT )
-            {
-                double l = i->start.dist( i->end ) + 0.00001f;
-                if( i->r < l/2.0f )  i->r = l/2.0f;
-                p.create_arc( *i, i->start, i->end, i->r, i->type == CUT_ARC_IN );
-            }
-            else
-            {
-                p.create_line( i->end, i->type );
-            }
+            double l = i->start.dist( i->end ) + 0.00001f;
+            if( i->r < l/2.0f )  i->r = l/2.0f;
+            p.create_arc( *i, i->start, i->end, i->r, i->type == CUT_ARC_IN );
+        }
+        else
+        {
+            p.create_line( i->end, i->type );
         }
 
     }

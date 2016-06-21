@@ -9,16 +9,15 @@ extern const int maxrpm;
 void path::create_line( const vec2 &v , const int t, const char *comment )
 {
     vec2 start;
-    if( ml.empty() )
+    if( ml.empty() || t == CUT_BEGIN )
     {
-        //start.x = start.z = 0;
         start = v;
     }
     else
     {
         start = ml.back().end;
     }
-    ml.push_back( mov( v.x, v.z , t ) );
+    ml.push_back( mov( vec2( v.x, v.z ) , t ) );
     ml.back().start = start;
     if( comment != NULL ) ml.back().comment = comment;
 }
@@ -261,7 +260,7 @@ void path::remove_knots()
 
 void path::draw( bool both )
 {
-  
+    
     for(list<struct mov>::iterator i = ++(ml.begin()); i != ml.end(); i++)
     {
 
@@ -328,9 +327,11 @@ void path::save( FILE *fp )
 }
 void path::findminmax()
 {
+    if( ml.empty() ) return;
+    
     min = 1000000000;
     max = -1000000000;
-    vec2 start(0,0);
+    vec2 start =  ml.front().end;
     for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
     {
         i->end.findminmax( min, max );

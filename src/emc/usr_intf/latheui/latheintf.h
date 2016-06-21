@@ -327,16 +327,11 @@ struct cut
 
 struct mov
 {
-    mov( double ax,double az, int ct )
-    {
-        end.x = ax;
-        end.z = az;
-        feed = 0;
-        type = ct;
-    }
+
     mov( const vec2 &v, int ct )
     {
         end = v;
+        start = v;
         feed = 0;
         type = ct;
     }
