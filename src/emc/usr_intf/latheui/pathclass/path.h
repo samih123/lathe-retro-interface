@@ -11,8 +11,8 @@ class path
         ml.clear();
     }
     
-    void create_line( const vec2 &v , const int t, const char *comment = NULL );
-    void create_arc( struct cut &c, const vec2 v1, const vec2 v2, const double r, const bool side);
+    void create_line( const vec2 &v , const move_type t, const char *comment = NULL );
+    void create_arc( struct cut &c, const vec2 v1, const vec2 v2, const double r, const bool side, const move_type t );
     void rapid_move( const vec2 v );
     void remove_knots();
     
@@ -31,7 +31,7 @@ class path
    // int type;
     std::list<struct mov> ml;
     vec2 min,max;    
-    bool outside;
+    Side side;
     //friend class fine_path;
     //friend class rough_path;
     //friend class undercut_path;
@@ -47,13 +47,13 @@ class contour_path:public path
 class fine_path:public path
 {
     public:
-    void create( contour_path &c, double r, bool outside = true );
+    void create( contour_path &c, double r, Side side, const move_type t );
 };
 
 class rough_path:public path
 {
     public:
-    void create( contour_path &c, const tool &tl, bool outside = true );
+    void create( contour_path &c, const tool &tl, Side side );
     void draw( bool both );
     fine_path tc;
 };
@@ -61,7 +61,7 @@ class rough_path:public path
 class undercut_path:public path
 {
     public:
-    void create( contour_path &c, double depth, double tool_r, double retract, bool outside = true );
+    void create( contour_path &c, double depth, double tool_r, double retract, Side side );
     void draw( bool both );
     fine_path tc;
 };

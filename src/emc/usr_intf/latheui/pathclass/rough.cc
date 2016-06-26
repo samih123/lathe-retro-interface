@@ -3,13 +3,13 @@
 extern const double retract;
 extern char strbuf[BUFFSIZE];;
 
-void rough_path::create( contour_path &c, const tool &tl, bool oside )
+void rough_path::create( contour_path &c, const tool &tl, Side s )
 {
     
     double tool_r = _tools[ tl.tooln ].diameter/2.0f;
     
-    outside = oside;
-    tc.create( c, tool_r, outside );
+    side = s;
+    tc.create( c, tool_r, side, MOV_CONTOUR );
     
     double x;
     double min_z = c.min.z;

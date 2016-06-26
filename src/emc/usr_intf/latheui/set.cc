@@ -192,7 +192,7 @@ void update()
             glClearColor ( 0.0f, 0.0f, 0.0f, 1.0f );
             glClear( GL_COLOR_BUFFER_BIT );
             
-            println( "", 0, 0, 12, GREEN );
+            println( "", 0, 0, 12 );
             for(std::list<string>::iterator i = updatelog.begin(); i!= updatelog.end(); i++)
             {
                 println( i->c_str() );

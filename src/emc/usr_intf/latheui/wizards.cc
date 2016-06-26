@@ -79,6 +79,7 @@ const char* phasename( int type )
 
     if(type == TOOL ) return "Tool";
     else if(type == CONTOUR ) return "Contour";
+    else if(type == INSIDE_CONTOUR ) return "Inside contour";
     else if(type == TURN ) return "Turning";
     else if(type == UNDERCUT ) return "Undercut";
     else if(type == FINISHING ) return "Finishing";
@@ -92,9 +93,16 @@ const char* phasename( int type )
 
 void getzd()
 {
-    if( cur_contour != opl.end() ) ccut = cur_contour->get_cut();
-    if( cur_tool != opl.end() ) ctool = cur_tool->get_tool();
-    diameter = ccut.end.x *2.0;
+    if( cur_contour != opl.end() ){
+         ccut = cur_contour->get_cut();
+         diameter = ccut.end.x *2.0;
+    }
+    
+    if( cur_tool != opl.end() )
+    {
+        ctool = cur_tool->get_tool();
+    }
+    
 }
 
 static const char *typestr[] =
@@ -120,6 +128,9 @@ void create_phase_menu()
     Menu.begin( phasename( type ) );
         if( type == CONTOUR )
         {
+            sprintf(Dstr,"D start:%.20g end:", ccut.start.x*2.0f );
+            sprintf(Zstr,"Z start:%.20g lenght:", ccut.start.z );
+
             Menu.edit( &ccut.type, typestr[ ccut.type ] );Menu.hiddenvalue();
             Menu.select( &menuselect, MENU_DELETECUT, "Delete" );
             Menu.select( &menuselect, MENU_NEWCUT, "New" );
@@ -177,6 +188,7 @@ void create_main_menu()
             Menu.back("Back");
             create_new_phase_menu( TOOL );
             create_new_phase_menu( CONTOUR );
+            create_new_phase_menu( INSIDE_CONTOUR );
             create_new_phase_menu( TURN );
             create_new_phase_menu( UNDERCUT );
             create_new_phase_menu( FINISHING );
@@ -318,7 +330,7 @@ void draw_thread(double x1, double y1, double x2, double y2, double pitch, doubl
     double x = x1;
     double y = y1;
     glBegin(GL_LINE_STRIP);
-        setcolor( GREEN );
+        setcolor( CONTOUR_LINE );
         glVertex2f( x1, y1 );
         for( int i=0 ; i < n-1 ; i++ )
         {
@@ -340,7 +352,7 @@ void draw_thread(double x1, double y1, double x2, double y2, double pitch, doubl
     x = x1;
     y = y1;
     glBegin(GL_LINE_STRIP);
-        setcolor( GREEN );
+        setcolor( CONTOUR_LINE );
         glVertex2f( x1, -y1 );
         for( int i=0 ; i < n-1 ; i++ )
         {
@@ -551,7 +563,7 @@ void wizards_parse_serialdata()
         if( Menu.edited( &phasecreate ) )
         {
             opl.push_back( operation( phasecreate ) );
-            if( phasecreate == CONTOUR )
+            if( phasecreate == CONTOUR || phasecreate == INSIDE_CONTOUR )
             {
                 cur_contour = --opl.end();
                 cur_contour->new_cut(vec2(0,10),CUT_BEGIN );
@@ -596,9 +608,13 @@ void wizards_parse_serialdata()
         if( cur_contour != opl.end() )
         {
 
-            if( Menu.edited( &ccut.end.z ) ||  Menu.edited( &diameter ) || Menu.edited( &ccut.type ) )
+            if( Menu.edited( &ccut.end.z ) || 
+                Menu.edited( &diameter ) ||
+                Menu.edited( &ccut.type ) 
+            )
             {
                 ccut.end.x = diameter / 2.0;
+                
                 cur_contour->set_cut( ccut );
                 if( Menu.edited( &ccut.type ) )
                 {
@@ -652,7 +668,7 @@ void wizards_draw()
          {
             if( cur_op->get_type() == TURN )
             {
-                cur_op->create_path( *cur_contour, *cur_tool );
+                cur_op->create_path( *cur_contour, *cur_tool ,cur_contour->get_side() );
                 cur_op->draw( 0,100,100,100 );
             }
          }

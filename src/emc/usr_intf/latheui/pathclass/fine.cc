@@ -7,20 +7,20 @@ extern const int maxrpm;
 extern const vec2 startposition;
 
 
-void fine_path::create( contour_path &c, double r, bool oside )
+void fine_path::create( contour_path &c, double r, Side s, move_type mtype )
 {
     
     vec2 n;
     path tp;
     ml.clear();
-    outside = oside;
+    side = s;
     
     // copy to temp list
     for(list<struct mov>::iterator i = c.ml.begin(); i != c.ml.end(); i++)
     {
         if( i->start.dist( i->end ) > 0.001 || i == c.ml.begin() )
         {
-            tp.create_line( i->end, FEED );
+            tp.create_line( i->end, mtype );
             tp.ml.back().start = i->start;
             tp.ml.back().end = i->end;
         }
@@ -32,6 +32,12 @@ void fine_path::create( contour_path &c, double r, bool oside )
     for(list<struct mov>::iterator i = ++(tp.ml.begin()); i != tp.ml.end(); i++)
     {
         n = i->start.normal( i->end ) * r;
+        
+        if( side == INSIDE )
+        {
+            n = -n;
+        }
+        
         i->start += n;
         i->end += n;
         
@@ -79,7 +85,7 @@ void fine_path::create( contour_path &c, double r, bool oside )
     for( list<struct mov>::iterator i1 = tp.ml.begin(); i1 != tp.ml.end(); i1++,i2++)
     {
 
-        create_line( i1->end, FEED );
+        create_line( i1->end, mtype );
         if(  i1 == tp.ml.begin() )  start = i1->start; // first start
 
         double l = i1->end.dist( i2->start ) ;
@@ -91,11 +97,11 @@ void fine_path::create( contour_path &c, double r, bool oside )
                 double r2 = fabs(r);
                 double l = i1->end.dist( i2->start ) + 0.00001f;
                 if( r2 < l/2.0f )  r2 = l/2.0f;
-                create_arc( cutp, i1->end, i2->start , r2, (r < 0) );
+                create_arc( cutp, i1->end, i2->start , r2, (r < 0), mtype);
             }
             else
             {
-                create_line( i2->start, FEED );
+                create_line( i2->start, mtype );
             }
         }
     }

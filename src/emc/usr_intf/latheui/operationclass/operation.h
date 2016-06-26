@@ -16,8 +16,8 @@ class operation
     tool get_tool();
     void set_tool( tool &c );
     
-    void set_inside( bool s ){ inside = s;} 
-    bool is_inside(){ return inside; }; 
+    //void set_inside( bool s ){ inside = s;} 
+    Side get_side(){ return side; }; 
     void draw( int x1,int y1,int x2,int y2);
     void new_cut( vec2 p, cut_type t );
     
@@ -27,7 +27,7 @@ class operation
     void save( FILE *fp ); 
     void load( FILE *fp );
     void create_contour( contour_path &p );
-    void create_path( operation &ccontour, operation &ctool );
+    void create_path( operation &ccontour, operation &ctool, Side s );
 
     int get_type(){ return type; };
     
@@ -37,7 +37,7 @@ class operation
     // shape
     list<struct cut>::iterator currentcut;
     std::list<struct cut> cl;
-    bool inside;
+    Side side;
     contour_path contour;
     
     // tool

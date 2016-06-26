@@ -29,11 +29,33 @@ void setcolor( int color )
     else if( color == WHITE ) glColor3f ( 1.0f, 1.0f, 1.0f );
     else if( color == GREY ) glColor3f ( 0.5f, 0.5f, 0.5f );
     else if( color == MAGENTA ) glColor3f ( 1.0f, 0.0f, 1.0f );
+    else if( color == BLACK ) glColor3f ( 0.0f, 0.0f, 0.0f );
+}
+   
+void setcolor( color c )
+{
+    switch( c )
+    {
+        case BACKROUND: setcolor( BLACK ); break;
+        case FEED: setcolor( YELLOW ); break;
+        case RAPID: setcolor( RED ); break;
+        case CONTOUR_LINE: setcolor( GREEN ); break;
+        case CONTOUR_SHADOW: setcolor( GREY ); break;
+        case CROSS: setcolor( GREY ); break;
+        case OUTLINE: setcolor( GREY ); break;
+        case CENTERLINE: setcolor( GREY ); break;
+        case TEXT: setcolor( GREEN ); break;
+        case WARNING: setcolor( RED ); break;
+        case ERROR: setcolor( YELLOW ); break;
+        case DISABLED: setcolor( GREY ); break;
+        case DIRECTORY: setcolor( RED ); break;
+        
+    }
 }
 
-void printStringUsingGlutVectorFont(const char *string, int x, int y, float size, int color)
+void printStringUsingGlutVectorFont(const char *string, int x, int y, float size, color c )
 {
-    setcolor( color );
+    setcolor( c );
    // glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glTranslatef(x, screenh-y, 0);
@@ -43,35 +65,30 @@ void printStringUsingGlutVectorFont(const char *string, int x, int y, float size
     glPopMatrix();
 }
 
-void print(const char *s, int x, int y ,int size)
+void print(const char *s, int x, int y ,int size, color c )
 {
-    if(s) printStringUsingGlutVectorFont(s,x,y, (float)size / glutStrokeHeight(GLUT_STROKE_MONO_ROMAN), GREEN );
+    if(s) printStringUsingGlutVectorFont(s,x,y, (float)size / glutStrokeHeight(GLUT_STROKE_MONO_ROMAN), c );
 }
 
-void print(const char *s, int x, int y ,int size, int color )
+void println(const char *s, int x, int y, int size, color c )
 {
-    if(s) printStringUsingGlutVectorFont(s,x,y, (float)size / glutStrokeHeight(GLUT_STROKE_MONO_ROMAN), color );
-}
-
-void println(const char *s, int x, int y, int size, int color )
-{
-    print( s, x, y, size, color );
+    print( s, x, y, size, c );
     print_y = y;
     print_x = x;
     print_s = size;
 }
 
-void println( int x, int y, int size, int color )
+void println( int x, int y, int size, color c )
 {
     print_x = x;
     print_s = size;
     print_y = y - ( print_s + print_s/16 );
 }
 
-void println(const char *s, int color )
+void println(const char *s, color c )
 {
     print_y += print_s + print_s/16;
-    print(s, print_x, print_y , print_s, color);
+    print(s, print_x, print_y , print_s, c);
 }
 
 
@@ -142,7 +159,7 @@ void drawCircle(GLfloat x, GLfloat y, GLfloat radius){
 
 }
 
-int axiscolor( int n )
+color axiscolor( int n )
 {
 
     if( emcStatus->motion.axis[ n ].minSoftLimit ||
@@ -150,14 +167,17 @@ int axiscolor( int n )
         emcStatus->motion.axis[ n ].minHardLimit ||
         emcStatus->motion.axis[ n ].maxHardLimit )
     {
-        if( flasher ) return RED;
-        return GREY;
+        return flasher ? WARNING:DISABLED;
     }   
     
-    if( ! emcStatus->motion.axis[ n ].enabled ) return GREY;
-    if( emcStatus->motion.axis[ n ].homed ) return GREEN;
-    if( emcStatus->motion.axis[ n ].homing ) return ORANGE;
-    return RED;
+    if( ! emcStatus->motion.axis[ n ].enabled ) return DISABLED;
+    if( emcStatus->motion.axis[ n ].homed ) return TEXT;
+    
+    if( emcStatus->motion.axis[ n ].homing ){
+        return flasher ? WARNING:DISABLED;
+    }
+    
+    return WARNING;
 }
 
 

@@ -80,9 +80,9 @@ void menu::hiddenvalue()
     cmi->ml.back().hidden = true;
 }  
 
-void menu::color( int c )
+void menu::setcolor( color c )
 {
-    cmi->ml.back().color = c;
+    cmi->ml.back().tcolor = c;
 }
 
 void menu::end()
@@ -158,7 +158,7 @@ void menu::draw( int x, int y)
 {
 
     
-    println( x, y, 20, cmi->color );
+    println( x, y, 20, cmi->tcolor );
     if( cmi->name[0] != 0 ) println( cmi->name );
    
     int selected = std::distance( cmi->ml.begin(), cmi->it);
@@ -183,23 +183,23 @@ void menu::draw( int x, int y)
                     case TYPESELECT:
                     case TYPEBEGIN:
                         sprintf(strbuf,"%s%s", arrow, i->name );
-                        println( strbuf, i->color );
+                        println( strbuf, i->tcolor );
                     break;                 
                     case TYPEINT:
                         sprintf(strbuf,"%s%s %s", arrow, i->name, i->str );
-                        println( strbuf, i->color );
+                        println( strbuf, i->tcolor );
                     break;
                     case TYPESTR:
                         sprintf(strbuf,"%s%s %s", arrow, i->name, (char *)i->val );
-                        println( strbuf,i->color );
+                        println( strbuf,i->tcolor );
                     break;                
                     case TYPEDOUBLE:
                         sprintf(strbuf,"%s%s%s", arrow, i->name, i->str );
-                        println( strbuf, i->color );
+                        println( strbuf, i->tcolor );
                     break;      
                     case TYPEBOOL:
                         sprintf(strbuf,"%s%s %s", arrow, i->name, *(bool *)i->val ? "On":"Off" );
-                        println( strbuf, i->color );
+                        println( strbuf, i->tcolor );
                     break;                                     
                 }
             }

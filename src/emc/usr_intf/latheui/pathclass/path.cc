@@ -6,10 +6,10 @@ extern char strbuf[BUFFSIZE];
 extern const int maxrpm;
 
 
-void path::create_line( const vec2 &v , const int t, const char *comment )
+void path::create_line( const vec2 &v , const move_type t, const char *comment )
 {
     vec2 start;
-    if( ml.empty() || t == CUT_BEGIN )
+    if( ml.empty() )
     {
         start = v;
     }
@@ -23,7 +23,7 @@ void path::create_line( const vec2 &v , const int t, const char *comment )
 }
 
 
-void path::create_arc( struct cut &c, const vec2 v1, const vec2 v2, const double r, const bool side)
+void path::create_arc( struct cut &c, const vec2 v1, const vec2 v2, const double r, const bool side, move_type mtype )
 {
 
     double x1 = v1.x;
@@ -69,7 +69,7 @@ void path::create_arc( struct cut &c, const vec2 v1, const vec2 v2, const double
     double y = r * sinf(start_angle);
     for(int ii = 0; ii < num_segments; ii++)
     {
-        create_line( vec2(x + cx, y + cy), c.type );
+        create_line( vec2(x + cx, y + cy), mtype );
         double tx = -y;
         double ty = x;
         x += tx * tangetial_factor;
@@ -84,9 +84,9 @@ void path::rapid_move( const vec2 v )
     double r = stockdiameter/2.0f + retract;
     if( r < ml.back().end.x ) r = ml.back().end.x;
     if( r < v.x ) r = v.x;
-    create_line( vec2( r, ml.back().end.z ), RAPID );
-    create_line( vec2( r, v.z ), RAPID );
-    create_line( v, RAPID );
+    create_line( vec2( r, ml.back().end.z ), MOV_RAPID );
+    create_line( vec2( r, v.z ), MOV_RAPID );
+    create_line( v, MOV_RAPID );
 }
 
 
@@ -104,9 +104,9 @@ void path::feed_to_left( path &colp, list<struct mov>::iterator fi, vec2 v, doub
     bool first = (ml.size() == 0);
   //  if( v.dist( v2 ) > retract*2.0 ){
         if( ! first ) rapid_move( vec2( v.x + retract + depth, v.z - retract ) );
-        create_line( v, FEED );
-        create_line( v2 , FEED );
-        create_line( vec2( v2.x + retract, v2.z + retract ) , FEED );
+        create_line( v, MOV_FEED );
+        create_line( v2 , MOV_FEED );
+        create_line( vec2( v2.x + retract, v2.z + retract ) , MOV_FEED );
   //  }
 }
 
@@ -265,18 +265,19 @@ void path::draw( bool both )
     {
 
 
-        if( i->type == RAPID )
+        if( i->type == MOV_FEED )
         {
-            setcolor( RED );
+            setcolor( FEED );
         }
-        else if( i->type == FEED )
+        else if( i->type == MOV_CONTOUR )
         {
-            setcolor( YELLOW );
+            setcolor( CONTOUR_LINE );
         }
         else
         {
-            setcolor( GREEN );
+            setcolor( RAPID );
         }
+        
 
         glBegin(GL_LINES);
 
@@ -316,7 +317,7 @@ void path::save( FILE *fp )
             sprintf( strbuf, "( %s )", i->comment.c_str() );
         }
         fprintf(fp, "G%s X%.4f Z%.4f%s\n",
-            i->type == FEED ? "1":"0" ,
+            i->type == MOV_FEED ? "1":"0" ,
             fabs( i->end.x ) < 0.001 ? 0:i->end.x,
             fabs( i->end.z ) < 0.001 ? 0:i->end.z,
             strbuf

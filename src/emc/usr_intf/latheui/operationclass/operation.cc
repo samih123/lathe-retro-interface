@@ -31,7 +31,7 @@ static void draw_thread(double x1, double y1, double x2, double y2, double pitch
     double x = x1;
     double y = y1;
     glBegin(GL_LINE_STRIP);
-        setcolor( GREEN );
+        setcolor( CONTOUR_LINE );
         glVertex2f( x1, y1 );
         for( int i=0 ; i < n-1 ; i++ )
         {
@@ -53,7 +53,7 @@ static void draw_thread(double x1, double y1, double x2, double y2, double pitch
     x = x1;
     y = y1;
     glBegin(GL_LINE_STRIP);
-        setcolor( GREEN );
+        setcolor( CONTOUR_LINE );
         glVertex2f( x1, -y1 );
         for( int i=0 ; i < n-1 ; i++ )
         {
@@ -80,11 +80,12 @@ operation::operation( int t )
     scale = 1;
     pos.x = pos.z = 0;
     type = t;
-    inside = false;
-    if( type == CONTOUR )
+    side = OUTSIDE;
+    
+    if( type == INSIDE_CONTOUR )
     {
-      //  cl.clear();
-      //  new_cut( vec2(13,12), CUT_LINE );
+        side = INSIDE;
+        type = CONTOUR;
     }
 
 }
@@ -111,7 +112,7 @@ void operation::draw( int x,int y,int xs,int ys)
     glScalef(scale*3.0f, scale*3.0f,scale*3.0f);
     glTranslatef( pos.x ,pos.z , 0);
     glBegin(GL_LINES);
-        setcolor( GREY );
+        setcolor( CENTERLINE );
         glVertex2f( 10,0 );
         glVertex2f( -600,0 );
     glEnd();
@@ -129,7 +130,7 @@ void operation::draw( int x,int y,int xs,int ys)
             {
                 
                 glBegin(GL_LINES);
-                    setcolor( GREY );
+                    setcolor( CONTOUR_SHADOW );
                     glVertex2f( x2, -y2 );
                     glVertex2f( x2, y2  );
                     glVertex2f( x1, -y1 );
@@ -138,20 +139,19 @@ void operation::draw( int x,int y,int xs,int ys)
 
                 if(i->type == CUT_THREAD )
                 {
-                    setcolor( GREEN );
                     draw_thread( x1,  y1,  x2,  y2, i->pitch, i->depth );
                 }
 
                 if( i->type == CUT_ARC_IN || i->type == CUT_ARC_OUT )
                 {
-                    setcolor( GREEN );
+                    setcolor( CROSS );
                     drawCross( i->center.z, i->center.x, 3.0f / scale );
                     drawCross( i->center.z, -i->center.x, 3.0f / scale );
                 }
 
                 if( i == currentcut )
                 {
-                    setcolor( RED );
+                    setcolor( WARNING );
                     drawCircle( x2, y2, 3.0f / scale );
                 }
             }
@@ -288,10 +288,10 @@ void operation::save( FILE *fp )
         fprintf(fp, "END\n" );
     }
     
-    if( type == CONTOUR )
+    else if( type == CONTOUR )
     {
         fprintf(fp, "OPERATION %i //contour\n", type );
-        fprintf(fp, "   INSIDE %i\n", (int)inside );
+        fprintf(fp, "   SIDE %i\n", (int)side );
         
         for(list<struct cut>::iterator i = cl.begin(); i != cl.end(); i++)
         {
@@ -317,6 +317,13 @@ void operation::save( FILE *fp )
         
         fprintf(fp, "END\n" );
     }
+    else
+    {
+        fprintf(fp, "OPERATION %i\n", type );
+        fprintf(fp, "END\n" );
+    }
+    
+    
     
 }
 
@@ -375,7 +382,9 @@ void operation::load( FILE *fp )
         
         if( type == CONTOUR )
         {
-            findtag( tag, "INSIDE", inside, v1 );
+            int s = (int)side;
+            findtag( tag, "SIDE", s, v1 );
+            side = (Side)s;
             
             if( strcmp( tag, "CUT") == 0 )
             {
@@ -438,11 +447,11 @@ void operation::create_contour( contour_path &p )
         {
             double l = i->start.dist( i->end ) + 0.00001f;
             if( i->r < l/2.0f )  i->r = l/2.0f;
-            p.create_arc( *i, i->start, i->end, i->r, i->type == CUT_ARC_IN );
+            p.create_arc( *i, i->start, i->end, i->r, i->type == CUT_ARC_IN, MOV_CONTOUR );
         }
         else
         {
-            p.create_line( i->end, i->type );
+            p.create_line( i->end, MOV_CONTOUR );
         }
 
     }
@@ -453,7 +462,7 @@ void operation::create_contour( contour_path &p )
 }
 
 
-void operation::create_path( operation &ccontour, operation &ctool )
+void operation::create_path( operation &ccontour, operation &ctool, Side s )
 {
     if( type != TURN || ccontour.type != CONTOUR || ctool.type != TOOL )
     {
@@ -462,7 +471,7 @@ void operation::create_path( operation &ccontour, operation &ctool )
     }
 
     ccontour.create_contour( contour );
-    r_path.create( ccontour.contour, ctool.get_tool() );
+    r_path.create( ccontour.contour, ctool.get_tool(), s );
 
 }
 

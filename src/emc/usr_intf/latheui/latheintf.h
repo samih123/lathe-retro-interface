@@ -64,14 +64,28 @@ using namespace std;
 #define GREY 6
 #define WHITE 7
 #define MAGENTA 8
+#define BLACK 9
+
+
+enum color
+{
+    BACKROUND,
+    FEED,
+    RAPID,
+    CONTOUR_LINE,
+    CONTOUR_SHADOW,
+    CROSS,
+    OUTLINE,
+    CENTERLINE,
+    TEXT,
+    WARNING,
+    ERROR,
+    DISABLED,
+    DIRECTORY
+};
 
 #define MAXTOOLS 20
 
-//#define LINE 0
-//#define THREAD 3
-//#define GROOVE 4
-#define RAPID 5
-#define FEED 6
 
 enum cut_type
 {
@@ -85,14 +99,16 @@ enum cut_type
 
 enum move_type
 {
-    MOV_LINE,
-    MOV_RAPID
+    MOV_FEED,
+    MOV_RAPID,
+    MOV_CONTOUR
 };
 
 enum op_type
 {
     TOOL,
     CONTOUR,
+    INSIDE_CONTOUR,
     TURN,
     UNDERCUT,
     FINISHING,
@@ -100,6 +116,12 @@ enum op_type
     FACING,
     DRILL,
     PARTING 
+};
+
+enum Side
+{
+    OUTSIDE,
+    INSIDE
 };
 
 class vec2
@@ -113,6 +135,8 @@ public:
     ~vec2() {} ;
  
     double x, z;
+ 
+ 
     
      vec2 &operator=(const double &d) {
         x = d;
@@ -125,6 +149,10 @@ public:
         z = v.z;
         return *this;
     }
+    
+    vec2 operator-() {
+        return vec2(-x,-z);
+    }    
     
     vec2 &operator+=(const vec2 &v) {
         x += v.x;
@@ -328,12 +356,12 @@ struct cut
 struct mov
 {
 
-    mov( const vec2 &v, int ct )
+    mov( const vec2 &v, move_type t )
     {
         end = v;
         start = v;
         feed = 0;
-        type = ct;
+        type = t;
     }
     ~mov()
     {
@@ -345,7 +373,7 @@ struct mov
     double pitch;
     double depth;
     double feed;
-    int type;
+    move_type type;
     string comment;
     
 };
@@ -377,7 +405,7 @@ struct menuitem
         edited = false;
         shortcut = NULL;
         val = NULL;
-        color = GREEN;
+        tcolor = TEXT;
     };
     ~menuitem()
     {
@@ -395,7 +423,7 @@ struct menuitem
     menuitem *up;
     bool hidden;
     bool edited;
-    int color;
+    color tcolor;
 }; 
 
 
@@ -411,7 +439,7 @@ class menu
     void setmaxlines( int l );
     
     void hiddenvalue();
-    void color( int c );
+    void setcolor( color c );
     void shortcut( const char *shortcut );
     
     void edit( int *i, const char *n);
@@ -442,12 +470,12 @@ int get_line_intersection( vec2 S1P0, vec2 S1P1 , vec2 S2P0, vec2 S2P1, vec2 &I0
 
 
 void init_opengl( int argc, char **argv );
-void setcolor( int color );
-void print(const char *s, int x, int y ,int size);
-void print(const char *s, int x, int y ,int size, int color );
-void println(const char *s, int x, int y, int size = 10 , int color = GREEN );
-void println(const char *s, int color = GREEN);
-void println( int x, int y, int size, int color );
+//void setcolor( int color );
+void setcolor( color c );
+void print(const char *s, int x, int y ,int size, color c = TEXT );
+void println(const char *s, int x, int y, int size = 10 , color c = TEXT );
+void println(const char *s, color c = TEXT );
+void println( int x, int y, int size, color c = TEXT );
 
 void draw_dro( vec2 *cpos = NULL );
 void draw_statusbar( const char *s );

@@ -65,7 +65,7 @@ static void createmenu( const char* s )
             Menu.select( &menuselect, cnt , eps[cnt]->d_name );
             if( eps[cnt]->d_type == DT_DIR )
             {
-                Menu.color( BLUE );
+                Menu.setcolor( DIRECTORY );
             }
         }
     }
