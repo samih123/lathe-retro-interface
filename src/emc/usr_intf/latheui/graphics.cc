@@ -347,8 +347,11 @@ void draw_tool( int i )
 
 void updatescreen(void)
 {
-    
-    glClearColor ( 0.0f, 0.0f, 0.0f, 1.0f );
+    float c[4];
+    setcolor( BACKROUND );
+    glGetFloatv(GL_CURRENT_COLOR, c);
+
+    glClearColor ( c[0], c[1], c[2], 1.0f );
     glClear      ( GL_COLOR_BUFFER_BIT );
     
     switch( status.screenmode )
