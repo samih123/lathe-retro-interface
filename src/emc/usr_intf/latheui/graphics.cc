@@ -19,36 +19,52 @@ int print_x = 0;
 int print_s = 20;
 list<string> ser_emul;
 
-void setcolor( int color )
+enum rawcolor
 {
-    if( color == RED ) glColor3f ( 1.0f, 0, 0 );
-    else if( color == BLUE ) glColor3f ( 0, 0, 1.0f );
-    else if( color == GREEN ) glColor3f ( 0, 1.0f, 0 );
-    else if( color == ORANGE ) glColor3f ( 1.0f, 0.65f, 0.0f );
-    else if( color == YELLOW ) glColor3f ( 1.0f, 1.0f, 0.0f );
-    else if( color == WHITE ) glColor3f ( 1.0f, 1.0f, 1.0f );
-    else if( color == GREY ) glColor3f ( 0.5f, 0.5f, 0.5f );
-    else if( color == MAGENTA ) glColor3f ( 1.0f, 0.0f, 1.0f );
-    else if( color == BLACK ) glColor3f ( 0.0f, 0.0f, 0.0f );
+   RED, 
+   GREEN,
+   BLUE, 
+   ORANGE,
+   YELLOW,
+   GREY,
+   WHITE,
+   MAGENTA,
+   BLACK
+};
+
+void setrawcolor( rawcolor color )
+{
+    switch( color )
+    {
+        case RED    : glColor3f ( 1.0f, 0, 0 ); break;
+        case BLUE   : glColor3f ( 0, 0, 1.0f ); break;
+        case GREEN  : glColor3f ( 0, 1.0f, 0 ); break;
+        case ORANGE : glColor3f ( 1.0f, 0.65f, 0.0f ); break;
+        case YELLOW : glColor3f ( 1.0f, 1.0f, 0.0f ); break;
+        case WHITE  : glColor3f ( 1.0f, 1.0f, 1.0f ); break;
+        case GREY   : glColor3f ( 0.5f, 0.5f, 0.5f ); break;
+        case MAGENTA: glColor3f ( 1.0f, 0.0f, 1.0f ); break;
+        case BLACK  : glColor3f ( 0.0f, 0.0f, 0.0f ); break;
+    }
 }
    
 void setcolor( color c )
 {
     switch( c )
     {
-        case BACKROUND: setcolor( BLACK ); break;
-        case FEED: setcolor( YELLOW ); break;
-        case RAPID: setcolor( RED ); break;
-        case CONTOUR_LINE: setcolor( GREEN ); break;
-        case CONTOUR_SHADOW: setcolor( GREY ); break;
-        case CROSS: setcolor( GREY ); break;
-        case OUTLINE: setcolor( GREY ); break;
-        case CENTERLINE: setcolor( GREY ); break;
-        case TEXT: setcolor( GREEN ); break;
-        case WARNING: setcolor( RED ); break;
-        case ERROR: setcolor( YELLOW ); break;
-        case DISABLED: setcolor( GREY ); break;
-        case DIRECTORY: setcolor( RED ); break;
+        case BACKROUND: setrawcolor( BLACK ); break;
+        case FEED: setrawcolor( YELLOW ); break;
+        case RAPID: setrawcolor( RED ); break;
+        case CONTOUR_LINE: setrawcolor( GREEN ); break;
+        case CONTOUR_SHADOW: setrawcolor( GREY ); break;
+        case CROSS: setrawcolor( GREY ); break;
+        case OUTLINE: setrawcolor( GREY ); break;
+        case CENTERLINE: setrawcolor( GREY ); break;
+        case TEXT: setrawcolor( GREEN ); break;
+        case WARNING: setrawcolor( RED ); break;
+        case ERROR: setrawcolor( YELLOW ); break;
+        case DISABLED: setrawcolor( GREY ); break;
+        case DIRECTORY: setrawcolor( RED ); break;
         
     }
 }
@@ -282,7 +298,7 @@ void draw_tool( int i )
     };
     
     float radius = diameter / 2.0f;
-    setcolor( YELLOW );
+    setrawcolor( YELLOW );
     glBegin(GL_LINES);
         glVertex2f(-radius/2.0,0.0);
         glVertex2f(radius/2.0,0.0);

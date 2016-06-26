@@ -56,17 +56,6 @@ using namespace std;
 
 #define BUFFSIZE 1000
 
-#define RED 1
-#define GREEN 2
-#define BLUE 3
-#define ORANGE 4
-#define YELLOW 5
-#define GREY 6
-#define WHITE 7
-#define MAGENTA 8
-#define BLACK 9
-
-
 enum color
 {
     BACKROUND,
