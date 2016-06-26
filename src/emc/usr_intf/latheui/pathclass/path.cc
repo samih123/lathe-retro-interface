@@ -16,6 +16,10 @@ void path::create_line( const vec2 &v , const move_type t, const char *comment )
     else
     {
         start = ml.back().end;
+        if( start == v ) 
+        {
+            return; // zero movement
+        }
     }
     ml.push_back( mov( vec2( v.x, v.z ) , t ) );
     ml.back().start = start;
@@ -90,24 +94,32 @@ void path::rapid_move( const vec2 v )
 }
 
 
-void path::feed_to_left( path &colp, vec2 v, double len , double depth)
+void path::feed_to_left( path &colp, vec2 v, double len)
 {
     list<struct mov>::iterator fi = colp.ml.begin();
-    feed_to_left( colp, fi, v, len, depth);
+    feed_to_left( colp, fi, v, len );
 }
 
-void path::feed_to_left( path &colp, list<struct mov>::iterator fi, vec2 v, double len , double depth)
+void path::feed_to_left( path &colp, list<struct mov>::iterator fi, vec2 v, double len )
 {
     vec2 v2;
+    
+    vec2 rt( retract, retract );
+    
+    if( side == INSIDE ) 
+    {
+        rt.x = -rt.x;
+    }
+    
     list<struct mov>::iterator ci;
     colp.find_intersection( v, vec2( v.x, v.z - len ), v2, fi, ci, false );
-    bool first = (ml.size() == 0);
-  //  if( v.dist( v2 ) > retract*2.0 ){
-        if( ! first ) rapid_move( vec2( v.x + retract + depth, v.z - retract ) );
-        create_line( v, MOV_FEED );
-        create_line( v2 , MOV_FEED );
-        create_line( vec2( v2.x + retract, v2.z + retract ) , MOV_FEED );
-  //  }
+    
+    create_line( v, MOV_FEED );
+    create_line( v2 , MOV_FEED );
+    create_line( v2 + rt , MOV_FEED );
+    rapid_move( vec2( v.x + rt.x, v.z ) );
+    create_line( v, MOV_FEED );
+    
 }
 
 

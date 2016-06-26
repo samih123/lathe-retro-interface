@@ -13,22 +13,35 @@ void rough_path::create( contour_path &c, const tool &tl, Side s )
     
     double x;
     double min_z = c.min.z;
-    double max_z = c.max.z + tool_r + retract*3.0 ;
+    double max_z = c.max.z + tool_r + retract ;
     double len = fabs( min_z - max_z );
     ml.clear();
     
-    x = c.max.x;
-
     if( tc.ml.empty() )
     {
         return;
     }
- 
-    while( x > tc.ml.front().start.x + 0.001 )
+    
+    if( side == OUTSIDE )
     {
-        feed_to_left( tc, vec2( x, max_z ), len ,tl.depth );
-        x -= tl.depth;
+        x = c.max.x - tl.depth;
+        while( x > tc.ml.front().start.x + 0.001 )
+        {
+            feed_to_left( tc, vec2( x, max_z ), len );
+            x -= tl.depth;
+        }
     }
+    
+    else if( side == INSIDE )
+    {
+        x = c.min.x + tl.depth;
+        while( x < tc.ml.front().start.x - 0.001 )
+        {
+            feed_to_left( tc, vec2( x, max_z ), len );
+            x += tl.depth;
+        }
+    }
+        
     findminmax();
         
 }
