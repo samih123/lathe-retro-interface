@@ -1,12 +1,14 @@
 
-
+const char* phase_name( int t );
 
 class operation
 {
     public:
 
-    operation( int t );
+    operation( op_type t );
     ~operation();
+    
+    const char* get_name();
     
     // shape
     cut get_cut();
@@ -29,10 +31,10 @@ class operation
     void create_contour( contour_path &p );
     void create_path( operation &ccontour, operation &ctool, Side s );
 
-    int get_type(){ return type; };
+    op_type get_type(){ return type; };
     
     private:
-    int type; 
+    op_type type; 
     
     // shape
     list<struct cut>::iterator currentcut;

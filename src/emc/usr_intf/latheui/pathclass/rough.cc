@@ -12,8 +12,8 @@ void rough_path::create( contour_path &c, const tool &tl, Side s )
     tc.create( c, tool_r, side, MOV_CONTOUR );
     
     double x;
-    double min_z = c.min.z;
-    double max_z = c.max.z + tool_r + retract ;
+    double min_z = tc.min.z;
+    double max_z = tc.max.z + tool_r + retract ;
     double len = fabs( min_z - max_z );
     ml.clear();
     
@@ -24,7 +24,7 @@ void rough_path::create( contour_path &c, const tool &tl, Side s )
     
     if( side == OUTSIDE )
     {
-        x = c.max.x - tl.depth;
+        x = tc.max.x - tl.depth;
         while( x > tc.ml.front().start.x + 0.001 )
         {
             feed_to_left( tc, vec2( x, max_z ), len );
@@ -34,7 +34,7 @@ void rough_path::create( contour_path &c, const tool &tl, Side s )
     
     else if( side == INSIDE )
     {
-        x = c.min.x + tl.depth;
+        x = tc.min.x + tl.depth;
         while( x < tc.ml.front().start.x - 0.001 )
         {
             feed_to_left( tc, vec2( x, max_z ), len );

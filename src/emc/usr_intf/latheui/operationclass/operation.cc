@@ -5,7 +5,31 @@ extern const double stockdiameter;
 extern char strbuf[BUFFSIZE];
 extern const int maxrpm;
 
+const char* phase_name( int t )
+{
 
+    if(t == TOOL ) return "Tool";
+    else if(t == CONTOUR ) return "Contour";
+    else if(t == INSIDE_CONTOUR ) return "Inside contour";
+    else if(t == TURN ) return "Turning";
+    else if(t == UNDERCUT ) return "Undercut";
+    else if(t == FINISHING ) return "Finishing";
+    else if(t == THREADING ) return "Thread";
+    else if(t == FACING ) return "Facing";
+    else if(t == DRILL ) return "Drilling";
+    else if(t == PARTING ) return "Parting off";
+
+    return "ERROR";
+};
+
+const char* operation::get_name()
+{
+    if( type == CONTOUR && side == INSIDE )
+    { 
+        return phase_name( INSIDE_CONTOUR );
+    }
+    return phase_name( type );
+};
 
 static void draw_thread(double x1, double y1, double x2, double y2, double pitch, double depth )
 {
@@ -74,7 +98,7 @@ static void draw_thread(double x1, double y1, double x2, double y2, double pitch
 
 }
 
-operation::operation( int t )
+operation::operation( op_type t )
 {
     cl.clear();
     scale = 1;

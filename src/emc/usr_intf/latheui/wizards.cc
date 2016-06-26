@@ -74,22 +74,6 @@ double retract = 1;
 #define  MENU_SAVE 4
 #define  MENU_MAIN 5
 
-const char* phasename( int type )
-{
-
-    if(type == TOOL ) return "Tool";
-    else if(type == CONTOUR ) return "Contour";
-    else if(type == INSIDE_CONTOUR ) return "Inside contour";
-    else if(type == TURN ) return "Turning";
-    else if(type == UNDERCUT ) return "Undercut";
-    else if(type == FINISHING ) return "Finishing";
-    else if(type == THREADING ) return "Thread";
-    else if(type == FACING ) return "Facing";
-    else if(type == DRILL ) return "Drilling";
-    else if(type == PARTING ) return "Parting off";
-
-    return "ERROR";
-};
 
 void getzd()
 {
@@ -123,9 +107,10 @@ void create_phase_menu()
         return;
     }
     menuselect = 0;
-    int type = cur_op->get_type();
     Menu.clear();
-    Menu.begin( phasename( type ) );
+    op_type type = cur_op->get_type();
+    
+    Menu.begin( cur_op->get_name() );
         if( type == CONTOUR )
         {
             sprintf(Dstr,"D start:%.20g end:", ccut.start.x*2.0f );
@@ -162,16 +147,21 @@ void create_phase_menu()
     Menu.end();
 }
 
-void create_phase_select_menu( int n, int type )
+void create_phase_select_menus()
 {
-    sprintf(strbuf,"phase %d:%s%s", n, type > CONTOUR ? "  " : "", phasename( type ) );
-    Menu.select( &phaseselect, n, strbuf );
+    int n = 1;
+    for( auto i: opl )
+    {
+        sprintf(strbuf,"phase %d:%s%s", n, i.get_type() > CONTOUR ? "  " : "", i.get_name() );
+        Menu.select( &phaseselect, n, strbuf );
+        n++;
+    }
 }
 
 
 void create_new_phase_menu( int type )
 {
-    Menu.select( &phasecreate, type, phasename( type ) );
+    Menu.select( &phasecreate, type, phase_name( type ) );
 }
 
 void create_main_menu()
@@ -197,12 +187,8 @@ void create_main_menu()
             create_new_phase_menu( DRILL );
             create_new_phase_menu( PARTING );
         Menu.end();
-
-        int n = 1;
-        for( auto i: opl )
-        {
-            create_phase_select_menu( n++ ,i.get_type() );
-        }
+        
+        create_phase_select_menus();
 
     Menu.end();
     Menu.setmaxlines( 15 );
@@ -272,7 +258,7 @@ void wizards_load( const char *name )
         
         if( strcmp( tag, "OPERATION" ) == 0 )
         {
-            opl.push_back( operation( (int)val ) );
+            opl.push_back( operation( (op_type)val ) );
             opl.back().load( fp );
         }
 
@@ -562,7 +548,7 @@ void wizards_parse_serialdata()
 
         if( Menu.edited( &phasecreate ) )
         {
-            opl.push_back( operation( phasecreate ) );
+            opl.push_back( operation( (op_type)phasecreate ) );
             if( phasecreate == CONTOUR || phasecreate == INSIDE_CONTOUR )
             {
                 cur_contour = --opl.end();

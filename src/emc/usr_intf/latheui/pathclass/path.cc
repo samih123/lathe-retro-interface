@@ -86,7 +86,7 @@ void path::create_arc( struct cut &c, const vec2 v1, const vec2 v2, const double
 void path::rapid_move( const vec2 v )
 {
     double r = stockdiameter/2.0f + retract;
-    if( r < ml.back().end.x ) r = ml.back().end.x;
+    if( side == OUTSIDE && r < ml.back().end.x ) r = ml.back().end.x;
     if( r < v.x ) r = v.x;
     create_line( vec2( r, ml.back().end.z ), MOV_RAPID );
     create_line( vec2( r, v.z ), MOV_RAPID );
@@ -117,7 +117,7 @@ void path::feed_to_left( path &colp, list<struct mov>::iterator fi, vec2 v, doub
     create_line( v, MOV_FEED );
     create_line( v2 , MOV_FEED );
     create_line( v2 + rt , MOV_FEED );
-    rapid_move( vec2( v.x + rt.x, v.z ) );
+    create_line( vec2( v.x + rt.x, v.z ), MOV_RAPID );
     create_line( v, MOV_FEED );
     
 }
