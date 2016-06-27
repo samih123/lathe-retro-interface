@@ -18,7 +18,6 @@ const char* phase_name( int t )
     else if(t == FACING ) return "Facing";
     else if(t == DRILL ) return "Drilling";
     else if(t == PARTING ) return "Parting off";
-
     return "ERROR";
 };
 
@@ -184,6 +183,20 @@ void operation::draw( int x,int y,int xs,int ys)
 
         create_contour( contour );
         contour.draw( true );
+        
+        if( side == OUTSIDE )
+        {
+            glBegin(GL_LINES);
+                setcolor( DISABLED );
+                glVertex2f( x2,  (stockdiameter/2.0) );
+                glVertex2f( x2, -(stockdiameter/2.0) );
+                glVertex2f( x2, -(stockdiameter/2.0) );
+                glVertex2f( -1000, -(stockdiameter/2.0) );
+                glVertex2f( x2, (stockdiameter/2.0) );
+                glVertex2f( -1000, (stockdiameter/2.0) );
+            glEnd();
+        }
+        
     }
 
     if( type == TURN )
@@ -265,7 +278,7 @@ void operation::set_cut( cut &c )
             currentcut->type = c.type;
         }
 
-       // if( c.end.x < 0 ) c.end.x = 0;
+        if( c.end.x < 0 ) c.end.x = 0;
 
         vec2 d = c.end - currentcut->end;
         currentcut->end += d;
@@ -274,13 +287,13 @@ void operation::set_cut( cut &c )
         i++;
 
         i->start = currentcut->end;
-        /*
+        
         for(; i != cl.end(); i++)
         {
             i->end += d;
             i->start += d;
         }
-        */
+        
 
     }
 }
@@ -346,8 +359,6 @@ void operation::save( FILE *fp )
         fprintf(fp, "OPERATION %i\n", type );
         fprintf(fp, "END\n" );
     }
-    
-    
     
 }
 

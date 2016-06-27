@@ -2,6 +2,7 @@
 
 extern const double retract;
 extern char strbuf[BUFFSIZE];;
+extern const double stockdiameter;
 
 void rough_path::create( contour_path &c, const tool &tl, Side s )
 {
@@ -10,6 +11,7 @@ void rough_path::create( contour_path &c, const tool &tl, Side s )
     
     side = s;
     tc.create( c, tool_r, side, MOV_CONTOUR );
+    tc.temporary = true;
     
     double x;
     double min_z = tc.min.z;
@@ -24,22 +26,28 @@ void rough_path::create( contour_path &c, const tool &tl, Side s )
     
     if( side == OUTSIDE )
     {
-        x = tc.max.x - tl.depth;
+        x = std::max( tc.max.x, stockdiameter/2.0 ) - tl.depth;
+        create_line( vec2( x, max_z ), MOV_RAPID );
+        
         while( x > tc.ml.front().start.x + 0.001 )
         {
             feed_to_left( tc, vec2( x, max_z ), len );
             x -= tl.depth;
         }
+        
     }
     
     else if( side == INSIDE )
     {
         x = tc.min.x + tl.depth;
+        create_line( vec2( x, max_z ), MOV_RAPID );
+        
         while( x < tc.ml.front().start.x - 0.001 )
         {
             feed_to_left( tc, vec2( x, max_z ), len );
             x += tl.depth;
         }
+        
     }
         
     findminmax();

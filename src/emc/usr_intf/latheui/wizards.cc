@@ -29,26 +29,6 @@ list<operation>::iterator cur_tool;
 
 static bool draw_toolpath = false;
 static bool dynamic_toolpath = true;
-
-
-void save( const char *name )
-{
-    FILE *fp;
-
-    sprintf(strbuf,"%s/%s.wiz", programPrefix, name );
-    printf("save:%s\n",strbuf);
-    fp = fopen( strbuf, "w");
-    if (fp == NULL) return;
-    fprintf(fp, "NAME %s\n", name );
-    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
-    {
-        i->save( fp );
-    }
-
-    fclose( fp );
-}
-
-
 static char Dstr[BUFFSIZE];
 static char Zstr[BUFFSIZE];
 static char Name[BUFFSIZE];
@@ -230,6 +210,29 @@ void create_main_menu()
 }
 
 
+void wizards_save( const char *name )
+{
+    FILE *fp;
+
+    sprintf(strbuf,"%s/%s.wiz", programPrefix, name );
+    printf("save:%s\n",strbuf);
+    fp = fopen( strbuf, "w");
+    if (fp == NULL) return;
+    fprintf(fp, "NAME %s\n", name );
+    fprintf(fp, "STOCKDIAM %.20g\n", stockdiameter );
+    printf( "maxrpm = %i\n",maxrpm);
+    
+    fprintf(fp, "MAXRPM %i\n", maxrpm );
+    
+    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
+    {
+        i->save( fp );
+    }
+
+    fclose( fp );
+}
+
+
 void wizards_load( const char *name )
 {
 
@@ -256,6 +259,9 @@ void wizards_load( const char *name )
         
         sscanf(line, "%s %lf", tag, &val );
         
+        findtag( tag, "STOCKDIAM", stockdiameter, val );
+        findtag( tag, "MAXRPM", maxrpm, val );
+
         if( strcmp( tag, "OPERATION" ) == 0 )
         {
             opl.push_back( operation( (op_type)val ) );
@@ -505,6 +511,13 @@ void create_toolpath()
 }
 
 
+void clamp_values()
+{
+     CLAMP( stockdiameter,0,1000 );
+     CLAMP( maxrpm, 1, 5000 );
+     CLAMP( diameter,0,stockdiameter);   
+}
+
 void wizards_parse_serialdata()
 {
 
@@ -525,6 +538,7 @@ void wizards_parse_serialdata()
 
     if( Menu.parse() )
     {
+        clamp_values();
 
         if( menuselect == MENU_MAIN )
         {
@@ -535,7 +549,7 @@ void wizards_parse_serialdata()
         if( menuselect == MENU_SAVE )
         {
             
-            save( Name );
+            wizards_save( Name );
             return;
         }
                 
@@ -599,6 +613,7 @@ void wizards_parse_serialdata()
                 Menu.edited( &ccut.type ) 
             )
             {
+                
                 ccut.end.x = diameter / 2.0;
                 
                 cur_contour->set_cut( ccut );
@@ -642,6 +657,14 @@ void wizards_draw()
 {
     draw_statusbar( "WIZARDS" );
 
+    for( auto i: opl )
+    {
+        if( i.get_type() == CONTOUR )
+        {
+            i.draw( 0,100,100,100 );
+        }
+    }
+    
     if( cur_contour != opl.end() )
     {
 
@@ -660,7 +683,7 @@ void wizards_draw()
          }
 
     }
-
+    clamp_values();
     Menu.draw(5,50);
 
 //double angle = atan2( fabs( currentcut->start.x - currentcut->end.x) , fabs(currentcut->dim.z) )* 180.0f / M_PI;

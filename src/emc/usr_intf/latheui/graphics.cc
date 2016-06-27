@@ -29,22 +29,33 @@ enum rawcolor
    GREY,
    WHITE,
    MAGENTA,
-   BLACK
+   BLACK,
+   CYAN,
 };
+
+
+void setrpgcolor( uint32_t n ) {
+        uint8_t B = n & 0xFF;
+        n >>= 8; uint8_t G = n & 0xFF;
+        n >>= 8; uint8_t R = n & 0xFF;
+        glColor3f( 1.0/255.0 * R ,1.0/255.0 * G, 1.0/255.0 * B );
+}
+
 
 void setrawcolor( rawcolor color )
 {
     switch( color )
     {
-        case RED    : glColor3f ( 1.0f, 0, 0 ); break;
-        case BLUE   : glColor3f ( 0, 0, 1.0f ); break;
-        case GREEN  : glColor3f ( 0, 1.0f, 0 ); break;
+        case RED    : setrpgcolor( 0xff4000 ); break;
+        case BLUE   : setrpgcolor( 0x0000ff ); break;
+        case GREEN  : setrpgcolor( 0x0fff0a ); break;
         case ORANGE : glColor3f ( 1.0f, 0.65f, 0.0f ); break;
-        case YELLOW : glColor3f ( 1.0f, 1.0f, 0.0f ); break;
+        case YELLOW : setrpgcolor( 0xd8d80a );break;
         case WHITE  : glColor3f ( 1.0f, 1.0f, 1.0f ); break;
         case GREY   : glColor3f ( 0.5f, 0.5f, 0.5f ); break;
         case MAGENTA: glColor3f ( 1.0f, 0.0f, 1.0f ); break;
         case BLACK  : glColor3f ( 0.0f, 0.0f, 0.0f ); break;
+        case CYAN   : setrpgcolor( 0x32cb98 ); break;
     }
 }
    
@@ -59,7 +70,7 @@ void setcolor( color c )
         case CONTOUR_SHADOW: setrawcolor( GREY ); break;
         case CROSS: setrawcolor( GREY ); break;
         case OUTLINE: setrawcolor( GREY ); break;
-        case CENTERLINE: setrawcolor( GREY ); break;
+        case CENTERLINE: setrawcolor( CYAN ); break;
         case TEXT: setrawcolor( GREEN ); break;
         case WARNING: setrawcolor( RED ); break;
         case ERROR: setrawcolor( YELLOW ); break;

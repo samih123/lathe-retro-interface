@@ -4,6 +4,7 @@ class path
     public:
     path()
     {
+        temporary = false;
     }
 
     ~path()
@@ -11,6 +12,7 @@ class path
         ml.clear();
     }
     
+    void set_temporary(){ temporary = true; };
     void create_line( const vec2 &v , const move_type t, const char *comment = NULL );
     void create_arc( struct cut &c, const vec2 v1, const vec2 v2, const double r, const bool side, const move_type t );
     void rapid_move( const vec2 v );
@@ -32,6 +34,7 @@ class path
     std::list<struct mov> ml;
     vec2 min,max;    
     Side side;
+    bool temporary;
     //friend class fine_path;
     //friend class rough_path;
     //friend class undercut_path;

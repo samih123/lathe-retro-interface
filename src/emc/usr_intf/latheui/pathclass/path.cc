@@ -276,18 +276,24 @@ void path::draw( bool both )
     for(list<struct mov>::iterator i = ++(ml.begin()); i != ml.end(); i++)
     {
 
-
-        if( i->type == MOV_FEED )
+        if( temporary )
         {
-            setcolor( FEED );
-        }
-        else if( i->type == MOV_CONTOUR )
-        {
-            setcolor( CONTOUR_LINE );
+            setcolor( DISABLED );
         }
         else
         {
-            setcolor( RAPID );
+            if( i->type == MOV_FEED )
+            {
+                setcolor( FEED );
+            }
+            else if( i->type == MOV_CONTOUR )
+            {
+                setcolor( CONTOUR_LINE );
+            }
+            else
+            {
+                setcolor( RAPID );
+            }
         }
         
 

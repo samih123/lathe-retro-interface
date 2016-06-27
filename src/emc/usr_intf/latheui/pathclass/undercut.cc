@@ -7,6 +7,7 @@ void undercut_path::create( contour_path &c, double depth, double tool_r, double
 {
     side = s;
     tc.create( c, tool_r, side, MOV_CONTOUR );
+    tc.temporary = true;
     
     double x = 0;
     ml.clear();

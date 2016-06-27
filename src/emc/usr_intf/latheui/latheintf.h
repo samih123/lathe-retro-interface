@@ -34,6 +34,7 @@
 #include "emc.hh"
 #include "../shcom.hh"
 #include <list>
+#include <algorithm>
 using namespace std;
 
 #define CLAMP(x, l, h) (x = (((x) > (h)) ? (h) : (((x) < (l)) ? (l) : (x))))
@@ -509,6 +510,10 @@ void wizards_init();
 void wizards_parse_serialdata();
 void wizards_draw();
 void wizards_load( const char *name );
+
+void findtag( const char *line, const char *tag, double &val,const double v );
+void findtag( const char *line, const char *tag, int &val,const int v );
+void findtag( const char *line, const char *tag, bool &val,const int v );
 
 const char* isprefix( const char*  prefix, int* n);
 
