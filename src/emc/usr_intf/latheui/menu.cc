@@ -158,7 +158,7 @@ void menu::draw( int x, int y)
 {
 
     
-    println( x, y, 20, cmi->tcolor );
+    println( x, y, 18, cmi->tcolor );
     if( cmi->name[0] != 0 ) println( cmi->name );
    
     int selected = std::distance( cmi->ml.begin(), cmi->it);

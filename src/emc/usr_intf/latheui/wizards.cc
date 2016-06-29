@@ -29,9 +29,12 @@ list<operation>::iterator cur_tool;
 
 static bool draw_toolpath = false;
 static bool dynamic_toolpath = true;
+
 static char Dstr[BUFFSIZE];
 static char Zstr[BUFFSIZE];
 static char Name[BUFFSIZE];
+static char initcommands[BUFFSIZE] = "";
+
 static int phasecreate;
 static int phaseselect;
 static int menuselect;
@@ -151,6 +154,7 @@ void create_main_menu()
     menuselect = 0;
     Menu.begin( "machining phases:" );
         Menu.edit( Name, "Program name:" );
+        Menu.edit( initcommands, "Init commands:" );
         Menu.select( &menuselect, MENU_SAVE, "Save" );
         Menu.edit( &stockdiameter, "Stock diameter " );
         Menu.edit( &maxrpm, "Max spindle rpm " );
@@ -219,6 +223,7 @@ void wizards_save( const char *name )
     fp = fopen( strbuf, "w");
     if (fp == NULL) return;
     fprintf(fp, "NAME %s\n", name );
+    fprintf(fp, "INIT \"%s\"\n", initcommands );
     fprintf(fp, "STOCKDIAM %.20g\n", stockdiameter );
     printf( "maxrpm = %i\n",maxrpm);
     
@@ -240,7 +245,7 @@ void wizards_load( const char *name )
     char *line = NULL;
     size_t len = 0;
     ssize_t read;
-    
+
     char tag[BUFFSIZE+1];
     double val=0;
     
@@ -251,6 +256,7 @@ void wizards_load( const char *name )
     
     opl.clear();
     cur_contour = cur_op = cur_tool= opl.end();
+    initcommands[0] = 0;
 
     while ((read = getline( &line, &len, fp)) != -1)
     {
@@ -261,6 +267,7 @@ void wizards_load( const char *name )
         
         findtag( tag, "STOCKDIAM", stockdiameter, val );
         findtag( tag, "MAXRPM", maxrpm, val );
+        findtag( line, "INIT", initcommands );
 
         if( strcmp( tag, "OPERATION" ) == 0 )
         {
@@ -294,6 +301,7 @@ void wizards_init()
         maxrpm = status.maxrpm;
         cur_contour = cur_op = cur_tool= opl.end();
     }
+
     create_main_menu();
 }
 

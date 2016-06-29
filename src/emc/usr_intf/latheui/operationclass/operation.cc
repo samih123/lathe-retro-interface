@@ -387,6 +387,17 @@ void findtag( const char *line, const char *tag, bool &val,const int v )
     }      
 }
 
+
+void findtag( const char *line, const char *tag, char *str )
+{
+    
+    if( strstr( line, line ) == line )
+    {
+        sscanf( line, "%*[^\"]\"%255[^\"]\"", str);
+    }      
+    
+}
+
 void operation::load( FILE *fp )
 {
     if (fp == NULL) return;

@@ -514,6 +514,7 @@ void wizards_load( const char *name );
 void findtag( const char *line, const char *tag, double &val,const double v );
 void findtag( const char *line, const char *tag, int &val,const int v );
 void findtag( const char *line, const char *tag, bool &val,const int v );
+void findtag( const char *line, const char *tag, char *str );
 
 const char* isprefix( const char*  prefix, int* n);
 
