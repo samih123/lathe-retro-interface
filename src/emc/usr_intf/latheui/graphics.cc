@@ -76,7 +76,6 @@ void setcolor( color c )
         case ERROR: setrawcolor( YELLOW ); break;
         case DISABLED: setrawcolor( GREY ); break;
         case DIRECTORY: setrawcolor( RED ); break;
-        
     }
 }
 

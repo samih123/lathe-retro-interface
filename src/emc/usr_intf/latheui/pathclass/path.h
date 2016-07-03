@@ -22,8 +22,9 @@ class path
     bool find_intersection( const vec2 a, const vec2 b, vec2 &cv, list<struct mov>::iterator fi,
                             list<struct mov>::iterator &ci, bool first = true );
 
-    void feed_to_left( path &colp, vec2 v, double len );
-    void feed_to_left( path &colp, list<struct mov>::iterator ci, vec2 v, double len );
+    void feed( path &colp, list<struct mov>::iterator fi, vec2 v, double len, const vec2 dir, const vec2 ret );
+    void feed( path &colp, vec2 v, double len, const vec2 dir, const vec2 ret );
+    
     void draw( bool both );
     void save( FILE *fp );
     void findminmax();

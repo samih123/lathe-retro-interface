@@ -74,13 +74,14 @@ void auto_draw()
     {
         for( int i = emcStatus->task.motionLine-1; i < emcStatus->task.motionLine-1 + 10; i++)
         {
-            if( i < (int)lines.size() )
+            if( i < 0 || i >=  (int)lines.size() )
             {
-                println(  lines[ i ].c_str() );
+                break;
             }
+            println(  lines[ i ].c_str() );
         }
     }
-    
+
     draw_dro();
     
     preview_draw();

@@ -31,7 +31,7 @@ void rough_path::create( contour_path &c, const tool &tl, Side s )
         
         while( x > tc.ml.front().start.x + 0.001 )
         {
-            feed_to_left( tc, vec2( x, max_z ), len );
+            feed( tc, vec2( x, max_z ), len, vec2( 0,-1 ), vec2( 1,1 ) );
             x -= tl.depth;
         }
         
@@ -44,7 +44,7 @@ void rough_path::create( contour_path &c, const tool &tl, Side s )
         
         while( x < tc.ml.front().start.x - 0.001 )
         {
-            feed_to_left( tc, vec2( x, max_z ), len );
+            feed( tc, vec2( x, max_z ), len, vec2( 0,-1 ), vec2( -1,1 ) );
             x += tl.depth;
         }
         

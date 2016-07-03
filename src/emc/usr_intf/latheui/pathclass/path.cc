@@ -94,32 +94,25 @@ void path::rapid_move( const vec2 v )
 }
 
 
-void path::feed_to_left( path &colp, vec2 v, double len)
+
+void path::feed( path &colp, vec2 v, double len, const vec2 dir, const vec2 ret)
 {
     list<struct mov>::iterator fi = colp.ml.begin();
-    feed_to_left( colp, fi, v, len );
+    feed( colp, fi, v, len, dir, ret );
 }
 
-void path::feed_to_left( path &colp, list<struct mov>::iterator fi, vec2 v, double len )
+void path::feed( path &colp, list<struct mov>::iterator fi, vec2 v, double len, const vec2 dir, const vec2 ret )
 {
     vec2 v2;
     
-    vec2 rt( retract, retract );
-    
-    if( side == INSIDE ) 
-    {
-        rt.x = -rt.x;
-    }
-    
     list<struct mov>::iterator ci;
-    colp.find_intersection( v, vec2( v.x, v.z - len ), v2, fi, ci, false );
+    colp.find_intersection( v, v + dir * len , v2, fi, ci, false );
     
     create_line( v, MOV_FEED );
     create_line( v2 , MOV_FEED );
-    create_line( v2 + rt , MOV_FEED );
-    create_line( vec2( v.x + rt.x, v.z ), MOV_RAPID );
-    create_line( v, MOV_FEED );
-    
+    create_line( v2 + ret , MOV_FEED );
+    create_line( v + ret, MOV_RAPID );
+    create_line( v, MOV_RAPID );
 }
 
 

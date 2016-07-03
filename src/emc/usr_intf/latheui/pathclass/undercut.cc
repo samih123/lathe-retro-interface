@@ -33,7 +33,7 @@ void undercut_path::create( contour_path &c, double depth, double tool_r, double
                         double z = i->start.z + dz * (x - i->start.x) / dx;
                         if( z > tc.min.z )
                         {
-                             feed_to_left( tc, next(i,1), vec2( x, z ), fabs( c.min.z -z ) );
+                             feed( tc, next(i,1), vec2( x, z ), fabs( c.min.z -z ), vec2( 0,-1 ), vec2( 1,1 ) );
                         }
                         x -= depth;
                     }
