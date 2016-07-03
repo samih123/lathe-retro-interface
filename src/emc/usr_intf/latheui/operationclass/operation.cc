@@ -104,7 +104,7 @@ operation::operation( op_type t )
     pos.x = pos.z = 0;
     type = t;
     side = OUTSIDE;
-    
+    changed = true;
     if( type == INSIDE_CONTOUR )
     {
         side = INSIDE;
@@ -181,7 +181,7 @@ void operation::draw( int x,int y,int xs,int ys)
 
         }
 
-        create_contour( contour );
+        create_contour();
         contour.draw( true );
         
         if( side == OUTSIDE )
@@ -226,7 +226,7 @@ void operation::new_cut( vec2 p, cut_type t )
     currentcut->r = 1.0f;
     currentcut->pitch = 1.0f;
     currentcut->depth = 0.65f * currentcut->pitch;
-
+    changed = true;
 }
 
 
@@ -236,6 +236,7 @@ void operation::erase()
     {
          currentcut =  cl.erase( currentcut );
          if( currentcut == cl.end() ) currentcut--;
+         changed = true;
     }
 }
 
@@ -290,11 +291,11 @@ void operation::set_cut( cut &c )
         
         for(; i != cl.end(); i++)
         {
-            i->end += d;
-            i->start += d;
+            i->end.z += d.z;
+            i->start.z += d.z;
         }
         
-
+        changed = true;
     }
 }
 
@@ -308,8 +309,29 @@ void operation::set_tool( tool &T )
 {
     if( type != TOOL ) printf( "TYPE ERROR %s\n", __PRETTY_FUNCTION__ );
     tl = T;
+    changed = true;
 }
 
+
+void operation::save_program( FILE *fp )
+{
+    
+    if( type == TURN )
+    {
+        r_path.save( fp );
+    }
+    
+    if( type == TOOL )
+    {
+        sprintf( strbuf, "T%d M6 F%f (change tool)\n", tl.tooln, tl.feed ); fprintf(fp, "%s", strbuf );
+        sprintf( strbuf, "G43 (enable tool compensation)\n" ); fprintf(fp, "%s", strbuf );
+        sprintf( strbuf, "G96 D%d S%f (set maxrpm & surface speed)\n", maxrpm, tl.speed ); fprintf(fp, "%s", strbuf );
+        sprintf( strbuf, "M4 (start spindle)\n" ); fprintf(fp, "%s", strbuf );
+        
+    }   
+    
+}    
+    
 void operation::save( FILE *fp )
 {
     if (fp == NULL) return;
@@ -483,8 +505,11 @@ void operation::create_contour( contour_path &p )
          return;
     }
     
+    if( ! changed ) return;
+    changed = false;
+    
+    printf("create contour\n");
     p.ml.clear();
-  //  vec2 start(0,0);
 
     for(list<struct cut>::iterator i = cl.begin(); i != cl.end(); i++)
     {
@@ -508,16 +533,18 @@ void operation::create_contour( contour_path &p )
 }
 
 
-void operation::create_path( operation &ccontour, operation &ctool, Side s )
+void operation::create_path( operation &ccontour, operation &ctool )
 {
     if( type != TURN || ccontour.type != CONTOUR || ctool.type != TOOL )
     {
          printf( "TYPE ERROR %s\n", __PRETTY_FUNCTION__ );
          return;
     }
-
-    ccontour.create_contour( contour );
-    r_path.create( ccontour.contour, ctool.get_tool(), s );
+    if( changed )
+    {
+        ccontour.create_contour( contour );
+        r_path.create( ccontour.contour, ctool.get_tool(), ccontour.get_side() );
+    }
 
 }
 

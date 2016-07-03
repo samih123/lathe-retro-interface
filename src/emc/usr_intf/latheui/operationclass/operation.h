@@ -26,10 +26,16 @@ class operation
     void erase();
     void previous();
     void next();
+    
     void save( FILE *fp ); 
+    void save_program( FILE *fp ); 
+    
     void load( FILE *fp );
+    
     void create_contour( contour_path &p );
-    void create_path( operation &ccontour, operation &ctool, Side s );
+    void create_contour(){ create_contour( contour ); };
+    
+    void create_path( operation &ccontour, operation &ctool );
 
     op_type get_type(){ return type; };
     
@@ -41,6 +47,7 @@ class operation
     std::list<struct cut> cl;
     Side side;
     contour_path contour;
+    bool changed;
     
     // tool
     tool tl;

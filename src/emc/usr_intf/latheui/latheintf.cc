@@ -343,7 +343,7 @@ void  parse_serialdata()
     int old_screenmode = status.screenmode; 
     status.jogged = 0;
     
-    parseagain: // handle potentiometers & increment here:
+    parseagain: // handle jog wheel, screen mode, potentiometers and increment here:
     
     
     if( isprefix( "JG+" ,&n ) )

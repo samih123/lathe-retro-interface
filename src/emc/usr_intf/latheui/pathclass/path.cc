@@ -334,7 +334,7 @@ void path::save( FILE *fp )
         {
             sprintf( strbuf, "( %s )", i->comment.c_str() );
         }
-        fprintf(fp, "G%s X%.4f Z%.4f%s\n",
+        fprintf(fp, "G%s X%.7g Z%.7g%s\n",
             i->type == MOV_FEED ? "1":"0" ,
             fabs( i->end.x ) < 0.001 ? 0:i->end.x,
             fabs( i->end.z ) < 0.001 ? 0:i->end.z,

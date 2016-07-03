@@ -32,6 +32,7 @@ void load( char* n )
     if( strstr( n, ".wiz" ) != NULL )
     {
         wizards_load( n );
+        edit_load( n );
         return;
     }
     

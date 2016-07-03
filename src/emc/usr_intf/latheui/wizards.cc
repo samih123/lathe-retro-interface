@@ -56,6 +56,7 @@ double retract = 1;
 #define  MENU_DELETECUT 3
 #define  MENU_SAVE 4
 #define  MENU_MAIN 5
+#define  MENU_SAVE_PROGRAM 6
 
 
 void getzd()
@@ -156,6 +157,7 @@ void create_main_menu()
         Menu.edit( Name, "Program name:" );
         Menu.edit( initcommands, "Init commands:" );
         Menu.select( &menuselect, MENU_SAVE, "Save" );
+        Menu.select( &menuselect, MENU_SAVE_PROGRAM, "Save program" );
         Menu.edit( &stockdiameter, "Stock diameter " );
         Menu.edit( &maxrpm, "Max spindle rpm " );
         Menu.begin( "Create new phase:" );
@@ -178,39 +180,64 @@ void create_main_menu()
     Menu.setmaxlines( 15 );
 }
 
+void create_paths()
+{
+    
+    list<operation>::iterator contour = opl.end();
+    list<operation>::iterator tool = opl.end();
+
+    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
+    {
+        if( i->get_type() == CONTOUR )
+        {
+            contour = i;
+            i->create_contour();
+        }
+
+        if( i->get_type() == TOOL )
+        {
+            tool = i;
+        }
+        
+        if( tool != opl.end() && contour != opl.end() )
+        {
+            if( i->get_type() == TURN )
+            {
+                i->create_path( *contour, *tool );
+            }
+        }
+        
+    }
+}
 
 
- void save_program(const char *name )
+void save_program(const char *name )
 {
 
     FILE *fp;
-    /*
-    printf("save_program:%s\n",name);
-    fp = fopen( name, "w");
+    char ngc_file[BUFFSIZE];
+    
+    sprintf( ngc_file, "%s/%s.ngc", programPrefix, name );
+    printf("save_program:%s\n",ngc_file);
+    fp = fopen( ngc_file, "w");
 
     if (fp == NULL) return;
 
-    fprintf(fp, "G18 G8 G21 G94 G40\n");
-    fprintf(fp, "G64 P0.01\n");
-    fprintf(fp, "( Rough )\n");
-
-    roughpath.save( fp );
-
-    fprintf(fp, "( undercut )\n");
-  //  save_path( undercutpath,fp, tp[UNDERCUT] );
-
-
-    fprintf(fp, "( Finish )\n");
-    for( int i = tp[FINISH].count-1 ; i >= 0; i-- )
+    fprintf(fp, "%s\n", initcommands );
+    
+    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-    //  save_path( finepath[i], fp, tp[FINISH] );
+        i->save_program( fp );
     }
-
+        
     fprintf(fp, "M5 (stop spindle)\n");
-
     fprintf(fp, "M2\n");
+    
     fclose( fp );
-*/
+
+    edit_load( ngc_file );
+    auto_load( ngc_file );
+
 }
 
 
@@ -255,8 +282,7 @@ void wizards_load( const char *name )
    if (fp == NULL) return;
     
     opl.clear();
-    cur_contour = cur_op = cur_tool= opl.end();
-    initcommands[0] = 0;
+    wizards_init();
 
     while ((read = getline( &line, &len, fp)) != -1)
     {
@@ -300,9 +326,13 @@ void wizards_init()
         retract = 1;
         maxrpm = status.maxrpm;
         cur_contour = cur_op = cur_tool= opl.end();
+        strcpy( initcommands, "G18 G8 G21 G94 G40 G64 P0.01 Q0.01" );
     }
 
-    create_main_menu();
+    if( status.screenmode == SCREENWIZARDS )
+    {
+        create_main_menu();
+    }
 }
 
 
@@ -554,13 +584,18 @@ void wizards_parse_serialdata()
             return;
         }
         
-        if( menuselect == MENU_SAVE )
+        if( menuselect == MENU_SAVE_PROGRAM )
         {
-            
-            wizards_save( Name );
+            save_program( Name );
             return;
         }
-                
+        
+        if( menuselect == MENU_SAVE )
+        {
+            wizards_save( Name );
+            return;
+        } 
+                      
         if( menuselect == MENU_NEWCUT )
         {
             cur_contour->new_cut(vec2(10,0),CUT_LINE );
@@ -665,32 +700,13 @@ void wizards_draw()
 {
     draw_statusbar( "WIZARDS" );
 
-    for( auto i: opl )
+    create_paths();
+    
+    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-        if( i.get_type() == CONTOUR )
-        {
-            i.draw( 0,100,100,100 );
-        }
+        i->draw( 0,100,100,100 );
     }
     
-    if( cur_contour != opl.end() )
-    {
-
-        if( cur_contour->get_type() == CONTOUR )
-        {
-            cur_contour->draw( 0,100,100,100 );
-        }
-
-         if( cur_tool != opl.end() && cur_op != opl.end() )
-         {
-            if( cur_op->get_type() == TURN )
-            {
-                cur_op->create_path( *cur_contour, *cur_tool ,cur_contour->get_side() );
-                cur_op->draw( 0,100,100,100 );
-            }
-         }
-
-    }
     clamp_values();
     Menu.draw(5,50);
 
