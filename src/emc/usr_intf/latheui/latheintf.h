@@ -378,6 +378,7 @@ struct machinestatus
     int jogfeedrate;
     int maxrpm;
     double incr;
+    double jogged;
     bool singleblock;
     bool skipblock;
     bool optionalstop;

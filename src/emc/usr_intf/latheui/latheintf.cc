@@ -277,6 +277,7 @@ void initstatus()
     status.mode = EMC_TASK_MODE_MANUAL;
     status.axis = AXISX;
     status.jogfeedrate = 50;
+    status.jogged = 0;
     status.incr = 1.0;
     status.feedoverride_new = status.feedoverride == 100;
     
@@ -340,8 +341,37 @@ void  parse_serialdata()
 {
     int n;
     int old_screenmode = status.screenmode; 
+    status.jogged = 0;
     
     parseagain: // handle potentiometers & increment here:
+    
+    
+    if( isprefix( "JG+" ,&n ) )
+    {
+        status.jogged += status.incr;
+        if( readserial() )
+        {
+            goto parseagain;
+        } 
+    }
+    
+    if( isprefix( "JG-" ,&n ) )
+    {
+        status.jogged -= status.incr;
+        if( readserial() )
+        {
+            goto parseagain;
+        } 
+    }    
+    
+        if( isprefix( "MO=" ,&n ) )
+    {
+        status.screenmode = n;
+        if( readserial() )
+        {
+            goto parseagain;
+        } 
+    }   
     
     if( isprefix( "MO=" ,&n ) )
     {
@@ -396,6 +426,7 @@ void  parse_serialdata()
     else if( isprefix( "AX=" ,&n ) )
     {
         status.axis = n;
+        status.jogged = 0;
     }
     
     
