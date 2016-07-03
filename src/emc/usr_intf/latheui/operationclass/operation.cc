@@ -267,6 +267,12 @@ cut operation::get_cut()
     return cut();
 }
 
+double limit_radius( const double r, const list<struct cut>::iterator c )
+{
+    double l = c->start.dist( c->end ) + 0.00001f;
+    if( r < l/2.0f )  return l/2.0f;
+    return r;
+}
 
 void operation::set_cut( cut &c )
 {
@@ -295,6 +301,8 @@ void operation::set_cut( cut &c )
             i->start.z += d.z;
         }
         
+        currentcut->r = c.r = limit_radius( c.r, currentcut );//c.r;
+    
         changed = true;
     }
 }
@@ -516,9 +524,9 @@ void operation::create_contour( contour_path &p )
 
         if( i->type == CUT_ARC_IN || i->type == CUT_ARC_OUT )
         {
-            double l = i->start.dist( i->end ) + 0.00001f;
-            if( i->r < l/2.0f )  i->r = l/2.0f;
+            i->r = limit_radius( i->r, i );
             p.create_arc( *i, i->start, i->end, i->r, i->type == CUT_ARC_IN, MOV_CONTOUR );
+            
         }
         else
         {

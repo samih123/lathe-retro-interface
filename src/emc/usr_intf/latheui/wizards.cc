@@ -27,9 +27,6 @@ list<operation>::iterator cur_op;
 list<operation>::iterator cur_contour;
 list<operation>::iterator cur_tool;
 
-static bool draw_toolpath = false;
-static bool dynamic_toolpath = true;
-
 static char Dstr[BUFFSIZE];
 static char Zstr[BUFFSIZE];
 static char Name[BUFFSIZE];
@@ -106,11 +103,12 @@ void create_phase_menu()
             Menu.edit( &diameter, Dstr ); Menu.shortcut("AX=0" );
             Menu.edit( &ccut.end.z, Zstr ); Menu.shortcut("AX=2" );
 
-            /*
-            if( cur_contour->currentcut->type == ARC_IN || cur_contour->currentcut->type == ARC_OUT )
+            
+            if( ccut.type == CUT_ARC_IN || ccut.type == CUT_ARC_OUT )
             {
-                Menu.edit( &cur_contour->currentcut->r, "Radius" ); Menu.shortcut("AX=5" );
+                Menu.edit( &ccut.r, "Radius " ); Menu.shortcut("AX=5" );
             }
+            /*
             if( cur_contour->currentcut->type == THREAD )
             {
                 Menu.edit( &cur_contour->currentcut->pitch, "Pitch" );
@@ -522,33 +520,6 @@ int get_line_intersection( vec2 S1P0, vec2 S1P1 , vec2 S2P0, vec2 S2P1, vec2 &I0
 
 
 
-
-static path temp1;
-static path temp2;
-
-void create_toolpath()
-{
-    /*
-    startposition = contour.max;
-    startposition.x = max( stockdiameter/2.0 , startposition.x );
-    startposition += tp[ROUGH].depth + tp[ROUGH].tool_r;
-    startposition.z += 5;
-
-    roughpath.set_tool( tp[ROUGH].tool );
-    roughpath.set_cut_param( 50,50,2 );
-    roughpath.create( contour );
-
-    undercutpath.set_tool( tp[UNDERCUT].tool );
-    undercutpath.set_cut_param( 50,50,2 );
-  //  undercutpath.create( contour );
-
-    finepath[0].set_tool( tp[FINISH].tool );
-    finepath[0].set_cut_param( 50,50,2 );
-   // finepath[0].create( contour );
-*/
-}
-
-
 void clamp_values()
 {
      CLAMP( stockdiameter,0,1000 );
@@ -653,7 +624,8 @@ void wizards_parse_serialdata()
 
             if( Menu.edited( &ccut.end.z ) || 
                 Menu.edited( &diameter ) ||
-                Menu.edited( &ccut.type ) 
+                Menu.edited( &ccut.type ) || 
+                Menu.edited( &ccut.r ) 
             )
             {
                 
@@ -676,8 +648,6 @@ void wizards_parse_serialdata()
         }
 
     }
-
-    if( dynamic_toolpath) create_toolpath();
 
 }
 
