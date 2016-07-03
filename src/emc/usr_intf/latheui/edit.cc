@@ -14,7 +14,7 @@ extern struct machinestatus status;
 extern int screenw, screenh;
 
 static int currentline;
-std::list<string> lines;
+std::vector<string> lines;
 
 void edit_init()
 {
@@ -41,7 +41,7 @@ void edit_draw()
     int sreenline = 0;
     int fileline = 0;
     
-    for(std::list<string>::iterator list_iter = lines.begin(); 
+    for(std::vector<string>::iterator list_iter = lines.begin(); 
     list_iter != lines.end(); list_iter++)
     {
         //std::cout<<*list_iter<<endl;
@@ -78,7 +78,7 @@ void edit_load( const char *file )
   
    
    
-    for(std::list<string>::iterator list_iter = lines.begin(); 
+    for(std::vector<string>::iterator list_iter = lines.begin(); 
     list_iter != lines.end(); list_iter++)
     {
         std::cout<<*list_iter<<endl;
