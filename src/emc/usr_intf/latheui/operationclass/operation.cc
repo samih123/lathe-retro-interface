@@ -323,6 +323,7 @@ tool operation::get_tool()
 void operation::set_tool( tool &T )
 {
     if( type != TOOL ) printf( "TYPE ERROR %s\n", __PRETTY_FUNCTION__ );
+    if( T.depth < 0.01 ) T.depth = 0.01;
     tl = T;
     changed = true;
 }

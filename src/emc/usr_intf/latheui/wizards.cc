@@ -683,22 +683,25 @@ void show_tool( int x,int y, int t, const char* name )
 void wizards_draw()
 {
     draw_statusbar( "WIZARDS" );
-
+    
+    clamp_values();
+    
     create_paths();
     
-    //glEnable(GL_LINE_STIPPLE);
-    //glLineStipple(1,0x5555);
+    glLineStipple(1,0x27ff);
     glPushMatrix();
     glTranslatef( 750 ,300 , 0);
     glTranslatef( pos.z ,pos.x , 0);
     glScalef(scale*3.0f, scale*3.0f,scale*3.0f);
     
+    glEnable(GL_LINE_STIPPLE);
     glBegin(GL_LINES);
         setcolor( CENTERLINE );
         glVertex2f( 10,0 );
         glVertex2f( -600,0 );
     glEnd();
-    
+    glDisable(GL_LINE_STIPPLE);
+
     for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
     {
         i->draw();
@@ -706,7 +709,6 @@ void wizards_draw()
     
     glPopMatrix();
     
-    clamp_values();
     Menu.draw(5,50);
 
 //double angle = atan2( fabs( currentcut->start.x - currentcut->end.x) , fabs(currentcut->dim.z) )* 180.0f / M_PI;
