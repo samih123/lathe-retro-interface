@@ -20,7 +20,7 @@ class operation
     
     //void set_inside( bool s ){ inside = s;} 
     Side get_side(){ return side; }; 
-    void draw( int x1,int y1,int x2,int y2);
+    void draw( bool all = true );
     void new_cut( vec2 p, cut_type t );
     
     void erase();
@@ -55,8 +55,6 @@ class operation
     // rough 
     rough_path r_path;
     
-    double scale;
-    vec2 pos;
     vec2 min,max; 
 };
 

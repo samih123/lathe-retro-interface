@@ -50,6 +50,8 @@ InterpBase *pinterp;
 
 
 extern char ttfile[LINELEN];
+extern list<operation> *wiz_opl;
+
 static float xmax,ymax,xmin,ymin;
 
 struct line
@@ -156,11 +158,20 @@ void preview_draw()
         glVertex2f( -15,0 );
     glEnd();
     
+    if( wiz_opl != NULL )
+    {
+        for(list<operation>::iterator i = wiz_opl->begin(); i != wiz_opl->end(); i++)
+        {
+            i->draw( false );
+        }
+    }
+    
     glTranslatef( x, y , 0);
     draw_tool( emcStatus->io.tool.toolInSpindle );
 
     glPopMatrix();
- 
+    
+    
 }
 
 

@@ -21,7 +21,7 @@ extern char estr[BUFFSIZE];
 static menu Menu;
 
 
-
+extern list<operation> *wiz_opl;
 static list<operation> opl;
 list<operation>::iterator cur_op;
 list<operation>::iterator cur_contour;
@@ -44,7 +44,8 @@ vec2 startposition;
 
 int maxrpm;
 double stockdiameter;
-static double scale = 2;
+double scale = 1;
+static vec2 pos(0,0); 
 double retract = 1;
 
 
@@ -153,6 +154,10 @@ void create_main_menu()
     menuselect = 0;
     Menu.begin( "machining phases:" );
         Menu.edit( Name, "Program name:" );
+        Menu.edit( &scale, "Image scale " ); Menu.shortcut("AX=5" );
+        Menu.edit( &pos.x, "Image x " ); Menu.shortcut("AX=0" );
+        Menu.edit( &pos.z, "Image z " ); Menu.shortcut("AX=2" );
+        
         Menu.edit( initcommands, "Init commands:" );
         Menu.select( &menuselect, MENU_SAVE, "Save" );
         Menu.select( &menuselect, MENU_SAVE_PROGRAM, "Save program" );
@@ -235,6 +240,7 @@ void save_program(const char *name )
 
     edit_load( ngc_file );
     auto_load( ngc_file );
+    wiz_opl = &opl;
 
 }
 
@@ -324,7 +330,7 @@ void wizards_init()
         retract = 1;
         maxrpm = status.maxrpm;
         cur_contour = cur_op = cur_tool= opl.end();
-        strcpy( initcommands, "G18 G8 G21 G94 G40 G64 P0.01 Q0.01" );
+        strcpy( initcommands, "G18 G8 G21 G95 G40 G64 P0.01 Q0.01" );
     }
 
     if( status.screenmode == SCREENWIZARDS )
@@ -524,7 +530,9 @@ void clamp_values()
 {
      CLAMP( stockdiameter,0,1000 );
      CLAMP( maxrpm, 1, 5000 );
-     CLAMP( diameter,0,stockdiameter);   
+     CLAMP( diameter,0,stockdiameter); 
+     CLAMP( scale,0.1,10 ); 
+       
 }
 
 void wizards_parse_serialdata()
@@ -672,10 +680,24 @@ void wizards_draw()
 
     create_paths();
     
+    //glEnable(GL_LINE_STIPPLE);
+    //glLineStipple(1,0x5555);
+    glPushMatrix();
+    glTranslatef( 750 ,300 , 0);
+    glScalef(scale*3.0f, scale*3.0f,scale*3.0f);
+    glTranslatef( pos.x ,pos.z , 0);
+    glBegin(GL_LINES);
+        setcolor( CENTERLINE );
+        glVertex2f( 10,0 );
+        glVertex2f( -600,0 );
+    glEnd();
+    
     for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-        i->draw( 0,100,100,100 );
+        i->draw();
     }
+    
+    glPopMatrix();
     
     clamp_values();
     Menu.draw(5,50);

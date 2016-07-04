@@ -12,6 +12,8 @@ extern struct machinestatus status;
 extern int screenw, screenh;
 extern std::vector<string> lines;
 
+list<operation> *wiz_opl;
+
 void auto_init()
 {
     sendAuto();
@@ -31,6 +33,7 @@ void auto_load( char *n )
     updateStatus();
     emcCommandWaitDone();
     preview( emcStatus->task.file );
+    wiz_opl = NULL;
 }
 
 
@@ -85,4 +88,6 @@ void auto_draw()
     draw_dro();
     
     preview_draw();
+    
+    
 }

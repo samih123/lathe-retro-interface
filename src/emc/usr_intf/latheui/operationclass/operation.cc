@@ -4,6 +4,7 @@ extern const double retract;
 extern const double stockdiameter;
 extern char strbuf[BUFFSIZE];
 extern const int maxrpm;
+extern double scale;
 
 const char* phase_name( int t )
 {
@@ -100,8 +101,7 @@ static void draw_thread(double x1, double y1, double x2, double y2, double pitch
 operation::operation( op_type t )
 {
     cl.clear();
-    scale = 1;
-    pos.x = pos.z = 0;
+    
     type = t;
     side = OUTSIDE;
     changed = true;
@@ -119,26 +119,13 @@ operation::~operation()
 }
 
 
-void operation::draw( int x,int y,int xs,int ys)
+void operation::draw( bool draw_all )
 {
 
     double x1 = 0;
     double y1 = 0;
     double x2 = 0;
     double y2 = 0;
-
-    //glEnable(GL_LINE_STIPPLE);
-    //glLineStipple(1,0x5555);
-
-    glPushMatrix();
-    glTranslatef( 750 ,300 , 0);
-    glScalef(scale*3.0f, scale*3.0f,scale*3.0f);
-    glTranslatef( pos.x ,pos.z , 0);
-    glBegin(GL_LINES);
-        setcolor( CENTERLINE );
-        glVertex2f( 10,0 );
-        glVertex2f( -600,0 );
-    glEnd();
 
     if( type == CONTOUR )
     {
@@ -152,6 +139,7 @@ void operation::draw( int x,int y,int xs,int ys)
 
             {
                 
+
                 glBegin(GL_LINES);
                     setcolor( CONTOUR_SHADOW );
                     glVertex2f( x2, -y2 );
@@ -159,7 +147,7 @@ void operation::draw( int x,int y,int xs,int ys)
                     glVertex2f( x1, -y1 );
                     glVertex2f( x1, y1  );
                 glEnd();
-
+                
                 if(i->type == CUT_THREAD )
                 {
                     draw_thread( x1,  y1,  x2,  y2, i->pitch, i->depth );
@@ -168,14 +156,17 @@ void operation::draw( int x,int y,int xs,int ys)
                 if( i->type == CUT_ARC_IN || i->type == CUT_ARC_OUT )
                 {
                     setcolor( CROSS );
-                    drawCross( i->center.z, i->center.x, 3.0f / scale );
-                    drawCross( i->center.z, -i->center.x, 3.0f / scale );
+                    if( draw_all )
+                    {
+                        drawCross( i->center.z, i->center.x, 3.0/scale );
+                        drawCross( i->center.z, -i->center.x, 3.0/scale );
+                    }
                 }
 
-                if( i == currentcut )
+                if( i == currentcut && draw_all )
                 {
                     setcolor( WARNING );
-                    drawCircle( x2, y2, 3.0f / scale );
+                    drawCircle( x2, y2, 3.0/scale );
                 }
             }
 
@@ -199,12 +190,14 @@ void operation::draw( int x,int y,int xs,int ys)
         
     }
 
-    if( type == TURN )
+    if( draw_all )
     {
-        r_path.draw( true );
+        if( type == TURN )
+        {
+            r_path.draw( true );
+        }
     }
 
-    glPopMatrix();
 
 }
 
