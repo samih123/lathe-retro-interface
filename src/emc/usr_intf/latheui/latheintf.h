@@ -474,7 +474,9 @@ void updatescreen();
 void drawCross(GLfloat x, GLfloat y, GLfloat size);
 void drawCircle(GLfloat x, GLfloat y, GLfloat radius);
 void draw_tool( int i );
-    
+vec2 tool_cpoint( int t );
+
+
 void file_init();
 void file_parse_serialdata();
 void file_draw();

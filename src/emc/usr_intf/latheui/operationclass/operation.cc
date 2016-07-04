@@ -5,6 +5,7 @@ extern const double stockdiameter;
 extern char strbuf[BUFFSIZE];
 extern const int maxrpm;
 extern double scale;
+extern char *ttcomments[CANON_POCKETS_MAX];
 
 const char* phase_name( int t )
 {
@@ -23,13 +24,22 @@ const char* phase_name( int t )
 };
 
 const char* operation::get_name()
-{
+{  
+    
     if( type == CONTOUR && side == INSIDE )
-    { 
+    {
         return phase_name( INSIDE_CONTOUR );
+    }   
+    
+    if( type == TOOL && tl.tooln > 0 && tl.tooln < CANON_POCKETS_MAX)
+    {
+        sprintf( name, "%s %s", phase_name( type ), ttcomments[ tl.tooln ]);
     }
-    return phase_name( type );
+
+    return name;
+    
 };
+
 
 static void draw_thread(double x1, double y1, double x2, double y2, double pitch, double depth )
 {
@@ -105,6 +115,9 @@ operation::operation( op_type t )
     type = t;
     side = OUTSIDE;
     changed = true;
+    
+    strcpy( name, phase_name(t) );
+    printf("name =%s\n",name);
     if( type == INSIDE_CONTOUR )
     {
         side = INSIDE;
@@ -126,6 +139,7 @@ void operation::draw( bool draw_all )
     double y1 = 0;
     double x2 = 0;
     double y2 = 0;
+    
 
     if( type == CONTOUR )
     {
@@ -328,7 +342,6 @@ void operation::save_program( FILE *fp )
         sprintf( strbuf, "G43 (enable tool compensation)\n" ); fprintf(fp, "%s", strbuf );
         sprintf( strbuf, "G96 D%d S%f (set maxrpm & surface speed)\n", maxrpm, tl.speed ); fprintf(fp, "%s", strbuf );
         sprintf( strbuf, "M4 (start spindle)\n" ); fprintf(fp, "%s", strbuf );
-        
     }   
     
 }    

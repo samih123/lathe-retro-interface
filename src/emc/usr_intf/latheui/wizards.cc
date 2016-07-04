@@ -228,9 +228,11 @@ void save_program(const char *name )
 
     fprintf(fp, "%s\n", initcommands );
     
+    
+    
     for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-        i->save_program( fp );
+        i->save_program( fp ); // must call in order! 
     }
         
     fprintf(fp, "M5 (stop spindle)\n");
@@ -256,9 +258,10 @@ void wizards_save( const char *name )
     fprintf(fp, "NAME %s\n", name );
     fprintf(fp, "INIT \"%s\"\n", initcommands );
     fprintf(fp, "STOCKDIAM %.20g\n", stockdiameter );
-    printf( "maxrpm = %i\n",maxrpm);
-    
     fprintf(fp, "MAXRPM %i\n", maxrpm );
+    fprintf(fp, "POSX %.20g\n", pos.x );
+    fprintf(fp, "POSZ %.20g\n", pos.z );
+    fprintf(fp, "SCALE %.20g\n", scale );
     
     for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
     {
@@ -298,6 +301,9 @@ void wizards_load( const char *name )
         findtag( tag, "STOCKDIAM", stockdiameter, val );
         findtag( tag, "MAXRPM", maxrpm, val );
         findtag( line, "INIT", initcommands );
+        findtag( tag, "POSX", pos.x, val );
+        findtag( tag, "POSZ", pos.z, val );
+        findtag( tag, "SCALE", scale, val );
 
         if( strcmp( tag, "OPERATION" ) == 0 )
         {
@@ -684,8 +690,9 @@ void wizards_draw()
     //glLineStipple(1,0x5555);
     glPushMatrix();
     glTranslatef( 750 ,300 , 0);
+    glTranslatef( pos.z ,pos.x , 0);
     glScalef(scale*3.0f, scale*3.0f,scale*3.0f);
-    glTranslatef( pos.x ,pos.z , 0);
+    
     glBegin(GL_LINES);
         setcolor( CENTERLINE );
         glVertex2f( 10,0 );

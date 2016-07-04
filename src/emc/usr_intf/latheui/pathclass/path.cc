@@ -316,9 +316,18 @@ void path::draw( bool both )
 }
 
 
+void path::move( vec2 m )
+{
+    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
+    {
+        i->end += m;
+        i->start += m;
+    }
+}
+
+
 void path::save( FILE *fp )
 {
-
     for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
     {
 
@@ -329,14 +338,13 @@ void path::save( FILE *fp )
         }
         fprintf(fp, "G%s X%.7g Z%.7g%s\n",
             i->type == MOV_FEED ? "1":"0" ,
-            fabs( i->end.x ) < 0.001 ? 0:i->end.x,
-            fabs( i->end.z ) < 0.001 ? 0:i->end.z,
+            (fabs( i->end.x ) < 0.001 ? 0:i->end.x),
+            (fabs( i->end.z ) < 0.001 ? 0:i->end.z),
             strbuf
         );
-
     }
-
 }
+
 void path::findminmax()
 {
     if( ml.empty() ) return;

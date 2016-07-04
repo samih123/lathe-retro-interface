@@ -55,7 +55,8 @@ class operation
     // rough 
     rough_path r_path;
     
-    vec2 min,max; 
+    vec2 min,max;
+    char name[BUFFSIZE]; 
 };
 
 

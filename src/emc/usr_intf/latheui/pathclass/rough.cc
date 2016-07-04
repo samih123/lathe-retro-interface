@@ -49,7 +49,8 @@ void rough_path::create( contour_path &c, const tool &tl, Side s )
         }
         
     }
-        
+    move( tool_cpoint( tl.tooln ) ); 
+    //printf( "toolxy %f,%f ", )
     findminmax();
         
 }

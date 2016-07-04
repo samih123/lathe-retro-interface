@@ -24,7 +24,7 @@ class path
 
     void feed( path &colp, list<struct mov>::iterator fi, vec2 v, double len, const vec2 dir, const vec2 ret );
     void feed( path &colp, vec2 v, double len, const vec2 dir, const vec2 ret );
-    
+    void move( vec2 m );
     void draw( bool both );
     void save( FILE *fp );
     void findminmax();

@@ -277,6 +277,22 @@ void draw_dro( vec2 *cpos )
 
 }
 
+vec2 tool_cpoint( int t )
+{
+    double lathe_shapes[10][2] = {
+        {0,0},                           
+        {1,-1}, {1,1}, {-1,1}, {-1,-1}, 
+        {0,-1}, {1,0}, {0,1}, {-1,0},   
+        {0,0}                           
+    };
+    
+    vec2 p;
+    p.x = -lathe_shapes[ _tools[ t ].orientation ][0];
+    p.z = -lathe_shapes[ _tools[ t ].orientation ][1];
+    p.x *= _tools[ t ].diameter / 2.0;
+    p.z *= _tools[ t ].diameter / 2.0;
+    return p;
+}
 
 void draw_tool( int i )
 {    
