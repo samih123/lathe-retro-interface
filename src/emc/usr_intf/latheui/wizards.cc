@@ -691,7 +691,7 @@ void wizards_draw()
     glLineStipple(1,0x27ff);
     glPushMatrix();
     glTranslatef( 750 ,300 , 0);
-    glTranslatef( pos.z ,pos.x , 0);
+    glTranslatef( pos.z * scale ,pos.x * scale , 0);
     glScalef(scale*3.0f, scale*3.0f,scale*3.0f);
     
     glEnable(GL_LINE_STIPPLE);
