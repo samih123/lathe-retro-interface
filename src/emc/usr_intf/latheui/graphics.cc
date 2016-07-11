@@ -168,6 +168,17 @@ void drawCross(GLfloat x, GLfloat y, GLfloat size){
     glEnd();
 }
 
+
+void drawBox( vec2 v1, vec2 v2 ){
+    glBegin(GL_LINE_LOOP);
+        glVertex2f( v1.z, -v1.x );
+        glVertex2f( v1.z, -v2.x );
+        glVertex2f( v2.z, -v2.x );
+        glVertex2f( v2.z, -v1.x );
+    glEnd();
+    
+}
+
 void drawCircle(GLfloat x, GLfloat y, GLfloat radius){
     int i;
     int lines = 16;

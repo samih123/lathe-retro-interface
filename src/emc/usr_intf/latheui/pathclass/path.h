@@ -70,5 +70,10 @@ class undercut_path:public path
     fine_path tc;
 };
 
+class facing_path:public path
+{
+    public:
+    void create( const tool &tl, vec2 min, vec2 max );
+};
 
 

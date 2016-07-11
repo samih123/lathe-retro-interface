@@ -115,13 +115,21 @@ operation::operation( op_type t )
     type = t;
     side = OUTSIDE;
     changed = true;
-    
+   
     strcpy( name, phase_name(t) );
     printf("name =%s\n",name);
     if( type == INSIDE_CONTOUR )
     {
         side = INSIDE;
         type = CONTOUR;
+    }
+    
+    if( type == FACING )
+    {
+        face_begin.z = 0;
+        face_begin.x = 0;
+        face_end.z = 5;
+        face_end.x = stockdiameter/2.0;
     }
 
 }
@@ -210,6 +218,12 @@ void operation::draw( bool draw_all )
         {
             r_path.draw( true );
         }
+        else if( type == FACING )
+        {
+            setcolor( DISABLED );
+            drawBox( face_begin, face_end );
+            f_path.draw( true );
+        }     
     }
 
 
@@ -314,6 +328,18 @@ void operation::set_cut( cut &c )
     }
 }
 
+void operation::setf_begin_end( vec2 fbeg, vec2 fend )
+{ 
+    if( type != FACING ) printf( "TYPE ERROR %s\n", __PRETTY_FUNCTION__ );
+    
+    {
+        face_begin = fbeg;
+        face_end = fend;
+        changed = true;
+    }
+}
+
+
 tool operation::get_tool()
 {
     if( type != TOOL ) printf( "TYPE ERROR %s\n", __PRETTY_FUNCTION__ );
@@ -337,7 +363,12 @@ void operation::save_program( FILE *fp )
         r_path.save( fp );
     }
     
-    if( type == TOOL )
+    else if( type == FACING )
+    {
+        f_path.save( fp );
+    }   
+    
+    else if( type == TOOL )
     {
         sprintf( strbuf, "T%d M6 F%f (change tool)\n", tl.tooln, tl.feed ); fprintf(fp, "%s", strbuf );
         sprintf( strbuf, "G43 (enable tool compensation)\n" ); fprintf(fp, "%s", strbuf );
@@ -358,7 +389,13 @@ void operation::save( FILE *fp )
         fprintf(fp, "   FEED %.10g\n", tl.feed );
         fprintf(fp, "   SPEED %.10g\n", tl.speed );
         fprintf(fp, "   TOOLN %i\n", tl.tooln );
-        fprintf(fp, "   COUNT %i\n", tl.count );
+        fprintf(fp, "END\n" );
+    }
+    
+    else if( type == FACING )
+    {
+        fprintf(fp, "OPERATION %i //facing\n", type );
+        fprintf(fp, "   F_BEGIN_END %.10g %.10g %.10g %.10g\n", face_begin.x, face_begin.z, face_end.x, face_end.z );
         fprintf(fp, "END\n" );
     }
     
@@ -460,10 +497,20 @@ void operation::load( FILE *fp )
             findtag( tag, "FEED",  tl.feed, v1 );
             findtag( tag, "SPEED", tl.speed, v1 );
             findtag( tag, "TOOLN", tl.tooln, v1 );
-            findtag( tag, "COUNT", tl.count, v1 );
         }
         
-        if( type == CONTOUR )
+        else if( type == FACING )
+        {
+            if( strcmp( tag, "F_BEGIN_END") == 0 )
+            {
+                face_begin.x = v1;
+                face_begin.z = v2;
+                face_end.x = v3;
+                face_end.z = v4;
+            }
+        }    
+            
+        else if( type == CONTOUR )
         {
             int s = (int)side;
             findtag( tag, "SIDE", s, v1 );
@@ -550,11 +597,20 @@ void operation::create_contour( contour_path &p )
 
 void operation::create_path( operation &ccontour, operation &ctool )
 {
+    
+    if( type == FACING && changed )
+    {
+         f_path.create( ctool.get_tool(), face_begin, face_end );
+         return;
+    }
+    
+    
     if( type != TURN || ccontour.type != CONTOUR || ctool.type != TOOL )
     {
          printf( "TYPE ERROR %s\n", __PRETTY_FUNCTION__ );
          return;
     }
+    
     if( changed )
     {
         ccontour.create_contour( contour );

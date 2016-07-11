@@ -309,16 +309,14 @@ struct tool
     {
         tooln =1;
         depth = 2;
-        count = 2;
         feed = 0.2;
         speed = 200;
     }
     ~tool()
     {
     }
-    double depth;
-    int count;
     
+    double depth;
     double feed;
     double speed;
     
@@ -473,6 +471,7 @@ void draw_statusbar( const char *s );
 void updatescreen();
 void drawCross(GLfloat x, GLfloat y, GLfloat size);
 void drawCircle(GLfloat x, GLfloat y, GLfloat radius);
+void drawBox( vec2 v1, vec2 v2 );
 void draw_tool( int i );
 vec2 tool_cpoint( int t );
 

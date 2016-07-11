@@ -18,6 +18,11 @@ class operation
     tool get_tool();
     void set_tool( tool &c );
     
+    // facing
+    vec2 getf_begin(){ return face_begin; };
+    vec2 getf_end(){ return face_end; };
+    void setf_begin_end( vec2 fbeg, vec2 fend );
+    
     //void set_inside( bool s ){ inside = s;} 
     Side get_side(){ return side; }; 
     void draw( bool all = true );
@@ -54,6 +59,10 @@ class operation
     
     // rough 
     rough_path r_path;
+    
+    // facing
+    facing_path f_path;
+    vec2 face_begin,face_end;
     
     vec2 min,max;
     char name[BUFFSIZE]; 

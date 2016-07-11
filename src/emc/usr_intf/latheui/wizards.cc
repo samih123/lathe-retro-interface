@@ -38,7 +38,8 @@ static int menuselect;
 
 static cut ccut;
 static tool ctool;
-static double diameter;
+static double diameter,diameter2;
+static double face_beginz,face_endz;
 
 vec2 startposition;
 
@@ -69,6 +70,21 @@ void getzd()
         ctool = cur_tool->get_tool();
     }
     
+    if( cur_op != opl.end() )
+    {
+        op_type type = cur_op->get_type();
+        
+        if( type == FACING )
+        {
+            vec2 begin = cur_op->getf_begin();
+            vec2 end = cur_op->getf_end();
+            diameter = begin.x*2.0;
+            diameter2 = end.x*2.0;
+            face_beginz = begin.z;
+            face_endz = end.z;
+        }
+
+    }
 }
 
 static const char *typestr[] =
@@ -123,7 +139,14 @@ void create_phase_menu()
             Menu.edit( &ctool.feed, "Feedrate mm/min " );
             Menu.edit( &ctool.speed, "Surface speed m/s " );
             Menu.edit( &ctool.depth, "Depth " );
-            Menu.edit( &ctool.count, "Count " );
+        }
+        
+        else if( type == FACING )
+        {
+            Menu.edit( &diameter, "Start diameter " );
+            Menu.edit( &diameter2, "End diameter " );
+            Menu.edit( &face_beginz, "Start Z " );
+            Menu.edit( &face_endz, "End Z " );           
         }
 
         Menu.select( &menuselect, MENU_MAIN, "Back" );
@@ -191,6 +214,15 @@ void create_paths()
 
     for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
     {
+        
+        if( tool != opl.end() )
+        {
+            if( i->get_type() == FACING )
+            {
+                i->create_path( *contour, *tool );
+            }
+        }
+        
         if( i->get_type() == CONTOUR )
         {
             contour = i;
@@ -335,6 +367,7 @@ void wizards_init()
         scale = 2;
         retract = 1;
         maxrpm = status.maxrpm;
+        stockdiameter = 20;
         cur_contour = cur_op = cur_tool= opl.end();
         strcpy( initcommands, "G18 G8 G21 G95 G40 G64 P0.01 Q0.01" );
     }
@@ -635,16 +668,15 @@ void wizards_parse_serialdata()
         // shape
         if( cur_contour != opl.end() )
         {
-
-            if( Menu.edited( &ccut.end.z ) || 
+            
+            if( cur_op->get_type() == CONTOUR && (
+                Menu.edited( &ccut.end.z ) || 
                 Menu.edited( &diameter ) ||
                 Menu.edited( &ccut.type ) || 
-                Menu.edited( &ccut.r ) 
+                Menu.edited( &ccut.r ) )
             )
             {
-                
                 ccut.end.x = diameter / 2.0;
-                
                 cur_contour->set_cut( ccut );
                 if( Menu.edited( &ccut.type ) )
                 {
@@ -660,7 +692,25 @@ void wizards_parse_serialdata()
             cur_tool->set_tool( ctool );
             ctool = cur_tool->get_tool();
         }
+        
+        if( cur_op != opl.end() )
+        {
+            if( cur_op->get_type() == FACING )
+            {
+                if( 
+                    Menu.edited( &diameter ) ||
+                    Menu.edited( &diameter2 ) ||
+                    Menu.edited( &face_beginz ) || 
+                    Menu.edited( &face_endz ) 
+                )
+                {
+                    printf("set\n");
+                    cur_op->setf_begin_end( vec2( diameter/2.0, face_beginz ), vec2( diameter2/2.0, face_endz ) );
+                }
+            }
+        }
 
+    
     }
 
 }
