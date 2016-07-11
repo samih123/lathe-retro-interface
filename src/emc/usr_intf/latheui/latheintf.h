@@ -520,9 +520,6 @@ void findtag( const char *line, const char *tag, char *str );
 
 const char* isprefix( const char*  prefix, int* n);
 
-#define FEED_RAPID 1
-#define FEED_NORMAL 2
-
 int preview( char *file );
 void preview_addfeed( float x, float y, float x2, float y2);
 void preview_addrapid( float x, float y, float x2, float y2);

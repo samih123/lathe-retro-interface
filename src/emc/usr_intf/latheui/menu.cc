@@ -157,6 +157,8 @@ void menu::show( const char *n )
 void menu::draw( int x, int y)
 {
 
+    // update edited strings
+    clean( rm );
     
     println( x, y, 18, cmi->tcolor );
     if( cmi->name[0] != 0 ) println( cmi->name );
@@ -220,7 +222,31 @@ void menu::clean( menuitem &m )
         {
              *(int *)i->val = 0;
         }
-        i->edited = false;
+        
+        if( i->edited )
+        {
+            switch( i->type )
+            { 
+                
+                case TYPEBEGIN:
+                break;
+                case TYPEBACK:
+                break;
+                case TYPESELECT:
+                break;     
+                case TYPEINT:
+                    sprintf( i->str, "%d", *(int *)i->val );
+                case TYPEBOOL:
+                case TYPESTR:
+                break;
+                case TYPEDOUBLE:
+                    sprintf( i->str, "%.10g", *(double *)i->val );
+                break;
+                
+            }
+            i->edited = false;
+        }
+        
         clean( *i );
     }
 }
@@ -282,6 +308,7 @@ bool menu::parse()
             case TYPEINT:
                 (*(int *)cmi->it->val) = atoi( cmi->it->str );
                 sprintf( cmi->it->str, "%d", *(int *)cmi->it->val );
+                cmi->it->edited = true;
                 return true;
             case TYPEBOOL:
             case TYPESTR:

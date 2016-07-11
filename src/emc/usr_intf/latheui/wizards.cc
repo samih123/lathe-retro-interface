@@ -571,7 +571,7 @@ void clamp_values()
      CLAMP( maxrpm, 1, 5000 );
      CLAMP( diameter,0,stockdiameter); 
      CLAMP( scale,0.1,10 ); 
-       
+     CLAMP( ctool.tooln, 0, MAXTOOLS );   
 }
 
 void wizards_parse_serialdata()
