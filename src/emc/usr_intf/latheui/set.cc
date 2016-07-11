@@ -106,7 +106,7 @@ static void createmenu()
                 Menu.back("back");
                 for(list<string>::iterator i = errors.begin(); i != errors.end(); i++)
                 {
-                    Menu.show( i->c_str() );
+                    Menu.comment( i->c_str() );
                 }
             Menu.end(); 
 

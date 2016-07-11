@@ -437,7 +437,7 @@ class menu
     void edit( char *s, const char *n );
     void edit( bool *b, const char *n );
     void back( const char *n );
-    void show( const char *n );
+    void comment( const char *n );
     void clean( menuitem &m );
 
     bool edited( void *v );

@@ -154,12 +154,16 @@ void create_phase_menu()
 }
 
 void create_phase_select_menus()
-{
+{ 
     int n = 1;
-    for( auto i: opl )
+    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-        sprintf(strbuf,"phase %d:%s%s", n, i.get_type() > CONTOUR ? "  " : "", i.get_name() );
+        sprintf(strbuf,"  phase %d:%s%s", n, i->get_type() > CONTOUR ? "  " : "", i->get_name() );
         Menu.select( &phaseselect, n, strbuf );
+        if( cur_op == i )
+        {
+            Menu.setcolor( WARNING );
+        }
         n++;
     }
 }
@@ -186,7 +190,7 @@ void create_main_menu()
         Menu.select( &menuselect, MENU_SAVE_PROGRAM, "Save program" );
         Menu.edit( &stockdiameter, "Stock diameter " );
         Menu.edit( &maxrpm, "Max spindle rpm " );
-        Menu.begin( "Create new phase:" );
+        Menu.begin( "Create new phase" );
             Menu.back("Back");
             create_new_phase_menu( TOOL );
             create_new_phase_menu( CONTOUR );

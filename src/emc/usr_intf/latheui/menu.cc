@@ -19,7 +19,7 @@ extern char buf[BUFFSIZE];
 #define TYPEBOOL 4
 #define TYPESELECT 5
 #define TYPEBACK 6
-#define TYPESHOW 7
+#define TYPECOMMENT 7
 
 #define SELECT 1
 #define SET 2
@@ -145,10 +145,10 @@ void menu::back( const char *n )
     strcpy( cmi->ml.back().name, n);   
 }
 
-void menu::show( const char *n )
+void menu::comment( const char *n )
 {
     cmi->ml.push_back( menuitem() );
-    cmi->ml.back().type = TYPESHOW; 
+    cmi->ml.back().type = TYPECOMMENT; 
     strcpy( cmi->ml.back().name, n);   
 }
  
@@ -180,7 +180,7 @@ void menu::draw( int x, int y)
             if( ! i->hidden ){
                 switch( i->type )
                 {
-                    case TYPESHOW:
+                    case TYPECOMMENT:
                     case TYPEBACK:
                     case TYPESELECT:
                     case TYPEBEGIN:
