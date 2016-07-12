@@ -50,12 +50,17 @@ static vec2 pos(0,0);
 double retract = 1;
 
 
-#define  MENU_NEWPHASE 1
-#define  MENU_NEWCUT    2
-#define  MENU_DELETECUT 3
-#define  MENU_SAVE 4
-#define  MENU_MAIN 5
-#define  MENU_SAVE_PROGRAM 6
+#define  MENU_PHASE_NEW 1
+#define  MENU_PHASE_DELETE 2
+#define  MENU_PHASE_UP 3
+#define  MENU_PHASE_DOWN 4
+
+#define  MENU_NEWCUT    5
+#define  MENU_DELETECUT 6
+
+#define  MENU_SAVE 7
+#define  MENU_MAIN 8
+#define  MENU_SAVE_PROGRAM 9
 
 
 void getzd()
@@ -109,6 +114,9 @@ void create_phase_menu()
     op_type type = cur_op->get_type();
     
     Menu.begin( cur_op->get_name() );
+    
+        Menu.select( &menuselect, MENU_MAIN, "Back" );
+        
         if( type == CONTOUR )
         {
             sprintf(Dstr,"D start:%.20g end:", ccut.start.x*2.0f );
@@ -148,8 +156,7 @@ void create_phase_menu()
             Menu.edit( &face_beginz, "Start Z " );
             Menu.edit( &face_endz, "End Z " );           
         }
-
-        Menu.select( &menuselect, MENU_MAIN, "Back" );
+        
     Menu.end();
 }
 
@@ -180,6 +187,7 @@ void create_main_menu()
     Menu.clear();
     menuselect = 0;
     Menu.begin( "machining phases:" );
+    
         Menu.edit( Name, "Program name:" );
         Menu.edit( &scale, "Image scale " ); Menu.shortcut("AX=5" );
         Menu.edit( &pos.x, "Image x " ); Menu.shortcut("AX=0" );
@@ -190,24 +198,67 @@ void create_main_menu()
         Menu.select( &menuselect, MENU_SAVE_PROGRAM, "Save program" );
         Menu.edit( &stockdiameter, "Stock diameter " );
         Menu.edit( &maxrpm, "Max spindle rpm " );
-        Menu.begin( "Create new phase" );
+        
+        Menu.begin( "Create and delete phases" );
             Menu.back("Back");
-            create_new_phase_menu( TOOL );
-            create_new_phase_menu( CONTOUR );
-            create_new_phase_menu( INSIDE_CONTOUR );
-            create_new_phase_menu( TURN );
-            create_new_phase_menu( UNDERCUT );
-            create_new_phase_menu( FINISHING );
-            create_new_phase_menu( THREADING );
-            create_new_phase_menu( FACING );
-            create_new_phase_menu( DRILL );
-            create_new_phase_menu( PARTING );
+            
+            if( cur_op != opl.end() )
+            {
+                Menu.select( &menuselect, MENU_PHASE_UP, "Move current phase up" );
+                Menu.select( &menuselect, MENU_PHASE_DOWN, "Move current phase down" );
+                sprintf(strbuf,"Delete current phase:%s", cur_op->get_name() );
+                Menu.select( &menuselect, MENU_PHASE_DELETE, strbuf );
+            }
+            
+            Menu.begin( "Create new phase" );
+                Menu.back("Back");
+                create_new_phase_menu( TOOL );
+                create_new_phase_menu( CONTOUR );
+                create_new_phase_menu( INSIDE_CONTOUR );
+                create_new_phase_menu( TURN );
+                create_new_phase_menu( UNDERCUT );
+                create_new_phase_menu( FINISHING );
+                create_new_phase_menu( THREADING );
+                create_new_phase_menu( FACING );
+                create_new_phase_menu( DRILL );
+                create_new_phase_menu( PARTING );
+            Menu.end();
+            
         Menu.end();
         
         create_phase_select_menus();
 
     Menu.end();
+    
     Menu.setmaxlines( 15 );
+}
+
+void clear_all_phases()
+{
+    cur_contour = cur_tool = opl.end();
+    bool ready = false;
+    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
+    {
+        if( ! ready && cur_op != opl.end() )
+        {
+            if( i->get_type() == CONTOUR )
+            {
+                cur_contour = i;
+            }
+
+            if( i->get_type() == TOOL )
+            {
+                cur_tool = i;
+            }
+            
+            if( i == cur_op )
+            {
+                 ready = true;
+            }
+        }
+         
+        i->clear();
+    }
 }
 
 void create_paths()
@@ -620,11 +671,46 @@ void wizards_parse_serialdata()
                       
         if( menuselect == MENU_NEWCUT )
         {
-            cur_contour->new_cut(vec2(10,0),CUT_LINE );
+            cur_contour->new_cut(vec2(0,0),CUT_LINE );
             create_phase_menu();
             return;
         }
+        
+        if( menuselect == MENU_DELETECUT )
+        {
+            cur_contour->erase();
+            create_phase_menu();
+            return;
+        }
+        
+        if( menuselect == MENU_PHASE_DELETE && cur_op !=  opl.end() )
+        {
+            opl.erase( cur_op );
+            cur_contour = cur_op = cur_tool = opl.end();
+            clear_all_phases();
+            create_main_menu();
+            return;
+        }
 
+
+        if( menuselect == MENU_PHASE_UP && cur_op !=  opl.end() && cur_op != opl.begin() )
+        {
+            opl.splice( std::prev(cur_op), opl, cur_op );
+            //cur_contour = cur_op = cur_tool = opl.end();
+            clear_all_phases();
+            create_main_menu();
+            return;
+        }
+                
+        if( menuselect == MENU_PHASE_DOWN && cur_op !=  opl.end() && cur_op != --opl.end() )
+        {
+            opl.splice( std::next(cur_op,2), opl, cur_op );
+            //cur_contour = cur_op = cur_tool = opl.end();
+            clear_all_phases();
+            create_main_menu();
+            return;
+        }
+               
         if( Menu.edited( &phasecreate ) )
         {
             opl.push_back( operation( (op_type)phasecreate ) );
@@ -633,6 +719,7 @@ void wizards_parse_serialdata()
                 cur_contour = --opl.end();
                 cur_contour->new_cut(vec2(0,10),CUT_BEGIN );
             }
+            clear_all_phases();
             create_main_menu();
             return;
         }
@@ -643,28 +730,15 @@ void wizards_parse_serialdata()
 
             int n = 1;
             cur_contour = cur_op = cur_tool = opl.end();
-
             for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
             {
-
-                if( i->get_type() == CONTOUR )
-                {
-                    cur_contour = i;
-                }
-
-                if( i->get_type() == TOOL )
-                {
-                    cur_tool = i;
-                }
-
                 if( n++ == phaseselect )
                 {
                     cur_op = i;
                     break;
                 }
-
             }
-
+            clear_all_phases();
             create_phase_menu();
 
         }
@@ -758,7 +832,7 @@ void wizards_draw()
 
     for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-        i->draw();
+        i->draw( i == cur_op ? NONE:DISABLED );
     }
     
     glPopMatrix();

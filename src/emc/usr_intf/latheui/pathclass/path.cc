@@ -263,13 +263,19 @@ void path::remove_knots()
 }
 
 
-void path::draw( bool both )
+void path::draw( color c )
 {
+    
+
     
     for(list<struct mov>::iterator i = ++(ml.begin()); i != ml.end(); i++)
     {
 
-        if( temporary )
+        if( c != NONE )
+        {
+            setcolor( c );
+        }
+        else if( temporary )
         {
             setcolor( DISABLED );
         }
@@ -303,7 +309,7 @@ void path::draw( bool both )
                 glVertex2f( i->end.z + v.x,  -i->end.x + v.z );
             }
 
-            if( both )
+            if( i->type == MOV_CONTOUR )
             {
                 glVertex2f( i->start.z, i->start.x );
                 glVertex2f( i->end.z, i->end.x );

@@ -162,7 +162,7 @@ void preview_draw()
     {
         for(list<operation>::iterator i = wiz_opl->begin(); i != wiz_opl->end(); i++)
         {
-            i->draw( false );
+            i->draw( NONE, true );
         }
     }
     

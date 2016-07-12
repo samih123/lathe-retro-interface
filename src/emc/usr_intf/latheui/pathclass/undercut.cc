@@ -45,8 +45,8 @@ void undercut_path::create( contour_path &c, double depth, double tool_r, double
     findminmax();
 }
 
-void undercut_path::draw( bool b )
+void undercut_path::draw( color c )
 {
-    path::draw(b);
-    tc.draw(b);
+    path::draw( c );
+    //tc.draw( c );
 }

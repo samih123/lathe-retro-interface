@@ -25,8 +25,9 @@ class operation
     
     //void set_inside( bool s ){ inside = s;} 
     Side get_side(){ return side; }; 
-    void draw( bool all = true );
+    void draw( color c=NONE, bool all = true );
     void new_cut( vec2 p, cut_type t );
+    void clear(){ f_path.clear();r_path.clear(); changed = true; };
     
     void erase();
     void previous();

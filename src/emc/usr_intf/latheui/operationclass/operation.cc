@@ -126,10 +126,10 @@ operation::operation( op_type t )
     
     if( type == FACING )
     {
-        face_begin.z = 0;
-        face_begin.x = 0;
-        face_end.z = 5;
-        face_end.x = stockdiameter/2.0;
+        face_begin.z = 5;
+        face_end.z = 0;
+        face_begin.x = stockdiameter/2.0;
+        face_end.x = 0;
     }
 
 }
@@ -140,7 +140,7 @@ operation::~operation()
 }
 
 
-void operation::draw( bool draw_all )
+void operation::draw( color c, bool draw_all )
 {
 
     double x1 = 0;
@@ -195,7 +195,7 @@ void operation::draw( bool draw_all )
         }
 
         create_contour();
-        contour.draw( true );
+        contour.draw( c );
         
         if( side == OUTSIDE )
         {
@@ -216,13 +216,13 @@ void operation::draw( bool draw_all )
     {
         if( type == TURN )
         {
-            r_path.draw( true );
+            r_path.draw( c );
         }
         else if( type == FACING )
         {
             setcolor( DISABLED );
             drawBox( face_begin, face_end );
-            f_path.draw( true );
+            f_path.draw( c );
         }     
     }
 

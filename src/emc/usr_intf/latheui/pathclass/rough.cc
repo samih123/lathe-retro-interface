@@ -55,8 +55,8 @@ void rough_path::create( contour_path &c, const tool &tl, Side s )
         
 }
 
-void rough_path::draw( bool b )
+void rough_path::draw( color c )
 {
-    path::draw(b);
-    tc.draw(b);
+    path::draw( c );
+    //tc.draw( DISABLED );
 }

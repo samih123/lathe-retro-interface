@@ -59,6 +59,7 @@ using namespace std;
 
 enum color
 {
+    NONE,
     BACKROUND,
     FEED,
     RAPID,
