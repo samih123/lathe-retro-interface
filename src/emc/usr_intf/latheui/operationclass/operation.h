@@ -62,7 +62,7 @@ class operation
     rough_path r_path;
     
     // facing
-    facing_path f_path;
+    box_path f_path;
     vec2 face_begin,face_end;
     
     vec2 min,max;

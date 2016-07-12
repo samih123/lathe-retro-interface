@@ -600,7 +600,7 @@ void operation::create_path( operation &ccontour, operation &ctool )
     
     if( type == FACING && changed )
     {
-         f_path.create( ctool.get_tool(), face_begin, face_end );
+         f_path.create( ctool.get_tool(), face_begin, vec2(-1,0), vec2(0,-1), fabs(face_end.x - face_begin.x), fabs(face_end.z - face_begin.z));
          return;
     }
     
