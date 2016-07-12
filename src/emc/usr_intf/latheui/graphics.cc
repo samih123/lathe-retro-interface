@@ -63,6 +63,7 @@ void setcolor( color c )
 {
     switch( c )
     {
+        case NONE: break;
         case BACKROUND: setrawcolor( BLACK ); break;
         case FEED: setrawcolor( YELLOW ); break;
         case RAPID: setrawcolor( RED ); break;

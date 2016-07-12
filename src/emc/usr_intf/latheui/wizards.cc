@@ -41,7 +41,8 @@ static tool ctool;
 static double diameter,diameter2;
 static double face_beginz,face_endz;
 
-vec2 startposition;
+double startz;
+double startd;
 
 int maxrpm;
 double stockdiameter;
@@ -192,6 +193,8 @@ void create_main_menu()
         Menu.edit( &scale, "Image scale " ); Menu.shortcut("AX=5" );
         Menu.edit( &pos.x, "Image x " ); Menu.shortcut("AX=0" );
         Menu.edit( &pos.z, "Image z " ); Menu.shortcut("AX=2" );
+        Menu.edit( &startz, "start position Z " );
+        Menu.edit( &startd, "start diameter   " );
         
         Menu.edit( initcommands, "Init commands:" );
         Menu.select( &menuselect, MENU_SAVE, "Save" );
@@ -319,7 +322,9 @@ void save_program(const char *name )
     
     for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
     {
+        fprintf(fp, "G0 X%.10g Z%.10g\n", startd/2.0, startz );
         i->save_program( fp ); // must call in order! 
+        fprintf(fp, "G0 X%.10g Z%.10g\n", startd/2.0, startz );
     }
         
     fprintf(fp, "M5 (stop spindle)\n");
@@ -423,6 +428,8 @@ void wizards_init()
         retract = 1;
         maxrpm = status.maxrpm;
         stockdiameter = 20;
+        startd = stockdiameter;
+        startz = 20;
         cur_contour = cur_op = cur_tool= opl.end();
         strcpy( initcommands, "G18 G8 G21 G95 G40 G64 P0.01 Q0.01" );
     }
@@ -834,6 +841,10 @@ void wizards_draw()
     {
         i->draw( i == cur_op ? NONE:DISABLED );
     }
+    
+    setcolor( RAPID );
+    drawCross( startz, -startd/2.0, 5 );
+    drawCircle( startz, -startd/2.0, 5 );
     
     glPopMatrix();
     
