@@ -215,19 +215,19 @@ void menu::draw( int x, int y)
                         println( strbuf, i->tcolor );
                     break;                 
                     case TYPEINT:
-                        sprintf(strbuf,"%s%s %s", arrow, i->name, i->str );
+                        sprintf(strbuf,"%s%s[%s]", arrow, i->name, i->str );
                         println( strbuf, i->tcolor );
                     break;
                     case TYPESTR:
-                        sprintf(strbuf,"%s%s %s", arrow, i->name, (char *)i->val );
+                        sprintf(strbuf,"%s%s[%s]", arrow, i->name, (char *)i->val );
                         println( strbuf,i->tcolor );
                     break;                
                     case TYPEDOUBLE:
-                        sprintf(strbuf,"%s%s%s", arrow, i->name, i->str );
+                        sprintf(strbuf,"%s%s[%s]", arrow, i->name, i->str );
                         println( strbuf, i->tcolor );
                     break;      
                     case TYPEBOOL:
-                        sprintf(strbuf,"%s%s %s", arrow, i->name, *(bool *)i->val ? "On":"Off" );
+                        sprintf(strbuf,"%s%s[%s]", arrow, i->name, *(bool *)i->val ? "On":"Off" );
                         println( strbuf, i->tcolor );
                     break;                                     
                 }

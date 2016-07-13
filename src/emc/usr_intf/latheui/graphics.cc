@@ -109,12 +109,12 @@ void println( int x, int y, int size, color c )
 {
     print_x = x;
     print_s = size;
-    print_y = y - ( print_s + print_s/16 );
+    print_y = y - ( print_s + print_s/5 );
 }
 
 void println(const char *s, color c )
 {
-    print_y += print_s + print_s/16;
+    print_y += print_s + print_s/5;
     print(s, print_x, print_y , print_s, c);
 }
 
