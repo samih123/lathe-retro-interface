@@ -1,5 +1,5 @@
 
-const char* phase_name( int t );
+const char* operation_name( int t );
 
 class operation
 {

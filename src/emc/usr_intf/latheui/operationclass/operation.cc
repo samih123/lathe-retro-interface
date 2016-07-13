@@ -7,7 +7,7 @@ extern const int maxrpm;
 extern double scale;
 extern char *ttcomments[CANON_POCKETS_MAX];
 
-const char* phase_name( int t )
+const char* operation_name( int t )
 {
     switch( t )
     {
@@ -32,12 +32,12 @@ const char* operation::get_name()
     
     if( type == CONTOUR && side == INSIDE )
     {
-        return phase_name( INSIDE_CONTOUR );
+        return operation_name( INSIDE_CONTOUR );
     }   
     
     if( type == TOOL && tl.tooln > 0 && tl.tooln < CANON_POCKETS_MAX)
     {
-        sprintf( name, "%s %s", phase_name( type ), ttcomments[ tl.tooln ]);
+        sprintf( name, "%s %s", operation_name( type ), ttcomments[ tl.tooln ]);
     }
 
     return name;
@@ -120,7 +120,7 @@ operation::operation( op_type t )
     side = OUTSIDE;
     changed = true;
    
-    strcpy( name, phase_name(t) );
+    strcpy( name, operation_name(t) );
     printf("name =%s\n",name);
     if( type == INSIDE_CONTOUR )
     {

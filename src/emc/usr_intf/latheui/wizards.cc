@@ -32,8 +32,8 @@ static char Zstr[BUFFSIZE];
 static char Name[BUFFSIZE];
 static char initcommands[BUFFSIZE] = "";
 
-static int phasecreate;
-static int phaseselect;
+static int operationcreate;
+static int operationselect;
 static int menuselect;
 
 static cut ccut;
@@ -100,7 +100,7 @@ static const char *typestr[] =
     "cut_end"
 };
 
-void create_phase_menu()
+void create_operation_menu()
 {
     getzd();
     if( cur_op == opl.end() )
@@ -164,13 +164,13 @@ void create_phase_menu()
     Menu.end();
 }
 
-void create_phase_select_menus()
+void create_operation_select_menus()
 { 
     int n = 1;
     for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-        sprintf(strbuf,"  phase %d:%s%s", n, i->get_type() > CONTOUR ? "  " : "", i->get_name() );
-        Menu.select( &phaseselect, n, strbuf );
+        sprintf(strbuf,"  %d:%s%s", n, i->get_type() > CONTOUR ? "  " : "", i->get_name() );
+        Menu.select( &operationselect, n, strbuf );
         if( cur_op == i )
         {
             Menu.setcolor( WARNING );
@@ -180,9 +180,9 @@ void create_phase_select_menus()
 }
 
 
-void create_new_phase_menu( int type )
+void create_new_operation_menu( int type )
 {
-    Menu.select( &phasecreate, type, phase_name( type ) );
+    Menu.select( &operationcreate, type, operation_name( type ) );
 }
 
 void create_main_menu()
@@ -190,7 +190,7 @@ void create_main_menu()
     printf("create main menu\n");
     Menu.clear();
     menuselect = 0;
-    Menu.begin( "machining phases:" );
+    Menu.begin( "" );
     
         Menu.edit( Name, "Program name:" );
         
@@ -207,42 +207,42 @@ void create_main_menu()
         Menu.edit( &stockdiameter, "Stock diameter " );
         Menu.edit( &maxrpm, "Max spindle rpm " );
         
-        Menu.begin( "Create and delete phases" );
+        Menu.begin( "Create and delete operations" );
             Menu.back("Back");
             
             if( cur_op != opl.end() )
             {
-                Menu.select( &menuselect, MENU_PHASE_UP, "Move current phase up" );
-                Menu.select( &menuselect, MENU_PHASE_DOWN, "Move current phase down" );
-                sprintf(strbuf,"Delete current phase:%s", cur_op->get_name() );
+                Menu.select( &menuselect, MENU_PHASE_UP, "Move current operation up" );
+                Menu.select( &menuselect, MENU_PHASE_DOWN, "Move current operation down" );
+                sprintf(strbuf,"Delete current operation:%s", cur_op->get_name() );
                 Menu.select( &menuselect, MENU_PHASE_DELETE, strbuf );
             }
             
-            Menu.begin( "Create new phase" );
+            Menu.begin( "Create new operation" );
                 Menu.back("Back");
-                create_new_phase_menu( TOOL );
-                create_new_phase_menu( CONTOUR );
-                create_new_phase_menu( INSIDE_CONTOUR );
-                create_new_phase_menu( TURN );
-                create_new_phase_menu( UNDERCUT );
-                create_new_phase_menu( FINISHING );
-                create_new_phase_menu( THREADING );
-                create_new_phase_menu( FACING );
-                create_new_phase_menu( DRILL );
-                create_new_phase_menu( PARTING );
-                create_new_phase_menu( MOVE );
+                create_new_operation_menu( TOOL );
+                create_new_operation_menu( CONTOUR );
+                create_new_operation_menu( INSIDE_CONTOUR );
+                create_new_operation_menu( TURN );
+                create_new_operation_menu( UNDERCUT );
+                create_new_operation_menu( FINISHING );
+                create_new_operation_menu( THREADING );
+                create_new_operation_menu( FACING );
+                create_new_operation_menu( DRILL );
+                create_new_operation_menu( PARTING );
+                create_new_operation_menu( MOVE );
             Menu.end();
             
         Menu.end();
         
-        create_phase_select_menus();
+        create_operation_select_menus();
 
     Menu.end();
     
     Menu.setmaxlines( 15 );
 }
 
-void clear_all_phases()
+void clear_all_operations()
 {
     cur_contour = cur_tool = opl.end();
     bool ready = false;
@@ -671,12 +671,12 @@ void wizards_parse_serialdata()
         if( isprefix( "LEFT" ,NULL ) )
         {
             cur_contour->next();
-            create_phase_menu();
+            create_operation_menu();
         }
         else if( isprefix( "RIGHT" ,NULL ) )
         {
             cur_contour->previous();
-            create_phase_menu();
+            create_operation_menu();
         }
     }
 
@@ -705,14 +705,14 @@ void wizards_parse_serialdata()
         if( menuselect == MENU_NEWCUT )
         {
             cur_contour->new_cut(vec2(0,0),CUT_LINE );
-            create_phase_menu();
+            create_operation_menu();
             return;
         }
         
         if( menuselect == MENU_DELETECUT )
         {
             cur_contour->erase();
-            create_phase_menu();
+            create_operation_menu();
             return;
         }
         
@@ -720,7 +720,7 @@ void wizards_parse_serialdata()
         {
             opl.erase( cur_op );
             cur_contour = cur_op = cur_tool = opl.end();
-            clear_all_phases();
+            clear_all_operations();
             create_main_menu();
             return;
         }
@@ -730,7 +730,7 @@ void wizards_parse_serialdata()
         {
             opl.splice( std::prev(cur_op), opl, cur_op );
             //cur_contour = cur_op = cur_tool = opl.end();
-            clear_all_phases();
+            clear_all_operations();
             create_main_menu();
             return;
         }
@@ -739,40 +739,40 @@ void wizards_parse_serialdata()
         {
             opl.splice( std::next(cur_op,2), opl, cur_op );
             //cur_contour = cur_op = cur_tool = opl.end();
-            clear_all_phases();
+            clear_all_operations();
             create_main_menu();
             return;
         }
                
-        if( Menu.edited( &phasecreate ) )
+        if( Menu.edited( &operationcreate ) )
         {
-            opl.push_back( operation( (op_type)phasecreate ) );
-            if( phasecreate == CONTOUR || phasecreate == INSIDE_CONTOUR )
+            opl.push_back( operation( (op_type)operationcreate ) );
+            if( operationcreate == CONTOUR || operationcreate == INSIDE_CONTOUR )
             {
                 cur_contour = --opl.end();
                 cur_contour->new_cut(vec2(0,10),CUT_BEGIN );
             }
-            clear_all_phases();
+            clear_all_operations();
             create_main_menu();
             return;
         }
 
-        else if( Menu.edited( &phaseselect ) )
+        else if( Menu.edited( &operationselect ) )
         {
-            printf("select %d\n", phaseselect );
+            printf("select %d\n", operationselect );
 
             int n = 1;
             cur_contour = cur_op = cur_tool = opl.end();
             for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
             {
-                if( n++ == phaseselect )
+                if( n++ == operationselect )
                 {
                     cur_op = i;
                     break;
                 }
             }
-            clear_all_phases();
-            create_phase_menu();
+            clear_all_operations();
+            create_operation_menu();
 
         }
 
@@ -790,7 +790,7 @@ void wizards_parse_serialdata()
                 cur_contour->set_cut( ccut );
                 if( Menu.edited( &ccut.type ) )
                 {
-                    create_phase_menu();// refresh type text
+                    create_operation_menu();// refresh type text
                 }
             }
 
@@ -879,8 +879,8 @@ void wizards_draw()
     }
     
     setcolor( RAPID );
-    drawCross( start_position.z, -start_position.x, 5 );
-    drawCircle( start_position.z, -start_position.x, 5 );
+    drawCross( start_position.z, -start_position.x, 5/scale);
+    drawCircle( start_position.z, -start_position.x, 5/scale );
     
     glPopMatrix();
     
