@@ -50,6 +50,8 @@ InterpBase *pinterp;
 
 
 extern char ttfile[LINELEN];
+extern list<operation> *wiz_opl;
+
 static float xmax,ymax,xmin,ymin;
 
 struct line
@@ -121,7 +123,8 @@ void preview_draw()
     glTranslatef(5+ -xmin2*scale,300 , 0);
     glScalef(scale, scale,scale);
         
-    setcolor( BLUE );
+    
+    setcolor( OUTLINE );
     glBegin(GL_LINE_LOOP);
         glVertex2f( xmin, ymin ); 
         glVertex2f( xmin, ymax ); 
@@ -129,8 +132,7 @@ void preview_draw()
         glVertex2f( xmax, ymin );
     glEnd();    
         
-        
-    setcolor( RED );
+    setcolor( RAPID );
     glBegin(GL_LINES);
     for(std::list<line>::iterator i = rapidlines.begin(); i != rapidlines.end(); i++)
     {
@@ -139,7 +141,7 @@ void preview_draw()
     }
     glEnd();
     
-    setcolor( GREEN );
+    setcolor( FEED );
     glBegin(GL_LINES);
     for(std::list<line>::iterator i = feedlines.begin(); i != feedlines.end(); i++)
     {
@@ -148,7 +150,7 @@ void preview_draw()
     }
     glEnd();
     
-    setcolor( MAGENTA );
+    setcolor( CROSS );
     glBegin(GL_LINES);
         glVertex2f( 0,15 ); 
         glVertex2f( 0,-15 ); 
@@ -156,11 +158,20 @@ void preview_draw()
         glVertex2f( -15,0 );
     glEnd();
     
+    if( wiz_opl != NULL )
+    {
+        for(list<operation>::iterator i = wiz_opl->begin(); i != wiz_opl->end(); i++)
+        {
+            i->draw( NONE, true );
+        }
+    }
+    
     glTranslatef( x, y , 0);
     draw_tool( emcStatus->io.tool.toolInSpindle );
 
     glPopMatrix();
- 
+    
+    
 }
 
 

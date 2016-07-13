@@ -6,35 +6,13 @@
 ********************************************************************/
 
 #include "latheintf.h"
-#include "menu.h"
+//#include "menu.h"
 
 #include <list>
 using namespace std;
 extern char programPrefix[LINELEN];
 
-#define LINE 0
-#define ARC_OUT 1
-#define ARC_IN 2
-#define THREAD 3
-#define GROOVE 4
-#define RAPID 5
-#define FEED 6
 
-#define MENUDELETE 1
-#define MENUNEW 2
-#define MENUSAVE 3
-#define MENUTOOLPATH 4
-
-const char *typestr[] =
-{
-    "straight line",
-    "Outside arch",
-    "Inside arch",
-    "Thread",
-    "Groove"
-    "Rapid move",
-    "Feed move",
-};
 
 extern char strbuf[BUFFSIZE];
 extern struct machinestatus status;
@@ -42,425 +20,372 @@ extern int screenw, screenh;
 extern char estr[BUFFSIZE];
 static menu Menu;
 
-static double scale = 2;
-static double retract = 1;
 
-struct cutparam
+extern list<operation> *wiz_opl;
+static list<operation> opl;
+list<operation>::iterator cur_op;
+list<operation>::iterator cur_contour;
+list<operation>::iterator cur_tool;
+
+static char Dstr[BUFFSIZE];
+static char Zstr[BUFFSIZE];
+static char Name[BUFFSIZE];
+static char initcommands[BUFFSIZE] = "";
+
+static int phasecreate;
+static int phaseselect;
+static int menuselect;
+
+static cut ccut;
+static tool ctool;
+static vec2 movepos;
+static vec2 face_begin,face_end;
+
+static vec2 start_position;
+
+int maxrpm;
+double stockdiameter;
+double scale = 1;
+static vec2 pos(0,0); 
+double retract = 1;
+
+
+#define  MENU_PHASE_NEW 1
+#define  MENU_PHASE_DELETE 2
+#define  MENU_PHASE_UP 3
+#define  MENU_PHASE_DOWN 4
+
+#define  MENU_NEWCUT    5
+#define  MENU_DELETECUT 6
+
+#define  MENU_SAVE 7
+#define  MENU_MAIN 8
+#define  MENU_SAVE_PROGRAM 9
+
+
+void getzd()
 {
-    double depth;
-    double feed;
-    double tool_r;
-    int tool;
-    int count;
-    int speed;
+    if( cur_contour != opl.end() ){
+         ccut = cur_contour->get_cut();
+    }
+    
+    if( cur_tool != opl.end() )
+    {
+        ctool = cur_tool->get_tool();
+    }
+    
+    if( cur_op != opl.end() )
+    {
+        op_type type = cur_op->get_type();
+        
+        if( type == FACING )
+        {
+            face_begin = cur_op->getf_begin();
+            face_end = cur_op->getf_end();
+        }
+        else if( type == MOVE )
+        {
+            movepos = cur_op->get_move();
+        }
+    }
+}
+
+static const char *typestr[] =
+{
+    "cut_Begin",
+    "straight line",
+    "Outside arch",
+    "Inside arch",
+    "Thread",
+    "cut_end"
 };
 
-#define ROUGH 0
-#define UNDERCUT 1
-#define FINISH 2
-
-static cutparam tp[3];
-
-struct cut
+void create_phase_menu()
 {
-    cut( double ax,double az )
+    getzd();
+    if( cur_op == opl.end() )
     {
-        dim.x = ax;
-        dim.z = az;
-        type = LINE;
-        r = 1.0f;
-        pitch = 1.0f;
-        depth = 0.65f * pitch;
+        return;
     }
-    int type;
-    vec2 dim;
-    double r;
-    double pitch;
-    double depth;
-    vec2 end,start,center;
-};
-
-static list<struct cut> cuts;
-static list<struct cut>::iterator currentcut;
-
-
-
-
-
-
-struct mov
-{
-    mov( double ax,double az, int ct )
-    {
-        end.x = ax;
-        end.z = az;
-        feed = 0;
-        type = ct;
-        toolchange = 0;
-    }
-    mov( const vec2 &v, int ct )
-    {
-        end = v;
-        feed = 0;
-        type = ct;
-        toolchange = 0;
-    }
-    ~mov()
-    {
-        comment.erase();
-    }
-
-    vec2 end,start;
-    vec2 vel;
-    double pitch;
-    double depth;
-    double feed;
-    int type;
-    string comment;
-    int toolchange;
-};
-
-#define MAXFINEPASS 20
-
-
-static vec2 contour_max;
-static vec2 contour_min;
-static vec2 startposition; 
-
-
-static std::list<struct mov> contour;
-static std::list<struct mov> finepath[MAXFINEPASS];
-static std::list<struct mov> roughpath;
-static std::list<struct mov> undercutpath;
-static std::list<struct mov> threadpath;
-static std::list<struct mov> toolpath[2];
-static bool draw_toolpath = false;
-static bool dynamic_toolpath = false;
-
-
-void create_line( std::list<struct mov> &ml, const vec2 &v , int t, const char *comment = NULL )
-{
-    vec2 start;
-    if( ml.empty() )
-    {
-        start.x = start.z = 0;
-    }
-    else
-    {
-        start = ml.back().end;
-    }
-    ml.push_back( mov( v.x, v.z , t ) );
-    ml.back().start = start;
-    if( comment != NULL ) ml.back().comment = comment;
-}
-
-void create_line( struct cut *c, std::list<struct mov> &ml, const vec2 &v )
-{
-    create_line( ml, v, c->type );
-}
-
-
-
-void create_arc( struct cut *c, std::list<struct mov> &ml, const vec2 v1, const vec2 v2, double r, bool side)
-{
-
-    double x1 = v1.x;
-    double y1 = v1.z;
-    double x2 = v2.x;
-    double y2 = v2.z;
-    double q = sqrt( (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) );
-    double x3 = (x1+x2)/2.0f;
-    double y3 = (y1+y2)/2.0f;
-
-    double cx;
-    double cy;
-
-    double u = r*r - q*q/4.0;
-
-    if( side )
-    {
-        cx = x3 + sqrt(u)*(y1-y2)/q;
-        cy = y3 + sqrt(u)*(x2-x1)/q;
-    }
-    else
-    {
-        cx = x3 - sqrt(u)*(y1-y2)/q;
-        cy = y3 - sqrt(u)*(x2-x1)/q;
-    }
-
-    c->center.x = -cx;
-    c->center.z = cy;
-
-    double start_angle = atan2(y1 - cy, x1 - cx);
-    double dot = (x1-cx)*(x2-cx) + (y1-cy)*(y2-cy);
-    double det = (x1-cx)*(y2-cy) - (y1-cy)*(x2-cx);
-    double angle = atan2(det, dot);
-
-    int num_segments = fabs( angle )*5.0f*r;
-    if( num_segments < 3 ) num_segments = 3;
-
-    double theta = angle / double(num_segments - 1);
-    double tangetial_factor = tanf(theta);
-    double radial_factor = cosf(theta);
-
-    double x = r * cosf(start_angle);
-    double y = r * sinf(start_angle);
-    for(int ii = 0; ii < num_segments; ii++)
-    {
-        create_line( c, ml, vec2(x + cx, y + cy) );
-        double tx = -y;
-        double ty = x;
-        x += tx * tangetial_factor;
-        y += ty * tangetial_factor;
-        x *= radial_factor;
-        y *= radial_factor;
-    }
-}
-
-
-void add_cut(double x,double z)
-{
-    vec2 start(0,0);
-    if( ! cuts.empty() )
-    {
-       start = cuts.back().end;
-    }
-    cuts.push_back( cut( cuts.back().dim.x + x, z) );
-    currentcut = --cuts.end();
-    currentcut->type = LINE;
-    currentcut->start = start;
-}
-
-
-
-void remove_short_lines(std::list<struct mov> &ml, double min )
-{
-    vec2 start(0,0);
-    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
-    {
-        if( start.dist_squared( i->end ) < min*min )
+    menuselect = 0;
+    Menu.clear();
+    op_type type = cur_op->get_type();
+    
+    Menu.begin( cur_op->get_name() );
+    
+        Menu.select( &menuselect, MENU_MAIN, "Back" );
+        
+        if( type == CONTOUR )
         {
-           // printf("removing short line %f\n", start.dist( i->dim ) );
-            i = contour.erase( i );
-        }
-        start = i->end;
-    }
+            sprintf(Dstr,"D start:%.20g end:", ccut.start.x*2.0f );
+            sprintf(Zstr,"Z start:%.20g lenght:", ccut.start.z );
 
+            Menu.edit( &ccut.type, typestr[ ccut.type ] );Menu.hiddenvalue();
+            Menu.select( &menuselect, MENU_DELETECUT, "Delete" );
+            Menu.select( &menuselect, MENU_NEWCUT, "New" );
+            Menu.edit( &ccut.end.x, Dstr ); Menu.shortcut("AX=0" ); Menu.diameter_mode();
+            Menu.edit( &ccut.end.z, Zstr ); Menu.shortcut("AX=2" );
+
+            
+            if( ccut.type == CUT_ARC_IN || ccut.type == CUT_ARC_OUT )
+            {
+                Menu.edit( &ccut.r, "Radius " ); Menu.shortcut("AX=5" );
+            }
+            /*
+            if( cur_contour->currentcut->type == THREAD )
+            {
+                Menu.edit( &cur_contour->currentcut->pitch, "Pitch" );
+                Menu.edit( &cur_contour->currentcut->depth, "Depth " );
+            }
+            */
+        }
+        else if( type == TOOL )
+        {
+            Menu.edit( &ctool.tooln, "Tool number " );
+            Menu.edit( &ctool.feed, "Feedrate mm/min " );
+            Menu.edit( &ctool.speed, "Surface speed m/s " );
+            Menu.edit( &ctool.depth, "Depth " );
+        }
+        
+        else if( type == FACING )
+        {
+            Menu.edit( &face_begin.x, "Start diameter " ); Menu.diameter_mode();
+            Menu.edit( &face_end.x, "End diameter " ); Menu.diameter_mode();
+            Menu.edit( &face_begin.z, "Start Z " );
+            Menu.edit( &face_end.z, "End Z " );           
+        }
+        
+        else if( type == MOVE )
+        {
+            Menu.edit( &movepos.x, "Diameter " ); Menu.diameter_mode();
+            Menu.edit( &movepos.z, "Z        " );
+        }       
+        
+    Menu.end();
 }
 
-bool create_contour()
+void create_phase_select_menus()
+{ 
+    int n = 1;
+    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
+    {
+        sprintf(strbuf,"  phase %d:%s%s", n, i->get_type() > CONTOUR ? "  " : "", i->get_name() );
+        Menu.select( &phaseselect, n, strbuf );
+        if( cur_op == i )
+        {
+            Menu.setcolor( WARNING );
+        }
+        n++;
+    }
+}
+
+
+void create_new_phase_menu( int type )
 {
-    contour.clear();
+    Menu.select( &phasecreate, type, phase_name( type ) );
+}
 
-    contour_max = vec2( -1000000,-1000000 );
-    contour_min = vec2( 1000000,1000000 );
+void create_main_menu()
+{
+    printf("create main menu\n");
+    Menu.clear();
+    menuselect = 0;
+    Menu.begin( "machining phases:" );
+    
+        Menu.edit( Name, "Program name:" );
+        
+        Menu.edit( &scale, "Image scale " ); Menu.shortcut("AX=5" );
+        Menu.edit( &pos.x, "Image x " ); Menu.shortcut("AX=0" );
+        Menu.edit( &pos.z, "Image z " ); Menu.shortcut("AX=2" );
+        
+        Menu.edit( &start_position.x, "start diameter   " ); Menu.diameter_mode();
+        Menu.edit( &start_position.z, "start position Z " );
+        
+        Menu.edit( initcommands, "Init commands:" );
+        Menu.select( &menuselect, MENU_SAVE, "Save" );
+        Menu.select( &menuselect, MENU_SAVE_PROGRAM, "Save program" );
+        Menu.edit( &stockdiameter, "Stock diameter " );
+        Menu.edit( &maxrpm, "Max spindle rpm " );
+        
+        Menu.begin( "Create and delete phases" );
+            Menu.back("Back");
+            
+            if( cur_op != opl.end() )
+            {
+                Menu.select( &menuselect, MENU_PHASE_UP, "Move current phase up" );
+                Menu.select( &menuselect, MENU_PHASE_DOWN, "Move current phase down" );
+                sprintf(strbuf,"Delete current phase:%s", cur_op->get_name() );
+                Menu.select( &menuselect, MENU_PHASE_DELETE, strbuf );
+            }
+            
+            Menu.begin( "Create new phase" );
+                Menu.back("Back");
+                create_new_phase_menu( TOOL );
+                create_new_phase_menu( CONTOUR );
+                create_new_phase_menu( INSIDE_CONTOUR );
+                create_new_phase_menu( TURN );
+                create_new_phase_menu( UNDERCUT );
+                create_new_phase_menu( FINISHING );
+                create_new_phase_menu( THREADING );
+                create_new_phase_menu( FACING );
+                create_new_phase_menu( DRILL );
+                create_new_phase_menu( PARTING );
+                create_new_phase_menu( MOVE );
+            Menu.end();
+            
+        Menu.end();
+        
+        create_phase_select_menus();
 
-    vec2 start(0,0);
+    Menu.end();
+    
+    Menu.setmaxlines( 15 );
+}
 
-    for(list<struct cut>::iterator i = cuts.begin(); i != cuts.end(); i++)
+void clear_all_phases()
+{
+    cur_contour = cur_tool = opl.end();
+    bool ready = false;
+    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-
-       i->start = start;
-
-       i->end.z = start.z + i->dim.z;
-       i->end.x = i->dim.x;
-
-       start =  i->end;
-
-        if( i->type == ARC_IN || i->type == ARC_OUT )
+        if( ! ready && cur_op != opl.end() )
         {
-            double l = i->start.dist( i->end ) + 0.00001f;
-            if( i->r < l/2.0f )  i->r = l/2.0f;
-            create_arc( &*i, contour, i->start, i->end, i->r, i->type == ARC_IN );
-            //contour.back().end = i->end;
+            if( i->get_type() == CONTOUR )
+            {
+                cur_contour = i;
+            }
+
+            if( i->get_type() == TOOL )
+            {
+                cur_tool = i;
+            }
+            
+            if( i == cur_op )
+            {
+                 ready = true;
+            }
         }
-        else if(i->type == LINE )
-        {
-            create_line( &*i, contour, i->end );
-        }
-        else if(i->type == THREAD )
-        {
-            create_line( &*i, contour, i->end );
-        }
-        else printf("error:unknow type %i\n",i->type);
+         
+        i->clear();
     }
+}
 
-    //remove_short_lines( contour ,0.01 );
+void create_paths()
+{
+    
+    list<operation>::iterator contour = opl.end();
+    list<operation>::iterator tool = opl.end();
 
-    vec2(0,0).findminmax( contour_min, contour_max );
-    start.x = start.z = 0;
-    for(list<struct mov>::iterator i = contour.begin(); i != contour.end(); i++)
+    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-        i->end.findminmax( contour_min, contour_max );
-        i->start = start;
-        start =  i->end;
+        
+        if( tool != opl.end() )
+        {
+            if( i->get_type() == FACING )
+            {
+                i->create_path( *contour, *tool );
+            }
+        }
+        
+        if( i->get_type() == CONTOUR )
+        {
+            contour = i;
+            i->create_contour();
+        }
+
+        if( i->get_type() == TOOL )
+        {
+            tool = i;
+        }
+        
+        if( tool != opl.end() && contour != opl.end() )
+        {
+            if( i->get_type() == TURN )
+            {
+                i->create_path( *contour, *tool );
+            }
+        }
+        
     }
-
-
-    return true;
 }
 
 
-void save( const char *name )
+void save_program(const char *name )
+{
+
+    FILE *fp;
+    char ngc_file[BUFFSIZE];
+    
+    sprintf( ngc_file, "%s/%s.ngc", programPrefix, name );
+    printf("save_program:%s\n",ngc_file);
+    fp = fopen( ngc_file, "w");
+
+    if (fp == NULL) return;
+
+    fprintf(fp, "%s\n", initcommands );
+    
+    
+    fprintf(fp, "G0 X%.10g Z%.10g\n", start_position.x, start_position.z );
+    
+    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
+    {
+        i->save_program( fp ); // must call in order! 
+        
+        if( i->get_type() != CONTOUR &&
+            i->get_type() != INSIDE_CONTOUR
+        )
+        {
+            
+            bool b = true;
+            if( std::next(i) != opl.end() )
+            {
+                if( std::next(i)->get_type() == MOVE ) 
+                {
+                    b = false;
+                }
+            }
+            
+            if(b)
+            {
+                fprintf(fp, "G0 X%.10g Z%.10g (start position)\n", start_position.x, start_position.z );
+            }
+        }
+        
+    }
+        
+    fprintf(fp, "M5 (stop spindle)\n");
+    fprintf(fp, "M2\n");
+    
+    fclose( fp );
+
+    edit_load( ngc_file );
+    auto_load( ngc_file );
+    wiz_opl = &opl;
+
+}
+
+
+void wizards_save( const char *name )
 {
     FILE *fp;
 
     sprintf(strbuf,"%s/%s.wiz", programPrefix, name );
     printf("save:%s\n",strbuf);
     fp = fopen( strbuf, "w");
-
     if (fp == NULL) return;
-
-     fprintf(fp, "%d %d %d %f %f\n%d %d %d %f %f\n%d %d %d %f %f\n",
-            tp[ROUGH   ].tool, tp[ROUGH   ].count, tp[ROUGH   ].speed, tp[ROUGH   ].feed, tp[ROUGH   ].depth,
-            tp[UNDERCUT].tool, tp[UNDERCUT].count, tp[UNDERCUT].speed, tp[UNDERCUT].feed, tp[UNDERCUT].depth,
-            tp[FINISH  ].tool, tp[FINISH  ].count, tp[FINISH  ].speed, tp[FINISH  ].feed, tp[FINISH  ].depth
-         );
-    for(list<struct cut>::iterator i = cuts.begin(); i != cuts.end(); i++)
-    {
-         fprintf(fp, "%d %f %f %f %f %f\n",
-            i->type,
-            i->dim.x,
-            i->dim.z,
-            i->r,
-            i->pitch,
-            i->depth
-         );
-    }
-    fclose( fp );
-
-}
-
-
-
-static char Dstr[BUFFSIZE];
-static char Zstr[BUFFSIZE];
-static char Name[BUFFSIZE];
-static int menuselect;
-static double diameter;
-static double stockdiameter;
-static double X;
-static double Y;
-static int maxrpm;
-
-void toolmenu( int t, const char *n )
-{
-    Menu.begin( n );
-        Menu.back("back");
-        Menu.edit( &tp[t].tool, "Tool number " );
-        Menu.edit( &tp[t].feed, "Feedrate mm/min" );
-        Menu.edit( &tp[t].speed, "Surface speed m/s " );
-        Menu.edit( &tp[t].depth, "Depth " );
-        if( t== FINISH )
-        {
-            Menu.edit( &tp[t].count, "Count " );
-        }
-    Menu.end();
-}
-
-void createmenu()
-{
-
-    diameter = currentcut->dim.x *2.0f;
-    printf("max  %g,%g\n",contour_max.x,contour_max.z);
-    printf("min  %g,%g\n",contour_min.x,contour_min.z);
-
-    sprintf(Dstr,"D start:%4.3g end:", currentcut->start.x*2.0f );
-    sprintf(Zstr,"Z start:%4.3g lenght:", currentcut->start.z );
-
-    Menu.clear();
-    Menu.begin( "" );
-        Menu.edit( &currentcut->type, typestr[ currentcut->type ] ); Menu.hiddenvalue();
-        Menu.select( &menuselect, MENUDELETE, "Delete" );
-        Menu.select( &menuselect, MENUNEW, "New" );
-        Menu.edit( &diameter, Dstr ); Menu.shortcut("AX=0" );
-        Menu.edit( &currentcut->dim.z, Zstr ); Menu.shortcut("AX=2" );
-        if( currentcut->type == ARC_IN || currentcut->type == ARC_OUT )
-        {
-        Menu.edit( &currentcut->r, "Radius" ); Menu.shortcut("AX=5" );
-        }
-        if(currentcut->type == THREAD )
-        {
-        Menu.edit( &currentcut->pitch, "Pitch" );
-        Menu.edit( &currentcut->depth, "Depth " );
-        }
-        Menu.edit( &stockdiameter, "Stock diameter " );
-        Menu.edit( &maxrpm, "Max spindle rpm " );
-        Menu.select( &menuselect, MENUTOOLPATH, "Create toolpath" );
-        Menu.select( &menuselect, MENUSAVE, "Save program" );
-        Menu.edit( Name, "Program name:" );
-        Menu.edit( &scale, "Scale " );
-        Menu.edit( &X, "X " );
-        Menu.edit( &Y, "Y " );
-
-        toolmenu( ROUGH , "Rough tool settings");
-        toolmenu( UNDERCUT , "Undercut tool settings");
-        toolmenu( FINISH , "Finish tool settings");
-        Menu.edit( &dynamic_toolpath, "dynamic toolpath calculation " );
-    Menu.end();
-    Menu.setmaxlines( 10 );
-}
-
-
-void save_path( list<struct mov> ml,FILE *fp ,cutparam &cp)
-{
-
-    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
-    {
-        
-        strbuf[0] = 0;
-        if( ! i->comment.empty() )
-        {
-            sprintf( strbuf, "( %s )", i->comment.c_str() );
-        }
-        fprintf(fp, "G%s X%.4f Z%.4f%s\n",
-            i->type == FEED ? "1":"0" ,
-            fabs( i->end.x ) < 0.001 ? 0:i->end.x,
-            fabs( i->end.z ) < 0.001 ? 0:i->end.z,
-            strbuf
-        );
-        
-        if( i->toolchange )
-        {
-            sprintf( strbuf, "T%d M6 F%f\n", i->toolchange, cp.feed );
-            fprintf(fp, "%s", strbuf );
-            sprintf( strbuf, "G96 D%d S%d\n", maxrpm, cp.speed );
-            fprintf(fp, "%s", strbuf );
-            sprintf( strbuf, "M4\n" );
-            fprintf(fp, "%s", strbuf );
-        }        
-
-    }
-
-}
-
- void save_program(const char *name )
-{
-    FILE *fp;
-    printf("save_program:%s\n",name);
-    fp = fopen( name, "w");
-
-    if (fp == NULL) return;
-
-    fprintf(fp, "G18 G8 G21 G94 G40\n");
-    fprintf(fp, "G64 P0.01\n");
-    fprintf(fp, "( Rough )\n");
-
-    save_path( roughpath, fp, tp[ROUGH] );
-
-    fprintf(fp, "( undercut )\n");
-    save_path( undercutpath,fp, tp[UNDERCUT] );
-
-
-    fprintf(fp, "( Finish )\n");
-    for( int i = tp[FINISH].count-1 ; i >= 0; i-- )
-    {
-      save_path( finepath[i], fp, tp[FINISH] );
-    }
+    fprintf(fp, "NAME %s\n", name );
+    fprintf(fp, "INIT \"%s\"\n", initcommands );
+    fprintf(fp, "STOCKDIAM %.20g\n", stockdiameter );
+    fprintf(fp, "MAXRPM %i\n", maxrpm );
+    fprintf(fp, "POSX %.20g\n", pos.x );
+    fprintf(fp, "POSZ %.20g\n", pos.z );
+    fprintf(fp, "SCALE %.20g\n", scale );
     
-    fprintf(fp, "M5 (stop spindle)\n");
+    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
+    {
+        i->save( fp );
+    }
 
-    fprintf(fp, "M2\n");
     fclose( fp );
 }
 
@@ -468,49 +393,46 @@ void save_path( list<struct mov> ml,FILE *fp ,cutparam &cp)
 void wizards_load( const char *name )
 {
 
-    cuts.clear();
-
     FILE *fp;
     char *line = NULL;
     size_t len = 0;
     ssize_t read;
 
-   printf("load:%s\n",name);
-   fp = fopen( name, "r");
+    char tag[BUFFSIZE+1];
+    double val=0;
+    
+    printf("load:%s\n",name);
+    fp = fopen( name, "r");
 
    if (fp == NULL) return;
-
-    // read tool parameters
-    for( int i=0 ; i<3 ; i++ )
-    {
-        if((read = getline( &line, &len, fp)) != -1)
-        {
-            sscanf(line, "%d %d %d %lf %lf",
-                &tp[i].tool, &tp[i].count, &tp[i].speed, &tp[i].feed, &tp[i].depth
-            );
-        }
-    }
     
-    // read contour
+    opl.clear();
+    wizards_init();
+
     while ((read = getline( &line, &len, fp)) != -1)
     {
 
         printf("%s", line);
-        cuts.push_back( cut(0,0) );
-        list<struct cut>::iterator i= --cuts.end();
-        sscanf(line, "%d %lf %lf %lf %lf %lf",
-            &i->type,
-            &i->dim.x,
-            &i->dim.z,
-            &i->r,
-            &i->pitch,
-            &i->depth
-        );
+        
+        sscanf(line, "%s %lf", tag, &val );
+        
+        findtag( tag, "STOCKDIAM", stockdiameter, val );
+        findtag( tag, "MAXRPM", maxrpm, val );
+        findtag( line, "INIT", initcommands );
+        findtag( tag, "POSX", pos.x, val );
+        findtag( tag, "POSZ", pos.z, val );
+        findtag( tag, "SCALE", scale, val );
+
+        if( strcmp( tag, "OPERATION" ) == 0 )
+        {
+            opl.push_back( operation( (op_type)val ) );
+            opl.back().load( fp );
+        }
 
         free(line);
         line = NULL;
     }
-    currentcut = --cuts.end();
+
     fclose( fp );
 
     // strip name
@@ -519,82 +441,31 @@ void wizards_load( const char *name )
     strcpy( Name, n+1 );
     n = strstr(Name, ".wiz" );
     if( n ) *(char *)n = 0;
-    scale = 3;
-    create_contour();
-    createmenu();
+    
+
 }
 
 
 void wizards_init()
 {
-
-    scale = 2;
-    retract = 1;
-    maxrpm = status.maxrpm;
-
-    //wizards_load( "/home/sami/linuxcnc/nc_files/sotilas.wiz" );
-    if( cuts.size() == 0 )
+    if( opl.size() == 0 )
     {
-         add_cut(10,0);
-         tp[ROUGH].tool = tp[FINISH].tool = tp[UNDERCUT].tool = 1;
-         tp[ROUGH].feed = tp[FINISH].feed = tp[UNDERCUT].feed = 50;
-         tp[ROUGH].speed = tp[FINISH].speed = tp[UNDERCUT].speed = 20;
-    }
-    scale = 1;
-    create_contour();
-    createmenu();
-}
-
-
-void draw_contour( std::list<struct mov> &ml ,bool both )
-{
-
-    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
-    {
-
-        //setcolor( MAGENTA );drawCross( i->vel.z,-(i->vel.x) ,2);////////////////////
-
-        if( i->type == THREAD && both )
-        {
-            setcolor( GREY );
-        }
-        else if( i->type == RAPID )
-        {
-            setcolor( RED );
-        }
-        else if( i->type == FEED )
-        {
-            setcolor( YELLOW );
-        }
-        else
-        {
-            setcolor( GREEN );
-        }
-
-        glBegin(GL_LINES);
-
-            glVertex2f( i->start.z, -i->start.x );
-            glVertex2f( i->end.z, -i->end.x );
-
-            if( i != ml.begin() && 0 ) // draw normals
-            {
-                glVertex2f( i->end.z, -i->end.x );
-                vec2 v( i->start.z, -i->start.x );
-                v = v.normal( vec2(i->end.z, -i->end.x) );
-                glVertex2f( i->end.z + v.x,  -i->end.x + v.z );
-            }
-
-            if( both )
-            {
-                glVertex2f( i->start.z, i->start.x );
-                glVertex2f( i->end.z, i->end.x );
-            }
-
-        glEnd();
-
+        scale = 2;
+        retract = 1;
+        maxrpm = status.maxrpm;
+        stockdiameter = 20;
+        start_position.x = stockdiameter/2.0;
+        start_position.z = 20;
+        cur_contour = cur_op = cur_tool= opl.end();
+        strcpy( initcommands, "G18 G8 G21 G95 G40 G64 P0.01 Q0.01" );
     }
 
+    if( status.screenmode == SCREENWIZARDS )
+    {
+        create_main_menu();
+    }
 }
+
 
 void draw_thread(double x1, double y1, double x2, double y2, double pitch, double depth )
 {
@@ -620,7 +491,7 @@ void draw_thread(double x1, double y1, double x2, double y2, double pitch, doubl
     double x = x1;
     double y = y1;
     glBegin(GL_LINE_STRIP);
-        setcolor( GREEN );
+        setcolor( CONTOUR_LINE );
         glVertex2f( x1, y1 );
         for( int i=0 ; i < n-1 ; i++ )
         {
@@ -642,7 +513,7 @@ void draw_thread(double x1, double y1, double x2, double y2, double pitch, doubl
     x = x1;
     y = y1;
     glBegin(GL_LINE_STRIP);
-        setcolor( GREEN );
+        setcolor( CONTOUR_LINE );
         glVertex2f( x1, -y1 );
         for( int i=0 ; i < n-1 ; i++ )
         {
@@ -665,46 +536,7 @@ void draw_thread(double x1, double y1, double x2, double y2, double pitch, doubl
 
 
 
-double dist_from_segment( const vec2 v, const vec2 w, const vec2 p )
-{
-    const double distSq = v.dist_squared( w );
-    if ( distSq == 0.0 )
-    {
-        return v.dist( p );
-    }
-    const double t = ( p - v ).dot( w - v ) / distSq;
-    if ( t < 0.0 )
-    {
-        return v.dist( p );
-    }
-    else if ( t > 1.0 )
-    {
-        return w.dist( p );
-    }
-    const vec2 projection = v + ( ( w - v ) * t );
-    return p.dist( projection );
-}
-
-
-double distance( std::list<struct mov> &ml, const vec2 &p )
-{
-    double mindist = 1000000;
-    vec2 start(0,0);
-    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
-    {
-        if( i->type != RAPID )
-        {
-            double d = dist_from_segment( i->start, i->end , p );
-            if( d < mindist ) mindist = d ;
-        }
-
-    }
-    return mindist;
-}
-
-
-
-  // inSegment(): determine if a point is inside a segment
+// inSegment(): determine if a point is inside a segment
 //    Input:  a point P, and a collinear segment S
 //    Return: 1 = P is inside S
 //            0 = P is  not inside S
@@ -726,7 +558,7 @@ inSegment( vec2 P, vec2 S1, vec2 S2)
     return 0;
 }
 
-#define SMALL_NUM 0.00000001
+#define SMALL_NUM 0.000001
 //===================================================================
 // dot product (3D) which allows vector operations in arguments
 #define DOT(u,v)   (u.dot(v))  //)((u).x * (v).x + (u).z * (v).z)
@@ -819,515 +651,188 @@ int get_line_intersection( vec2 S1P0, vec2 S1P1 , vec2 S2P0, vec2 S2P1, vec2 &I0
 //===================================================================
 
 
-double Segment_to_Segment( vec2 a1, vec2 a2, vec2 b1, vec2 b2)
+
+
+void clamp_values()
 {
-    vec2   u = a2 - a1;//S1P1 - S1P0;
-    vec2   v = b2 - b1;//S2P1 - S2P0;
-    vec2   w = a1 - b1;//S1P0 - S2P0;
-
-    double    a = u.dot(u);         // always >= 0
-    double    b = u.dot(v);
-    double    c = v.dot(v);         // always >= 0
-    double    d = u.dot(w);
-    double    e = v.dot(w);
-    double    D = a*c - b*b;        // always >= 0
-    double    sc, sN, sD = D;       // sc = sN / sD, default sD = D >= 0
-    double    tc, tN, tD = D;       // tc = tN / tD, default tD = D >= 0
-
-    // compute the line parameters of the two closest points
-    if (D < SMALL_NUM) { // the lines are almost parallel
-        sN = 0.0;         // force using point P0 on segment S1
-        sD = 1.0;         // to prevent possible division by 0.0 later
-        tN = e;
-        tD = c;
-    }
-    else {                 // get the closest points on the infinite lines
-        sN = (b*e - c*d);
-        tN = (a*e - b*d);
-        if (sN < 0.0) {        // sc < 0 => the s=0 edge is visible
-            sN = 0.0;
-            tN = e;
-            tD = c;
-        }
-        else if (sN > sD) {  // sc > 1  => the s=1 edge is visible
-            sN = sD;
-            tN = e + b;
-            tD = c;
-        }
-    }
-
-    if (tN < 0.0) {            // tc < 0 => the t=0 edge is visible
-        tN = 0.0;
-        // recompute sc for this edge
-        if (-d < 0.0)
-            sN = 0.0;
-        else if (-d > a)
-            sN = sD;
-        else {
-            sN = -d;
-            sD = a;
-        }
-    }
-    else if (tN > tD) {      // tc > 1  => the t=1 edge is visible
-        tN = tD;
-        // recompute sc for this edge
-        if ((-d + b) < 0.0)
-            sN = 0;
-        else if ((-d + b) > a)
-            sN = sD;
-        else {
-            sN = (-d +  b);
-            sD = a;
-        }
-    }
-    // finally do the division to get sc and tc
-    sc = (fabs(sN) < SMALL_NUM ? 0.0 : sN / sD);
-    tc = (fabs(tN) < SMALL_NUM ? 0.0 : tN / tD);
-
-    // get the difference of the two closest points
-    vec2   dP = w + (u *sc) - ( v*tc );  // =  S1(sc) - S2(tc)
-
-    return dP.length();   // return the closest distance
+     CLAMP( stockdiameter,0,1000 );
+     CLAMP( maxrpm, 1, 5000 );
+     CLAMP( ccut.end.x, 0, (stockdiameter/2.0) ); 
+     CLAMP( scale,0.1,10 ); 
+     CLAMP( ctool.tooln, 0, MAXTOOLS );   
 }
-//===================================================================void
-
-void find_max( std::list<struct mov> &ml , vec2 &m )
-{
-    m.z = m.x = -1000000;
-
-    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
-    {
-        if( m.z < i->end.z ) m.z = i->end.z;
-        if( m.z < i->start.z ) m.z = i->start.z;
-        if( m.x < i->end.x ) m.x = i->end.x;
-        if( m.x < i->start.x ) m.x = i->start.x;
-    }
-}
-
-double distance( std::list<struct mov> &ml, const vec2 p1, const vec2 p2)
-{
-    double mindist = 1000000;
-    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
-    {
-        double d = Segment_to_Segment( p1, p2, i->start, i->end );
-        if( d < mindist ) mindist = d ;
-    }
-    return mindist;
-}
-
-
-bool test_collision( std::list<struct mov> &ml, const vec2 p1, const vec2 p2, double d)
-{
-    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
-    {
-        if( d > Segment_to_Segment( p1, p2, i->start, i->end ) ) return true;
-    }
-    return false;;
-}
-
-void rapid_move( std::list<struct mov> &ml, std::list<struct mov> &contour, const vec2 v , const cutparam cp)
-{
-
-    if( distance( contour, v, ml.back().end ) > cp.tool_r - 0.001 )
-    {
-        create_line( ml, v, RAPID );
-    }
-    else
-    {
-        double r = max( stockdiameter/2.0f, ml.back().end.x ) + retract;
-        if( r < ml.back().end.x ) r = ml.back().end.x;
-        if( r < v.x ) r = v.x;
-        create_line( ml, vec2( r, ml.back().end.z ), RAPID );
-        create_line( ml, vec2( r, v.z ), RAPID );
-        create_line( ml, v, RAPID );
-    }
-
-}
-
-
-
-bool find_intersection( std::list<struct mov> &cl, list<struct mov>::iterator ci, const vec2 a, const vec2 b, vec2 &vi, list<struct mov>::iterator &ii, bool first = true )
-{
-
-    bool col = false;
-    //list<struct mov>::iterator i = i2;
-    for(; ci != cl.end(); ci++)
-    {
-        if( get_line_intersection( a,b , ci->start, ci->end, vi ) )
-        {
-           ii = ci;
-           col = true;
-           if( first ) return true;
-        }
-    }
-    if( ! col ) vi = b;
-    return col;
-}
-
-
-void remove_knots( std::list<struct mov> &ml )
-{
-    //printf("find knots...\n");
-    vec2 vi(0,0);
-
-    list<struct mov>::iterator i2,ie;
-    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
-    {
-        if( find_intersection( ml, next(i,2), i->start, i->end, vi, i2, false ) )
-        {
-            //printf("intersec %f %f \n",vi.x,vi.z);
-            ie = i;
-            ie++;
-            if( ie != ml.end())
-            {
-                ml.erase( ie, i2 );
-                i->end = vi;
-                i2->start = vi;
-            }
-            i->vel = vi;
-        }
-
-    }
-}
-
-double create_finepath( std::list<struct mov> &ml, std::list<struct mov> &ml2, double r )
-{
-    vec2 n;
-
-    std::list<struct mov> tm;
-    ml.clear();
-    tm.clear();
-    
-    // copy to temp list
-    for(list<struct mov>::iterator i = ml2.begin(); i != ml2.end(); i++)
-    {
-        if( i->start.dist( i->end ) > 0.001 )
-        {
-            create_line( tm, i->end, FEED );
-            tm.back().start = i->start;
-            tm.back().end = i->end;
-        }
-
-    }
-
-    // move normal direction
-    for(list<struct mov>::iterator i = tm.begin(); i != tm.end(); i++)
-    {
-        n = i->start.normal( i->end ) * r;
-        i->start += n;
-        i->end += n;
-    }
-
-    // fix intersections
-    vec2 iv(0,0);
-    list<struct mov>::iterator i2 = ++(tm.begin());
-    for( list<struct mov>::iterator i1 = tm.begin(); i2 != tm.end(); i1++,i2++)
-    {
-        i1->vel.x = i1->vel.z = 0;
-        if( get_line_intersection( i1->start, i1->end, i2->start, i2->end , iv ))
-        {
-            i1->end = iv;
-            i2->start = iv;
-        }
-    }
-
-    // close small gaps;
-    i2 = ++(tm.begin());
-    for( list<struct mov>::iterator i1 = tm.begin(); i2 != tm.end(); i1++,i2++)
-    {
-        double l = i1->end.dist( i2->start ) ;
-        if( l < 0.01 )
-        {
-            i1->end = i2->start = (i1->end + i2->start) / 2.0;
-
-        }
-
-    }
-
-    // copy list & fill big gaps
-
-    vec2 start(0,0);
-    cut c(0,0);
-    c.type = FEED;
-
-    i2 = ++(tm.begin());
-    for( list<struct mov>::iterator i1 = tm.begin(); i1 != tm.end(); i1++,i2++)
-    {
-
-        create_line( ml, i1->end, FEED );
-        if(  i1 == tm.begin() )  start = i1->start; // first start
-
-        double l = i1->end.dist( i2->start ) ;
-        if( l > 0.01 && i2 != tm.end() )
-        {
-
-            if( l > 0.2 )
-            {
-                double r2 = fabs(r);
-                double l = i1->end.dist( i2->start ) + 0.00001f;
-                if( r2 < l/2.0f )  r2 = l/2.0f;
-                create_arc( &c, ml, i1->end, i2->start , r2, (r < 0)  );
-            }
-            else
-            {
-                create_line( ml, i2->start, FEED );
-            }
-        }
-    }
-
-    // calc start/ends
-    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
-    {
-        i->start = start;
-        start =  i->end;
-    }
-
-    if( ml.size() > 0 ) ml.front().start.x = -0.1;
-    remove_knots( ml );
-
-    tm.clear();
-    return 0;
-
-}
-
-void feed_to_left(
-    list<struct mov> &ml,
-    list<struct mov> &cl,
-    list<struct mov>::iterator ci,
-    vec2 v, double len , cutparam &cp)
-{
-    vec2 v2;
-    list<struct mov>::iterator it;
-    bool first = (ml.size() == 0);
-    find_intersection( cl, ci, v, vec2( v.x, v.z - len ), v2, it, true );
-
-    if( v.dist( v2 ) > retract*2.0 ){
-        if( ! first ) rapid_move( ml, cl, vec2( v.x + retract + cp.depth, v.z - retract ) , cp );
-        create_line( ml, v, FEED );
-        create_line( ml, v2 , FEED );
-        create_line( ml, vec2( v2.x + retract, v2.z + retract ) , FEED );
-        if( first )
-        {
-             ml.front().start = v;
-            // ml.front().comment += "first";
-        }
-    }
-
-}
-
-
-
-void make_rough_path( std::list<struct mov> &ml, std::list<struct mov> &cl )
-{
-
-    vec2 max;
-    find_max( cl, max );
-
-    double x;
-    double min_z = contour_min.z;
-    double max_z = max.z + tp[ROUGH].tool_r + retract*3.0 ;
-    double len = fabs( min_z - max_z );
-    ml.clear();
-    
-    create_line( ml, startposition, RAPID );
-    ml.back().toolchange = tp[ROUGH].tool;
-    
-    x = startposition.x ;
-
-    while( x > 1 )
-    {
-        feed_to_left( ml, cl, cl.begin(), vec2( x, max_z ), len, tp[ROUGH] );
-        x -= tp[ROUGH].depth;
-    }
-
-}
-
-
-void make_undercut_path( std::list<struct mov> &ml, std::list<struct mov> &cl )
-{
-
-    double x = 0;
-    ml.clear();
-
-    for(list<struct mov>::iterator i = cl.begin(); i != cl.end(); i++)
-    {
-
-        if( i->end.x > i->start.x ) // uphill
-        {
-            while( x < i->end.x ) x += tp[UNDERCUT].depth;
-        }
-        else  // downhill
-        {
-            while( x > i->start.x ) x -= tp[UNDERCUT].depth;
-            if( i->end.x < x )
-            {
-                double dx = i->end.x - i->start.x;
-                double dz = i->end.z - i->start.z;
-               // for x from x1 to x2 {
-                while( x > i->end.x )
-                {
-                    double z = i->start.z + dz * (x - i->start.x) / dx;
-                    if( z > contour_min.z )
-                    {
-                         feed_to_left( ml, cl, next(i,1), vec2( x, z ), fabs( contour_min.z -z ), tp[UNDERCUT] );
-                    }
-                    x -= tp[UNDERCUT].depth;
-                }
-            }
-        }
-    }
-
-}
-
-
-void rapid_to_next_path( list<struct mov> &p1, list<struct mov> &p2, list<struct mov> &cl, cutparam &cp1, cutparam &cp2)
-{
- //   rapid_move( p1, cl, vec2( p2.front().start.x + retract, p2.front().start.z + retract ) , cp );
-    rapid_move( p1, cl, startposition, cp1 );
-    p1.back().toolchange = cp2.tool;
-    rapid_move( p1, cl, vec2( p2.front().start.x + retract, p2.front().start.z + retract ) , cp2 );
-    create_line( p1, p2.front().start, FEED );
-}
-
-
-static std::list<struct mov> temp1;
-static std::list<struct mov> temp2;
-
-void create_toolpath()
-{
-    startposition = 
-    
-    tp[ROUGH].tool_r = _tools[ tp[ROUGH].tool ].diameter/2.0f;
-    tp[UNDERCUT].tool_r = _tools[ tp[UNDERCUT].tool ].diameter/2.0f;
-    tp[FINISH].tool_r  = _tools[ tp[FINISH].tool ].diameter/2.0f;
-    
-    create_contour();
-    
-    startposition = contour_max;
-    startposition.x = max( stockdiameter/2.0 , startposition.x );
-    startposition += tp[ROUGH].depth + tp[ROUGH].tool_r;
-    startposition.z += 5;
-    
-    for( int i=0; i < tp[FINISH].count; i++ )
-    {
-        create_finepath( finepath[i],contour, tp[FINISH].tool_r + tp[FINISH].depth * i );
-    }   
-    
-    create_finepath( temp1, finepath[ tp[FINISH].count-1 ] ,tp[ROUGH].tool_r );
-    create_finepath( temp2, finepath[ tp[FINISH].count-1 ] ,tp[UNDERCUT].tool_r );
-    
-    make_rough_path( roughpath, temp1 );
-    make_undercut_path( undercutpath, temp2 );
-    
-    rapid_to_next_path( roughpath, undercutpath, temp1, tp[ROUGH], tp[UNDERCUT] );
-    rapid_to_next_path( undercutpath, finepath[tp[FINISH].count-1], temp2, tp[UNDERCUT], tp[FINISH] );
-    
-    for( int i=1; i < tp[FINISH].count; i++ )
-    {
-        rapid_to_next_path( finepath[i], finepath[i-1], finepath[i], tp[FINISH], tp[FINISH] );
-    }
-    
-    rapid_move( finepath[ 0 ], contour, startposition, tp[FINISH] );
-    
-    draw_toolpath = true;
-}
-
-
 
 void wizards_parse_serialdata()
 {
 
-    list<struct cut>::iterator oldcurrentcut = currentcut;
-    int oldtype = currentcut->type;
+    if( cur_contour == cur_op && cur_contour != opl.end() )
+    {
 
-    if( isprefix( "LEFT" ,NULL ) && currentcut != --cuts.end() )
-    {
-        currentcut++;
-    }
-    else if( isprefix( "RIGHT" ,NULL ) && currentcut != cuts.begin() )
-    {
-        currentcut--;
+        if( isprefix( "LEFT" ,NULL ) )
+        {
+            cur_contour->next();
+            create_phase_menu();
+        }
+        else if( isprefix( "RIGHT" ,NULL ) )
+        {
+            cur_contour->previous();
+            create_phase_menu();
+        }
     }
 
     if( Menu.parse() )
     {
+        clamp_values();
 
-        CLAMP( tp[ROUGH].tool, 1, MAXTOOLS );
-        CLAMP( tp[FINISH].tool, 1, MAXTOOLS );
-        CLAMP( tp[FINISH].count, 1, MAXFINEPASS-1 );
-        CLAMP( tp[UNDERCUT].tool, 1, MAXTOOLS );
+        if( menuselect == MENU_MAIN )
+        {
+            create_main_menu();
+            return;
+        }
         
-        CLAMP( tp[ROUGH].feed, 0, 2000 );
-        CLAMP( tp[UNDERCUT].feed, 0, 2000 );
-        CLAMP( tp[FINISH].feed, 0, 2000 );
+        if( menuselect == MENU_SAVE_PROGRAM )
+        {
+            save_program( Name );
+            return;
+        }
         
-        CLAMP( tp[ROUGH].depth, 0.01, 5 );
-        CLAMP( tp[UNDERCUT].depth, 0.01, 5 );
-        CLAMP( tp[FINISH].depth, 0.01, 5 );   
-             
-        if( menuselect == MENUNEW && currentcut->dim.length() > 0 )
+        if( menuselect == MENU_SAVE )
         {
-             add_cut( 0,0 );
+            wizards_save( Name );
+            return;
+        } 
+                      
+        if( menuselect == MENU_NEWCUT )
+        {
+            cur_contour->new_cut(vec2(0,0),CUT_LINE );
+            create_phase_menu();
+            return;
+        }
+        
+        if( menuselect == MENU_DELETECUT )
+        {
+            cur_contour->erase();
+            create_phase_menu();
+            return;
+        }
+        
+        if( menuselect == MENU_PHASE_DELETE && cur_op !=  opl.end() )
+        {
+            opl.erase( cur_op );
+            cur_contour = cur_op = cur_tool = opl.end();
+            clear_all_phases();
+            create_main_menu();
+            return;
         }
 
-        if( menuselect == MENUSAVE )
+
+        if( menuselect == MENU_PHASE_UP && cur_op !=  opl.end() && cur_op != opl.begin() )
         {
-             save( Name );
+            opl.splice( std::prev(cur_op), opl, cur_op );
+            //cur_contour = cur_op = cur_tool = opl.end();
+            clear_all_phases();
+            create_main_menu();
+            return;
+        }
+                
+        if( menuselect == MENU_PHASE_DOWN && cur_op !=  opl.end() && cur_op != --opl.end() )
+        {
+            opl.splice( std::next(cur_op,2), opl, cur_op );
+            //cur_contour = cur_op = cur_tool = opl.end();
+            clear_all_phases();
+            create_main_menu();
+            return;
+        }
+               
+        if( Menu.edited( &phasecreate ) )
+        {
+            opl.push_back( operation( (op_type)phasecreate ) );
+            if( phasecreate == CONTOUR || phasecreate == INSIDE_CONTOUR )
+            {
+                cur_contour = --opl.end();
+                cur_contour->new_cut(vec2(0,10),CUT_BEGIN );
+            }
+            clear_all_phases();
+            create_main_menu();
+            return;
         }
 
-        if( menuselect == MENUTOOLPATH )
+        else if( Menu.edited( &phaseselect ) )
         {
-             create_toolpath();
-             char path[LINELEN];
-             sprintf( path, "%s/%s.ngc", programPrefix, Name );
-             save_program( path );
-             edit_load( path );
-             auto_load( path );
-        }
+            printf("select %d\n", phaseselect );
 
-        if( Menu.edited( &diameter ) ||
-            Menu.edited( &currentcut->dim.z ) ||
-            Menu.edited( &currentcut->pitch ) ||
-            Menu.edited( &currentcut->r ) ||
-            Menu.edited( &currentcut->depth ) ||
-            Menu.edited( &currentcut->type ) )
-        {
-
-            draw_toolpath = false;
-
-            currentcut->dim.x = diameter/2.0;
-
-            double dx =  currentcut->start.x - currentcut->dim.x;
-            double dz =  currentcut->dim.z;
-            double l =  sqrt( dx*dx + dz*dz ) + 0.00001f;
-            if( currentcut->r < l/2.0f )  currentcut->r = l/2.0f;
-
-            CLAMP( currentcut->type, 0, 3 );
-
-            if( Menu.edited( &currentcut->pitch ) ) currentcut->depth = currentcut->pitch * 0.61343;
-            if( currentcut->pitch < 0.1f ) currentcut->pitch = 0.1f;
-            if( currentcut->depth < 0.1f ) currentcut->depth = 0.1f;
+            int n = 1;
+            cur_contour = cur_op = cur_tool = opl.end();
+            for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
+            {
+                if( n++ == phaseselect )
+                {
+                    cur_op = i;
+                    break;
+                }
+            }
+            clear_all_phases();
+            create_phase_menu();
 
         }
 
-        if( scale < 0.1f ) scale = 0.1f;
-
-        if( menuselect == MENUDELETE && cuts.size() > 1 )
+        // shape
+        if( cur_contour != opl.end() )
         {
-             currentcut =  cuts.erase( currentcut );
-             if( currentcut == cuts.end() ) currentcut--;
+            
+            if( cur_op->get_type() == CONTOUR && (
+                Menu.edited( &ccut.end.z ) || 
+                Menu.edited( &ccut.end.x ) ||
+                Menu.edited( &ccut.type ) || 
+                Menu.edited( &ccut.r ) )
+            )
+            {
+                cur_contour->set_cut( ccut );
+                if( Menu.edited( &ccut.type ) )
+                {
+                    create_phase_menu();// refresh type text
+                }
+            }
+
         }
 
+        // tool
+        if( cur_tool != opl.end() )
+        {
+            cur_tool->set_tool( ctool );
+            ctool = cur_tool->get_tool();
+        }
+        
+        if( cur_op != opl.end() )
+        {
+            if( cur_op->get_type() == FACING )
+            {
+                if( 
+                    Menu.edited( &face_begin.x ) ||
+                    Menu.edited( &face_end.x ) ||
+                    Menu.edited( &face_begin.z ) || 
+                    Menu.edited( &face_end.z ) 
+                )
+                {
+                    cur_op->setf_begin_end( face_begin, face_end );
+                }
+            }
+            
+            else if( cur_op->get_type() == MOVE )
+            {
+                if( 
+                    Menu.edited( &movepos.x ) ||
+                    Menu.edited( &movepos.z ) 
+                )
+                {
+                    cur_op->set_move( movepos );
+                }
+            }           
+            
+        }
+
+    
     }
-
-    if( currentcut->type != oldtype || currentcut != oldcurrentcut )
-    {
-        createmenu();
-    }
-
-    create_contour();
-    if( stockdiameter < contour_max.x *2.0f ) stockdiameter = contour_max.x *2.0f;
-    if( dynamic_toolpath) create_toolpath();
 
 }
 
@@ -1349,93 +854,42 @@ void show_tool( int x,int y, int t, const char* name )
 void wizards_draw()
 {
     draw_statusbar( "WIZARDS" );
-
-    double x1 = 0;
-    double y1 = 0;
-    double x2 = 0;
-    double y2 = 0;
-
-
-    //glEnable(GL_LINE_STIPPLE);
-    //glLineStipple(1,0x5555);
-
+    
+    clamp_values();
+    
+    create_paths();
+    
+    glLineStipple(1,0x27ff);
     glPushMatrix();
     glTranslatef( 750 ,300 , 0);
+    glTranslatef( pos.z * scale ,pos.x * scale , 0);
     glScalef(scale*3.0f, scale*3.0f,scale*3.0f);
-    glTranslatef( X ,Y , 0);
+    
+    glEnable(GL_LINE_STIPPLE);
     glBegin(GL_LINES);
-        setcolor( GREY );
+        setcolor( CENTERLINE );
         glVertex2f( 10,0 );
         glVertex2f( -600,0 );
     glEnd();
+    glDisable(GL_LINE_STIPPLE);
 
-    for(list<struct cut>::iterator i = cuts.begin(); i != cuts.end(); i++)
+    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-
-        x1 = i->start.z;
-        y1 = -i->start.x;
-        x2 = i->end.z;
-        y2 = -i->end.x;
-
-       // if( i != cuts.begin() )
-        {
-            glBegin(GL_LINES);
-                setcolor( GREY );
-                glVertex2f( x2, -y2 );
-                glVertex2f( x2, y2  );
-                glVertex2f( x1, -y1 );
-                glVertex2f( x1, y1  );
-            glEnd();
-
-            if(i->type == THREAD )
-            {
-                setcolor( GREEN );
-                draw_thread( x1,  y1,  x2,  y2, i->pitch, i->depth );
-            }
-
-            if( i->type == ARC_IN || i->type == ARC_OUT )
-            {
-                setcolor( GREEN );
-                drawCross( i->center.z, i->center.x, 3.0f / scale );
-                drawCross( i->center.z, -i->center.x, 3.0f / scale );
-            }
-
-            if( i == currentcut )
-            {
-                setcolor( RED );
-                drawCircle( x2, y2, 3.0f / scale );
-            }
-        }
-
+        i->draw( i == cur_op ? NONE:DISABLED );
     }
-
-    draw_contour( contour, true );
-
-    if( draw_toolpath )
-    {
-        for( int i=0; i < tp[FINISH].count; i++ )
-        {
-            draw_contour( finepath[i], false );
-        }
-        draw_contour( temp1, false );
-        draw_contour( temp2, false );
-        draw_contour( roughpath, false );
-        draw_contour( undercutpath, false );
-    }
-
+    
+    setcolor( RAPID );
+    drawCross( start_position.z, -start_position.x, 5 );
+    drawCircle( start_position.z, -start_position.x, 5 );
+    
     glPopMatrix();
+    
+    Menu.draw(5,50);
 
-    //glDisable(GL_LINE_STIPPLE);
+//double angle = atan2( fabs( currentcut->start.x - currentcut->end.x) , fabs(currentcut->dim.z) )* 180.0f / M_PI;
+  //  sprintf(strbuf,"Angle %g", angle );
+    //println( strbuf );
 
-    Menu.draw(0,25);
-
-    double angle = atan2( fabs( currentcut->start.x - currentcut->end.x) , fabs(currentcut->dim.z) )* 180.0f / M_PI;
-    sprintf(strbuf,"Angle %g", angle );
-    println( strbuf );
-
-    show_tool( 500, 70 , tp[ROUGH].tool, "Rough" );
-    show_tool( 600, 70 , tp[FINISH].tool, "Finish" );
-    show_tool( 700, 70 , tp[UNDERCUT].tool, "Undercut" );
 }
 
 

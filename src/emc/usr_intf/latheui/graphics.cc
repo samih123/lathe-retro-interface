@@ -19,21 +19,70 @@ int print_x = 0;
 int print_s = 20;
 list<string> ser_emul;
 
-void setcolor( int color )
+enum rawcolor
 {
-    if( color == RED ) glColor3f ( 1.0f, 0, 0 );
-    else if( color == BLUE ) glColor3f ( 0, 0, 1.0f );
-    else if( color == GREEN ) glColor3f ( 0, 1.0f, 0 );
-    else if( color == ORANGE ) glColor3f ( 1.0f, 0.65f, 0.0f );
-    else if( color == YELLOW ) glColor3f ( 1.0f, 1.0f, 0.0f );
-    else if( color == WHITE ) glColor3f ( 1.0f, 1.0f, 1.0f );
-    else if( color == GREY ) glColor3f ( 0.5f, 0.5f, 0.5f );
-    else if( color == MAGENTA ) glColor3f ( 1.0f, 0.0f, 1.0f );
+   RED, 
+   GREEN,
+   BLUE, 
+   ORANGE,
+   YELLOW,
+   GREY,
+   WHITE,
+   MAGENTA,
+   BLACK,
+   CYAN,
+};
+
+
+void setrpgcolor( uint32_t n ) {
+        uint8_t B = n & 0xFF;
+        n >>= 8; uint8_t G = n & 0xFF;
+        n >>= 8; uint8_t R = n & 0xFF;
+        glColor3f( 1.0/255.0 * R ,1.0/255.0 * G, 1.0/255.0 * B );
 }
 
-void printStringUsingGlutVectorFont(const char *string, int x, int y, float size, int color)
+
+void setrawcolor( rawcolor color )
 {
-    setcolor( color );
+    switch( color )
+    {
+        case RED    : setrpgcolor( 0xff4000 ); break;
+        case BLUE   : setrpgcolor( 0x0000ff ); break;
+        case GREEN  : setrpgcolor( 0x0fff0a ); break;
+        case ORANGE : glColor3f ( 1.0f, 0.65f, 0.0f ); break;
+        case YELLOW : setrpgcolor( 0xd8d80a );break;
+        case WHITE  : glColor3f ( 1.0f, 1.0f, 1.0f ); break;
+        case GREY   : glColor3f ( 0.5f, 0.5f, 0.5f ); break;
+        case MAGENTA: glColor3f ( 1.0f, 0.0f, 1.0f ); break;
+        case BLACK  : glColor3f ( 0.0f, 0.0f, 0.0f ); break;
+        case CYAN   : setrpgcolor( 0x32cb98 ); break;
+    }
+}
+   
+void setcolor( color c )
+{
+    switch( c )
+    {
+        case NONE: break;
+        case BACKROUND: setrawcolor( BLACK ); break;
+        case FEED: setrawcolor( YELLOW ); break;
+        case RAPID: setrawcolor( RED ); break;
+        case CONTOUR_LINE: setrawcolor( GREEN ); break;
+        case CONTOUR_SHADOW: setrawcolor( GREY ); break;
+        case CROSS: setrawcolor( GREY ); break;
+        case OUTLINE: setrawcolor( GREY ); break;
+        case CENTERLINE: setrawcolor( CYAN ); break;
+        case TEXT: setrawcolor( GREEN ); break;
+        case WARNING: setrawcolor( RED ); break;
+        case ERROR: setrawcolor( YELLOW ); break;
+        case DISABLED: setrawcolor( GREY ); break;
+        case DIRECTORY: setrawcolor( RED ); break;
+    }
+}
+
+void printStringUsingGlutVectorFont(const char *string, int x, int y, float size, color c )
+{
+    setcolor( c );
    // glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glTranslatef(x, screenh-y, 0);
@@ -43,28 +92,30 @@ void printStringUsingGlutVectorFont(const char *string, int x, int y, float size
     glPopMatrix();
 }
 
-void print(const char *s, int x, int y ,int size)
+void print(const char *s, int x, int y ,int size, color c )
 {
-    if(s) printStringUsingGlutVectorFont(s,x,y, (float)size / glutStrokeHeight(GLUT_STROKE_MONO_ROMAN), GREEN );
+    if(s) printStringUsingGlutVectorFont(s,x,y, (float)size / glutStrokeHeight(GLUT_STROKE_MONO_ROMAN), c );
 }
 
-void print(const char *s, int x, int y ,int size, int color )
+void println(const char *s, int x, int y, int size, color c )
 {
-    if(s) printStringUsingGlutVectorFont(s,x,y, (float)size / glutStrokeHeight(GLUT_STROKE_MONO_ROMAN), color );
-}
-
-void println(const char *s, int x, int y, int size, int color )
-{
-    print( s, x, y, size, color );
+    print( s, x, y, size, c );
     print_y = y;
     print_x = x;
     print_s = size;
 }
 
-void println(const char *s, int color )
+void println( int x, int y, int size, color c )
+{
+    print_x = x;
+    print_s = size;
+    print_y = y - ( print_s + print_s/16 );
+}
+
+void println(const char *s, color c )
 {
     print_y += print_s + print_s/16;
-    print(s, print_x, print_y , print_s, color);
+    print(s, print_x, print_y , print_s, c);
 }
 
 
@@ -118,6 +169,17 @@ void drawCross(GLfloat x, GLfloat y, GLfloat size){
     glEnd();
 }
 
+
+void drawBox( vec2 v1, vec2 v2 ){
+    glBegin(GL_LINE_LOOP);
+        glVertex2f( v1.z, -v1.x );
+        glVertex2f( v1.z, -v2.x );
+        glVertex2f( v2.z, -v2.x );
+        glVertex2f( v2.z, -v1.x );
+    glEnd();
+    
+}
+
 void drawCircle(GLfloat x, GLfloat y, GLfloat radius){
     int i;
     int lines = 16;
@@ -135,7 +197,7 @@ void drawCircle(GLfloat x, GLfloat y, GLfloat radius){
 
 }
 
-int axiscolor( int n )
+color axiscolor( int n )
 {
 
     if( emcStatus->motion.axis[ n ].minSoftLimit ||
@@ -143,14 +205,17 @@ int axiscolor( int n )
         emcStatus->motion.axis[ n ].minHardLimit ||
         emcStatus->motion.axis[ n ].maxHardLimit )
     {
-        if( flasher ) return RED;
-        return GREY;
+        return flasher ? WARNING:DISABLED;
     }   
     
-    if( ! emcStatus->motion.axis[ n ].enabled ) return GREY;
-    if( emcStatus->motion.axis[ n ].homed ) return GREEN;
-    if( emcStatus->motion.axis[ n ].homing ) return ORANGE;
-    return RED;
+    if( ! emcStatus->motion.axis[ n ].enabled ) return DISABLED;
+    if( emcStatus->motion.axis[ n ].homed ) return TEXT;
+    
+    if( emcStatus->motion.axis[ n ].homing ){
+        return flasher ? WARNING:DISABLED;
+    }
+    
+    return WARNING;
 }
 
 
@@ -224,6 +289,22 @@ void draw_dro( vec2 *cpos )
 
 }
 
+vec2 tool_cpoint( int t )
+{
+    double lathe_shapes[10][2] = {
+        {0,0},                           
+        {1,-1}, {1,1}, {-1,1}, {-1,-1}, 
+        {0,-1}, {1,0}, {0,1}, {-1,0},   
+        {0,0}                           
+    };
+    
+    vec2 p;
+    p.x = -lathe_shapes[ _tools[ t ].orientation ][0];
+    p.z = -lathe_shapes[ _tools[ t ].orientation ][1];
+    p.x *= _tools[ t ].diameter / 2.0;
+    p.z *= _tools[ t ].diameter / 2.0;
+    return p;
+}
 
 void draw_tool( int i )
 {    
@@ -255,7 +336,7 @@ void draw_tool( int i )
     };
     
     float radius = diameter / 2.0f;
-    setcolor( YELLOW );
+    setrawcolor( YELLOW );
     glBegin(GL_LINES);
         glVertex2f(-radius/2.0,0.0);
         glVertex2f(radius/2.0,0.0);
@@ -320,8 +401,11 @@ void draw_tool( int i )
 
 void updatescreen(void)
 {
-    
-    glClearColor ( 0.0f, 0.0f, 0.0f, 1.0f );
+    float c[4];
+    setcolor( BACKROUND );
+    glGetFloatv(GL_CURRENT_COLOR, c);
+
+    glClearColor ( c[0], c[1], c[2], 1.0f );
     glClear      ( GL_COLOR_BUFFER_BIT );
     
     switch( status.screenmode )

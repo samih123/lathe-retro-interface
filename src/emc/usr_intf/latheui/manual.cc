@@ -57,7 +57,7 @@ void manual_init()
 
 void manual_parse_serialdata()
 { 
-    
+    // rapid jogging with buttons
     if( jogcont_stopped && emcStatus->motion.traj.current_vel == 0 )
     {
         reset_position();
@@ -104,31 +104,33 @@ void manual_parse_serialdata()
        }            
     }
      
-    
-    if( isprefix( "JG+" ,NULL ) || isprefix( "JG-" ,NULL ))
+    // jogging wheel
+    if( status.jogged != 0 )
     {
         
         if( status.axis == AXISX )
         {
-            pos.x += status.incr * (isprefix( "JG+" ,NULL ) ? 0.5:-0.5);
+            pos.x += status.jogged;
             sendJogAbs(status.axis, status.jogfeedrate, pos.x );
         }
         else if( status.axis == AXISZ )
         {
-            pos.z += status.incr * (isprefix( "JG+" ,NULL ) ? 1.0:-1.0);
+            pos.z += status.jogged;
             sendJogAbs(status.axis, status.jogfeedrate, pos.z );
-        } 
-        
-      //  sendJogIncr(status.axis, status.jogfeedrate, status.incr * (isprefix( "JG+" ,NULL ) ? 1.0:-1.0));
+        }
+         
         return;
     }
     
+    // new menu if axis is changed.
     if( oldaxis != status.axis )
     {
         oldaxis = status.axis;
         createmenu();
     }
     
+    
+    // set work zero.
     if( Menu.parse() && isprefix( "RET" ,NULL ) )
     {
         if( Menu.edited( &diameter ) )

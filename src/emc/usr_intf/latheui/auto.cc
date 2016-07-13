@@ -10,7 +10,9 @@
 extern char strbuf[BUFFSIZE];
 extern struct machinestatus status;
 extern int screenw, screenh;
+extern std::vector<string> lines;
 
+list<operation> *wiz_opl;
 
 void auto_init()
 {
@@ -31,6 +33,7 @@ void auto_load( char *n )
     updateStatus();
     emcCommandWaitDone();
     preview( emcStatus->task.file );
+    wiz_opl = NULL;
 }
 
 
@@ -68,8 +71,23 @@ void auto_parse_serialdata()
 void auto_draw()
 {
     draw_statusbar( "AUTO" );
-    print(  emcStatus->task.file ,5,40 ,15);
+    println(  emcStatus->task.file ,5,40 ,15);
+   
+    if( ! lines.empty() )
+    {
+        for( int i = emcStatus->task.motionLine-1; i < emcStatus->task.motionLine-1 + 10; i++)
+        {
+            if( i < 0 || i >=  (int)lines.size() )
+            {
+                break;
+            }
+            println(  lines[ i ].c_str() );
+        }
+    }
+
     draw_dro();
     
     preview_draw();
+    
+    
 }

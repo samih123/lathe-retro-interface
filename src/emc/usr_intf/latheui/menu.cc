@@ -19,7 +19,7 @@ extern char buf[BUFFSIZE];
 #define TYPEBOOL 4
 #define TYPESELECT 5
 #define TYPEBACK 6
-#define TYPESHOW 7
+#define TYPECOMMENT 7
 
 #define SELECT 1
 #define SET 2
@@ -35,6 +35,7 @@ void menu::clear()
     rm.type = TYPEBEGIN; 
     rm.it = rm.ml.begin();
     rm.shortcut = NULL;
+    rm.val = NULL;
     cmi = &rm;
     rm.up = &rm;
     usewheel = true;
@@ -48,7 +49,41 @@ void menu::begin( const char *n )
     cmi->ml.back().up =  cmi;  
     cmi->ml.back().shortcut = NULL; 
     strcpy( cmi->ml.back().name, n);  
+    cmi->ml.back().val = NULL;
     cmi = &cmi->ml.back();
+}
+
+void menu::begin( int *i, int num, const char *n )
+{
+    cmi->ml.push_back( menuitem() );
+    cmi->ml.back().type = TYPEBEGIN;   
+    cmi->ml.back().up =  cmi;  
+    cmi->ml.back().shortcut = NULL; 
+    strcpy( cmi->ml.back().name, n);  
+    cmi->ml.back().val = (void *)i;
+    cmi->ml.back().num = num;
+    cmi = &cmi->ml.back();
+}
+
+void menu::update_str( menuitem &m )
+{
+    switch( m.type )
+    { 
+        case TYPEBEGIN:
+        break;
+        case TYPEBACK:
+        break;
+        case TYPESELECT:
+        break;     
+        case TYPEINT:
+            sprintf( m.str, "%d", *(int *)m.val * m.divider );
+        case TYPEBOOL:
+        case TYPESTR:
+        break;
+        case TYPEDOUBLE:
+            sprintf( m.str, "%.10g", *(double *)m.val * (double)m.divider );
+        break;
+    }
 }
 
 void menu::setmaxlines( int l )
@@ -66,11 +101,17 @@ void menu::hiddenvalue()
     cmi->ml.back().hidden = true;
 }  
 
-void menu::color( int c )
+void menu::setcolor( color c )
 {
-    cmi->ml.back().color = c;
+    cmi->ml.back().tcolor = c;
 }
 
+void menu::diameter_mode()
+{
+    cmi->ml.back().divider = 2;
+    update_str(cmi->ml.back());
+}
+ 
 void menu::end()
 {
     cmi = cmi->up;
@@ -84,6 +125,7 @@ void menu::edit( int *i, const char *n )
     cmi->ml.back().type = TYPEINT;
     cmi->ml.back().val = (void *)i;
     strcpy( cmi->ml.back().name, n);
+    update_str( cmi->ml.back() );
     usewheel = false;
 }
 
@@ -93,7 +135,7 @@ void menu::edit( double *d, const char *n )
     cmi->ml.back().type = TYPEDOUBLE;
     cmi->ml.back().val = d;  
     strcpy( cmi->ml.back().name, n);
-    sprintf( cmi->ml.back().str, "%4.3g", *(double *)cmi->ml.back().val );
+    update_str( cmi->ml.back() );
     usewheel = false;
 }
 
@@ -130,10 +172,10 @@ void menu::back( const char *n )
     strcpy( cmi->ml.back().name, n);   
 }
 
-void menu::show( const char *n )
+void menu::comment( const char *n )
 {
     cmi->ml.push_back( menuitem() );
-    cmi->ml.back().type = TYPESHOW; 
+    cmi->ml.back().type = TYPECOMMENT; 
     strcpy( cmi->ml.back().name, n);   
 }
  
@@ -142,7 +184,11 @@ void menu::show( const char *n )
 void menu::draw( int x, int y)
 {
 
-    println( cmi->name, x, y, 20 );
+    // update edited strings
+    clean( rm );
+    
+    println( x, y, 18, cmi->tcolor );
+    if( cmi->name[0] != 0 ) println( cmi->name );
    
     int selected = std::distance( cmi->ml.begin(), cmi->it);
     int line = 0, drawedline = 0;
@@ -161,28 +207,28 @@ void menu::draw( int x, int y)
             if( ! i->hidden ){
                 switch( i->type )
                 {
-                    case TYPESHOW:
+                    case TYPECOMMENT:
                     case TYPEBACK:
                     case TYPESELECT:
                     case TYPEBEGIN:
                         sprintf(strbuf,"%s%s", arrow, i->name );
-                        println( strbuf, i->color );
+                        println( strbuf, i->tcolor );
                     break;                 
                     case TYPEINT:
-                        sprintf(strbuf,"%s%s %i", arrow, i->name, *(int *)i->val );
-                        println( strbuf, i->color );
+                        sprintf(strbuf,"%s%s %s", arrow, i->name, i->str );
+                        println( strbuf, i->tcolor );
                     break;
                     case TYPESTR:
                         sprintf(strbuf,"%s%s %s", arrow, i->name, (char *)i->val );
-                        println( strbuf,i->color );
+                        println( strbuf,i->tcolor );
                     break;                
                     case TYPEDOUBLE:
                         sprintf(strbuf,"%s%s%s", arrow, i->name, i->str );
-                        println( strbuf, i->color );
+                        println( strbuf, i->tcolor );
                     break;      
                     case TYPEBOOL:
                         sprintf(strbuf,"%s%s %s", arrow, i->name, *(bool *)i->val ? "On":"Off" );
-                        println( strbuf, i->color );
+                        println( strbuf, i->tcolor );
                     break;                                     
                 }
             }
@@ -193,6 +239,27 @@ void menu::draw( int x, int y)
         }
     }        
 }
+
+// recursive cleaning 
+void menu::clean( menuitem &m )
+{
+    for(list<struct menuitem>::iterator i = m.ml.begin(); i != m.ml.end(); i++)
+    {
+        if( (i->type == TYPEBEGIN || i->type == TYPESELECT ) && i->val != NULL )
+        {
+             *(int *)i->val = 0;
+        }
+        
+        if( i->edited )
+        {
+            update_str( *i );
+            i->edited = false;
+        }
+        
+        clean( *i );
+    }
+}
+
 
 bool menu::parse()
 {
@@ -210,15 +277,8 @@ bool menu::parse()
         }
     }
     
-    // clear selections
-    for(list<struct menuitem>::iterator i = cmi->ml.begin(); i != cmi->ml.end(); i++)
-    {
-        if( i->type == TYPESELECT )
-        {
-             *(int *)i->val = 0;
-        }
-        i->edited = false;
-    }  
+    // clear selections &&b edited flag
+    clean( rm );  
       
     // menu up,down,select
     if( isprefix( "DOWN" ,NULL ) || (usewheel && isprefix( "JG+" ,NULL )) )
@@ -233,28 +293,44 @@ bool menu::parse()
     {
         switch( cmi->it->type )
         { 
+            
             case TYPEBEGIN:
+                if( cmi->it->val != NULL )
+                {
+                    *(int *)cmi->it->val = cmi->it->num;
+                    cmi->it->edited = true;
+                }
                 cmi = &*cmi->it;
-                cmi->it = cmi->ml.begin();  
+                cmi->it = cmi->ml.begin();
+                return true;
             break;
+            
             case TYPEBACK:
                 cmi = cmi->up;
                 cmi->it = cmi->ml.begin();
             break;
+            
             case TYPESELECT:
                 *(int *)cmi->it->val = cmi->it->num;
                 cmi->it->edited = true;
                 return true;
-            break;     
+            break;   
+              
             case TYPEINT:
+                (*(int *)cmi->it->val) = atoi( cmi->it->str ) / (int)cmi->it->divider;
+                update_str( *cmi->it );
+                cmi->it->edited = true;
+                return true;
             case TYPEBOOL:
+            
             case TYPESTR:
                 cmi->it->edited = true;
                 return true;
             break;
+            
             case TYPEDOUBLE:
-                (*(double *)cmi->it->val) = atof( cmi->it->str );
-                printf("val =%f\n",*(double *)cmi->it->val);
+                (*(double *)cmi->it->val) = atof( cmi->it->str ) / (double)cmi->it->divider;
+                update_str( *cmi->it );
                 cmi->it->edited = true;
                 return true;
             break;
@@ -275,13 +351,14 @@ bool menu::parse()
              if( cmi->it->type == TYPEINT )
              {
                   (*(int *)cmi->it->val)++;
+                  update_str( *cmi->it );
                   cmi->it->edited = true;
                   return true;
              }             
              if( cmi->it->type == TYPEDOUBLE )
              {
-                  (*(double *)cmi->it->val) += status.incr;
-                  sprintf( cmi->it->str, "%4.3g", *(double *)cmi->it->val );
+                  (*(double *)cmi->it->val) += status.incr / (double)cmi->it->divider;
+                  update_str( *cmi->it );
                   cmi->it->edited = true;
                   return true;
              }      
@@ -297,13 +374,14 @@ bool menu::parse()
              if( cmi->it->type == TYPEINT )
              {
                   (*(int *)cmi->it->val)--;
+                  update_str( *cmi->it );
                   cmi->it->edited = true;
                   return true;
              }             
              if( cmi->it->type == TYPEDOUBLE )
              {
-                  (*(double *)cmi->it->val) -= status.incr; 
-                  sprintf( cmi->it->str, "%4.3g", *(double *)cmi->it->val );
+                  (*(double *)cmi->it->val) -= status.incr / (double)cmi->it->divider; 
+                  update_str( *cmi->it );
                   cmi->it->edited = true;
                   return true;
              }             
@@ -331,14 +409,8 @@ bool menu::parse()
     
     if( isprefix( "DEL" ,NULL ) || isprefix( "BACK" ,NULL ) )
     {
-        if( cmi->it->type == TYPEINT)
-        {
-            sprintf( strbuf, "%i", *(int *)cmi->it->val );
-            strbuf[ strlen( strbuf )-1 ] = 0;;
-            (*(int *)cmi->it->val) = atoi( strbuf );
-        }
         
-        if( cmi->it->type == TYPEDOUBLE)
+        if( cmi->it->type == TYPEDOUBLE || cmi->it->type == TYPEINT )
         {
             int l = strlen( cmi->it->str ); 
             if( l > 0 )
@@ -377,13 +449,14 @@ bool menu::parse()
             if( cmi->it->type == TYPEINT )
             {
                 (*(int *)cmi->it->val) = -abs( (*(int *)cmi->it->val) );
+                update_str( *cmi->it );
                 cmi->it->edited = true;
                 return true;
             }   
             if( cmi->it->type == TYPEDOUBLE )
             {
                 (*(double *)cmi->it->val) = -fabs( (*(double *)cmi->it->val) );
-                sprintf( cmi->it->str, "%4.3g", *(double *)cmi->it->val );
+                update_str( *cmi->it );
                 cmi->it->edited = true;
                 return true;
             }   
@@ -393,13 +466,14 @@ bool menu::parse()
             if( cmi->it->type == TYPEINT )
             {
                 (*(int *)cmi->it->val) = abs( (*(int *)cmi->it->val) );
+                update_str( *cmi->it );
                 cmi->it->edited = true;
                 return true;
             }   
             if( cmi->it->type == TYPEDOUBLE )
             {
                 (*(double *)cmi->it->val) = fabs( (*(double *)cmi->it->val) );
-                sprintf( cmi->it->str, "%4.3g", *(double *)cmi->it->val );
+                update_str( *cmi->it );
                 cmi->it->edited = true;
                 return true;
             }   
@@ -407,27 +481,15 @@ bool menu::parse()
            
         else if( isdigit( *c ) || ( *c == '.' && cmi->it->type == TYPEDOUBLE ) )
         {
-            if( cmi->it->type == TYPEINT )
+            if( cmi->it->type == TYPEINT || cmi->it->type == TYPEDOUBLE )
             {
-                sprintf( strbuf, "%i", *(int *)cmi->it->val );
-                int l = strlen( strbuf ); 
-                if( l < BUFFSIZE-2 )
-                {
-                   strbuf[ l ] = *c; strbuf[ l + 1 ] = 0;
-                }
-                (*(int *)cmi->it->val) = atoi( strbuf );
-            }
-            else if( cmi->it->type == TYPEDOUBLE )
-            {
-                
                 int l = strlen( cmi->it->str ); 
                 if( l < BUFFSIZE-2 )
                 {
                     cmi->it->str[ l ] = *c; 
                     cmi->it->str[ l+1 ] = 0; 
                 }
-
-            }  
+            }
         }
        point = false;    
     } 

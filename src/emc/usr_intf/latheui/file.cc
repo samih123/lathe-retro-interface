@@ -32,6 +32,7 @@ void load( char* n )
     if( strstr( n, ".wiz" ) != NULL )
     {
         wizards_load( n );
+        edit_load( n );
         return;
     }
     
@@ -65,7 +66,7 @@ static void createmenu( const char* s )
             Menu.select( &menuselect, cnt , eps[cnt]->d_name );
             if( eps[cnt]->d_type == DT_DIR )
             {
-                Menu.color( BLUE );
+                Menu.setcolor( DIRECTORY );
             }
         }
     }

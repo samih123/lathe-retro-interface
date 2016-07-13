@@ -34,6 +34,7 @@
 #include "emc.hh"
 #include "../shcom.hh"
 #include <list>
+#include <algorithm>
 using namespace std;
 
 #define CLAMP(x, l, h) (x = (((x) > (h)) ? (h) : (((x) < (l)) ? (l) : (x))))
@@ -56,16 +57,64 @@ using namespace std;
 
 #define BUFFSIZE 1000
 
-#define RED 1
-#define GREEN 2
-#define BLUE 3
-#define ORANGE 4
-#define YELLOW 5
-#define GREY 6
-#define WHITE 7
-#define MAGENTA 8
+enum color
+{
+    NONE,
+    BACKROUND,
+    FEED,
+    RAPID,
+    CONTOUR_LINE,
+    CONTOUR_SHADOW,
+    CROSS,
+    OUTLINE,
+    CENTERLINE,
+    TEXT,
+    WARNING,
+    ERROR,
+    DISABLED,
+    DIRECTORY
+};
 
 #define MAXTOOLS 20
+
+
+enum cut_type
+{
+    CUT_BEGIN,
+    CUT_LINE,
+    CUT_ARC_OUT,
+    CUT_ARC_IN,
+    CUT_THREAD,
+    CUT_END
+};
+
+enum move_type
+{
+    MOV_FEED,
+    MOV_RAPID,
+    MOV_CONTOUR
+};
+
+enum op_type
+{
+    TOOL,
+    CONTOUR,
+    INSIDE_CONTOUR,
+    TURN,
+    UNDERCUT,
+    FINISHING,
+    THREADING,
+    FACING,
+    DRILL,
+    PARTING,
+    MOVE, 
+};
+
+enum Side
+{
+    OUTSIDE,
+    INSIDE
+};
 
 class vec2
 {
@@ -79,11 +128,23 @@ public:
  
     double x, z;
  
+ 
+    
+     vec2 &operator=(const double &d) {
+        x = d;
+        z = d;
+        return *this;
+    }
+    
     vec2 &operator=(const vec2 &v) {
         x = v.x;
         z = v.z;
         return *this;
     }
+    
+    vec2 operator-() {
+        return vec2(-x,-z);
+    }    
     
     vec2 &operator+=(const vec2 &v) {
         x += v.x;
@@ -244,6 +305,70 @@ public:
     }
 };
 
+struct tool
+{
+    tool()
+    {
+        tooln =1;
+        depth = 2;
+        feed = 0.2;
+        speed = 200;
+    }
+    ~tool()
+    {
+    }
+    
+    double depth;
+    double feed;
+    double speed;
+    
+    int tooln;
+   
+};
+
+struct cut
+{
+    cut()
+    {
+    }
+    ~cut()
+    {
+    }
+    int type;
+    double r;
+    double pitch;
+    double depth;
+    vec2 end,start,center;
+};
+
+
+
+struct mov
+{
+
+    mov( const vec2 &v, move_type t )
+    {
+        end = v;
+        start = v;
+        feed = 0;
+        type = t;
+    }
+    ~mov()
+    {
+        comment.erase();
+    }
+
+    vec2 end,start;
+    vec2 vel;
+    double pitch;
+    double depth;
+    double feed;
+    move_type type;
+    string comment;
+    
+};
+
+
 struct machinestatus
 {
     int screenmode;
@@ -253,6 +378,7 @@ struct machinestatus
     int jogfeedrate;
     int maxrpm;
     double incr;
+    double jogged;
     bool singleblock;
     bool skipblock;
     bool optionalstop;
@@ -269,7 +395,9 @@ struct menuitem
         hidden = false;
         edited = false;
         shortcut = NULL;
-        color = GREEN;
+        val = NULL;
+        tcolor = TEXT;
+        divider = 1;
     };
     ~menuitem()
     {
@@ -287,7 +415,8 @@ struct menuitem
     menuitem *up;
     bool hidden;
     bool edited;
-    int color;
+    color tcolor;
+    int divider;
 }; 
 
 
@@ -297,12 +426,16 @@ class menu
     menu();
     void clear();
     void begin( const char *name );
+    void begin( int *i, int num, const char *n );
+
     void end();
     void setmaxlines( int l );
     
     void hiddenvalue();
-    void color( int c );
+    void setcolor( color c );
     void shortcut( const char *shortcut );
+    void diameter_mode();
+    
     
     void edit( int *i, const char *n);
     void select( int *i, int num, const char *n );
@@ -310,8 +443,8 @@ class menu
     void edit( char *s, const char *n );
     void edit( bool *b, const char *n );
     void back( const char *n );
-    void show( const char *n );
-    
+    void comment( const char *n );
+    void clean( menuitem &m );
     bool edited( void *v );
     bool current_menu( const char *n );
     void draw( int x, int y);
@@ -319,6 +452,8 @@ class menu
     
     private:
     bool edited( menuitem &m, void *v );
+    void update_str( menuitem &m );
+    
     char strbuf[BUFFSIZE];
     menuitem rm;
     menuitem *cmi; // current menuitem
@@ -327,20 +462,27 @@ class menu
     int maxlines;
 };
 
+int get_line_intersection( vec2 S1P0, vec2 S1P1 , vec2 S2P0, vec2 S2P1, vec2 &I0 );
+
+
 void init_opengl( int argc, char **argv );
-void setcolor( int color );
-void print(const char *s, int x, int y ,int size);
-void print(const char *s, int x, int y ,int size, int color );
-void println(const char *s, int x, int y, int size = 10 , int color = GREEN );
-void println(const char *s, int color = GREEN);
+//void setcolor( int color );
+void setcolor( color c );
+void print(const char *s, int x, int y ,int size, color c = TEXT );
+void println(const char *s, int x, int y, int size = 10 , color c = TEXT );
+void println(const char *s, color c = TEXT );
+void println( int x, int y, int size, color c = TEXT );
 
 void draw_dro( vec2 *cpos = NULL );
 void draw_statusbar( const char *s );
 void updatescreen();
 void drawCross(GLfloat x, GLfloat y, GLfloat size);
 void drawCircle(GLfloat x, GLfloat y, GLfloat radius);
+void drawBox( vec2 v1, vec2 v2 );
 void draw_tool( int i );
-    
+vec2 tool_cpoint( int t );
+
+
 void file_init();
 void file_parse_serialdata();
 void file_draw();
@@ -378,10 +520,12 @@ void wizards_parse_serialdata();
 void wizards_draw();
 void wizards_load( const char *name );
 
-const char* isprefix( const char*  prefix, int* n);
+void findtag( const char *line, const char *tag, double &val,const double v );
+void findtag( const char *line, const char *tag, int &val,const int v );
+void findtag( const char *line, const char *tag, bool &val,const int v );
+void findtag( const char *line, const char *tag, char *str );
 
-#define FEED_RAPID 1
-#define FEED_NORMAL 2
+const char* isprefix( const char*  prefix, int* n);
 
 int preview( char *file );
 void preview_addfeed( float x, float y, float x2, float y2);
@@ -390,6 +534,10 @@ void preview_draw();
 
 void set_previewZoffset( double z );
 void set_previewXoffset( double z );
+
+#include "pathclass/path.h"
+#include "operationclass/operation.h"
+
 
 
 
