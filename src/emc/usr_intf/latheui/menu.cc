@@ -65,6 +65,27 @@ void menu::begin( int *i, int num, const char *n )
     cmi = &cmi->ml.back();
 }
 
+void menu::update_str( menuitem &m )
+{
+    switch( m.type )
+    { 
+        case TYPEBEGIN:
+        break;
+        case TYPEBACK:
+        break;
+        case TYPESELECT:
+        break;     
+        case TYPEINT:
+            sprintf( m.str, "%d", *(int *)m.val * m.divider );
+        case TYPEBOOL:
+        case TYPESTR:
+        break;
+        case TYPEDOUBLE:
+            sprintf( m.str, "%.10g", *(double *)m.val * (double)m.divider );
+        break;
+    }
+}
+
 void menu::setmaxlines( int l )
 {
     maxlines = l;
@@ -85,6 +106,12 @@ void menu::setcolor( color c )
     cmi->ml.back().tcolor = c;
 }
 
+void menu::diameter_mode()
+{
+    cmi->ml.back().divider = 2;
+    update_str(cmi->ml.back());
+}
+ 
 void menu::end()
 {
     cmi = cmi->up;
@@ -98,7 +125,7 @@ void menu::edit( int *i, const char *n )
     cmi->ml.back().type = TYPEINT;
     cmi->ml.back().val = (void *)i;
     strcpy( cmi->ml.back().name, n);
-    sprintf( cmi->ml.back().str, "%d", *(int *)cmi->ml.back().val );
+    update_str( cmi->ml.back() );
     usewheel = false;
 }
 
@@ -108,7 +135,7 @@ void menu::edit( double *d, const char *n )
     cmi->ml.back().type = TYPEDOUBLE;
     cmi->ml.back().val = d;  
     strcpy( cmi->ml.back().name, n);
-    sprintf( cmi->ml.back().str, "%.10g", *(double *)cmi->ml.back().val );
+    update_str( cmi->ml.back() );
     usewheel = false;
 }
 
@@ -225,25 +252,7 @@ void menu::clean( menuitem &m )
         
         if( i->edited )
         {
-            switch( i->type )
-            { 
-                
-                case TYPEBEGIN:
-                break;
-                case TYPEBACK:
-                break;
-                case TYPESELECT:
-                break;     
-                case TYPEINT:
-                    sprintf( i->str, "%d", *(int *)i->val );
-                case TYPEBOOL:
-                case TYPESTR:
-                break;
-                case TYPEDOUBLE:
-                    sprintf( i->str, "%.10g", *(double *)i->val );
-                break;
-                
-            }
+            update_str( *i );
             i->edited = false;
         }
         
@@ -300,24 +309,28 @@ bool menu::parse()
                 cmi = cmi->up;
                 cmi->it = cmi->ml.begin();
             break;
+            
             case TYPESELECT:
                 *(int *)cmi->it->val = cmi->it->num;
                 cmi->it->edited = true;
                 return true;
-            break;     
+            break;   
+              
             case TYPEINT:
-                (*(int *)cmi->it->val) = atoi( cmi->it->str );
-                sprintf( cmi->it->str, "%d", *(int *)cmi->it->val );
+                (*(int *)cmi->it->val) = atoi( cmi->it->str ) / (int)cmi->it->divider;
+                update_str( *cmi->it );
                 cmi->it->edited = true;
                 return true;
             case TYPEBOOL:
+            
             case TYPESTR:
                 cmi->it->edited = true;
                 return true;
             break;
+            
             case TYPEDOUBLE:
-                (*(double *)cmi->it->val) = atof( cmi->it->str );
-                sprintf( cmi->it->str, "%.10g", *(double *)cmi->it->val );
+                (*(double *)cmi->it->val) = atof( cmi->it->str ) / (double)cmi->it->divider;
+                update_str( *cmi->it );
                 cmi->it->edited = true;
                 return true;
             break;
@@ -338,14 +351,14 @@ bool menu::parse()
              if( cmi->it->type == TYPEINT )
              {
                   (*(int *)cmi->it->val)++;
-                  sprintf( cmi->it->str, "%d", *(int *)cmi->it->val );
+                  update_str( *cmi->it );
                   cmi->it->edited = true;
                   return true;
              }             
              if( cmi->it->type == TYPEDOUBLE )
              {
-                  (*(double *)cmi->it->val) += status.incr;
-                  sprintf( cmi->it->str, "%.10g", *(double *)cmi->it->val );
+                  (*(double *)cmi->it->val) += status.incr / (double)cmi->it->divider;
+                  update_str( *cmi->it );
                   cmi->it->edited = true;
                   return true;
              }      
@@ -361,14 +374,14 @@ bool menu::parse()
              if( cmi->it->type == TYPEINT )
              {
                   (*(int *)cmi->it->val)--;
-                  sprintf( cmi->it->str, "%d", *(int *)cmi->it->val );
+                  update_str( *cmi->it );
                   cmi->it->edited = true;
                   return true;
              }             
              if( cmi->it->type == TYPEDOUBLE )
              {
-                  (*(double *)cmi->it->val) -= status.incr; 
-                  sprintf( cmi->it->str, "%.10g", *(double *)cmi->it->val );
+                  (*(double *)cmi->it->val) -= status.incr / (double)cmi->it->divider; 
+                  update_str( *cmi->it );
                   cmi->it->edited = true;
                   return true;
              }             
@@ -436,14 +449,14 @@ bool menu::parse()
             if( cmi->it->type == TYPEINT )
             {
                 (*(int *)cmi->it->val) = -abs( (*(int *)cmi->it->val) );
-                sprintf( cmi->it->str, "%d", *(int *)cmi->it->val );
+                update_str( *cmi->it );
                 cmi->it->edited = true;
                 return true;
             }   
             if( cmi->it->type == TYPEDOUBLE )
             {
                 (*(double *)cmi->it->val) = -fabs( (*(double *)cmi->it->val) );
-                sprintf( cmi->it->str, "%.10g", *(double *)cmi->it->val );
+                update_str( *cmi->it );
                 cmi->it->edited = true;
                 return true;
             }   
@@ -453,14 +466,14 @@ bool menu::parse()
             if( cmi->it->type == TYPEINT )
             {
                 (*(int *)cmi->it->val) = abs( (*(int *)cmi->it->val) );
-                sprintf( cmi->it->str, "%d", *(int *)cmi->it->val );
+                update_str( *cmi->it );
                 cmi->it->edited = true;
                 return true;
             }   
             if( cmi->it->type == TYPEDOUBLE )
             {
                 (*(double *)cmi->it->val) = fabs( (*(double *)cmi->it->val) );
-                sprintf( cmi->it->str, "%.10g", *(double *)cmi->it->val );
+                update_str( *cmi->it );
                 cmi->it->edited = true;
                 return true;
             }   

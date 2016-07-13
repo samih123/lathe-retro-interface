@@ -396,6 +396,7 @@ struct menuitem
         shortcut = NULL;
         val = NULL;
         tcolor = TEXT;
+        divider = 1;
     };
     ~menuitem()
     {
@@ -414,6 +415,7 @@ struct menuitem
     bool hidden;
     bool edited;
     color tcolor;
+    int divider;
 }; 
 
 
@@ -431,6 +433,8 @@ class menu
     void hiddenvalue();
     void setcolor( color c );
     void shortcut( const char *shortcut );
+    void diameter_mode();
+    
     
     void edit( int *i, const char *n);
     void select( int *i, int num, const char *n );
@@ -440,7 +444,6 @@ class menu
     void back( const char *n );
     void comment( const char *n );
     void clean( menuitem &m );
-
     bool edited( void *v );
     bool current_menu( const char *n );
     void draw( int x, int y);
@@ -448,6 +451,8 @@ class menu
     
     private:
     bool edited( menuitem &m, void *v );
+    void update_str( menuitem &m );
+    
     char strbuf[BUFFSIZE];
     menuitem rm;
     menuitem *cmi; // current menuitem

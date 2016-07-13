@@ -38,11 +38,10 @@ static int menuselect;
 
 static cut ccut;
 static tool ctool;
-static double diameter,diameter2;
-static double face_beginz,face_endz;
 
-double startz;
-double startd;
+static vec2 face_begin,face_end;
+
+static vec2 start_position;
 
 int maxrpm;
 double stockdiameter;
@@ -68,7 +67,6 @@ void getzd()
 {
     if( cur_contour != opl.end() ){
          ccut = cur_contour->get_cut();
-         diameter = ccut.end.x *2.0;
     }
     
     if( cur_tool != opl.end() )
@@ -82,12 +80,8 @@ void getzd()
         
         if( type == FACING )
         {
-            vec2 begin = cur_op->getf_begin();
-            vec2 end = cur_op->getf_end();
-            diameter = begin.x*2.0;
-            diameter2 = end.x*2.0;
-            face_beginz = begin.z;
-            face_endz = end.z;
+            face_begin = cur_op->getf_begin();
+            face_end = cur_op->getf_end();
         }
 
     }
@@ -126,7 +120,7 @@ void create_phase_menu()
             Menu.edit( &ccut.type, typestr[ ccut.type ] );Menu.hiddenvalue();
             Menu.select( &menuselect, MENU_DELETECUT, "Delete" );
             Menu.select( &menuselect, MENU_NEWCUT, "New" );
-            Menu.edit( &diameter, Dstr ); Menu.shortcut("AX=0" );
+            Menu.edit( &ccut.end.x, Dstr ); Menu.shortcut("AX=0" ); Menu.diameter_mode();
             Menu.edit( &ccut.end.z, Zstr ); Menu.shortcut("AX=2" );
 
             
@@ -152,10 +146,10 @@ void create_phase_menu()
         
         else if( type == FACING )
         {
-            Menu.edit( &diameter, "Start diameter " );
-            Menu.edit( &diameter2, "End diameter " );
-            Menu.edit( &face_beginz, "Start Z " );
-            Menu.edit( &face_endz, "End Z " );           
+            Menu.edit( &face_begin.x, "Start diameter " ); Menu.diameter_mode();
+            Menu.edit( &face_end.x, "End diameter " ); Menu.diameter_mode();
+            Menu.edit( &face_begin.z, "Start Z " );
+            Menu.edit( &face_end.z, "End Z " );           
         }
         
     Menu.end();
@@ -190,11 +184,13 @@ void create_main_menu()
     Menu.begin( "machining phases:" );
     
         Menu.edit( Name, "Program name:" );
+        
         Menu.edit( &scale, "Image scale " ); Menu.shortcut("AX=5" );
         Menu.edit( &pos.x, "Image x " ); Menu.shortcut("AX=0" );
         Menu.edit( &pos.z, "Image z " ); Menu.shortcut("AX=2" );
-        Menu.edit( &startz, "start position Z " );
-        Menu.edit( &startd, "start diameter   " );
+        
+        Menu.edit( &start_position.x, "start diameter   " ); Menu.diameter_mode();
+        Menu.edit( &start_position.z, "start position Z " );
         
         Menu.edit( initcommands, "Init commands:" );
         Menu.select( &menuselect, MENU_SAVE, "Save" );
@@ -322,9 +318,9 @@ void save_program(const char *name )
     
     for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-        fprintf(fp, "G0 X%.10g Z%.10g\n", startd/2.0, startz );
+        fprintf(fp, "G0 X%.10g Z%.10g\n", start_position.x, start_position.z );
         i->save_program( fp ); // must call in order! 
-        fprintf(fp, "G0 X%.10g Z%.10g\n", startd/2.0, startz );
+        fprintf(fp, "G0 X%.10g Z%.10g\n", start_position.x, start_position.z );
     }
         
     fprintf(fp, "M5 (stop spindle)\n");
@@ -428,8 +424,8 @@ void wizards_init()
         retract = 1;
         maxrpm = status.maxrpm;
         stockdiameter = 20;
-        startd = stockdiameter;
-        startz = 20;
+        start_position.x = stockdiameter/2.0;
+        start_position.z = 20;
         cur_contour = cur_op = cur_tool= opl.end();
         strcpy( initcommands, "G18 G8 G21 G95 G40 G64 P0.01 Q0.01" );
     }
@@ -631,7 +627,7 @@ void clamp_values()
 {
      CLAMP( stockdiameter,0,1000 );
      CLAMP( maxrpm, 1, 5000 );
-     CLAMP( diameter,0,stockdiameter); 
+     CLAMP( ccut.end.x, 0, (stockdiameter/2.0) ); 
      CLAMP( scale,0.1,10 ); 
      CLAMP( ctool.tooln, 0, MAXTOOLS );   
 }
@@ -756,12 +752,11 @@ void wizards_parse_serialdata()
             
             if( cur_op->get_type() == CONTOUR && (
                 Menu.edited( &ccut.end.z ) || 
-                Menu.edited( &diameter ) ||
+                Menu.edited( &ccut.end.x ) ||
                 Menu.edited( &ccut.type ) || 
                 Menu.edited( &ccut.r ) )
             )
             {
-                ccut.end.x = diameter / 2.0;
                 cur_contour->set_cut( ccut );
                 if( Menu.edited( &ccut.type ) )
                 {
@@ -783,14 +778,14 @@ void wizards_parse_serialdata()
             if( cur_op->get_type() == FACING )
             {
                 if( 
-                    Menu.edited( &diameter ) ||
-                    Menu.edited( &diameter2 ) ||
-                    Menu.edited( &face_beginz ) || 
-                    Menu.edited( &face_endz ) 
+                    Menu.edited( &face_begin.x ) ||
+                    Menu.edited( &face_end.x ) ||
+                    Menu.edited( &face_begin.z ) || 
+                    Menu.edited( &face_end.z ) 
                 )
                 {
                     printf("set\n");
-                    cur_op->setf_begin_end( vec2( diameter/2.0, face_beginz ), vec2( diameter2/2.0, face_endz ) );
+                    cur_op->setf_begin_end( face_begin, face_end );
                 }
             }
         }
@@ -843,8 +838,8 @@ void wizards_draw()
     }
     
     setcolor( RAPID );
-    drawCross( startz, -startd/2.0, 5 );
-    drawCircle( startz, -startd/2.0, 5 );
+    drawCross( start_position.z, -start_position.x, 5 );
+    drawCircle( start_position.z, -start_position.x, 5 );
     
     glPopMatrix();
     
