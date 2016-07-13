@@ -9,17 +9,21 @@ extern char *ttcomments[CANON_POCKETS_MAX];
 
 const char* phase_name( int t )
 {
+    switch( t )
+    {
+        case TOOL:            return "Tool";
+        case CONTOUR:         return "Contour";
+        case INSIDE_CONTOUR:  return "Inside contour";
+        case TURN:            return "Turning";
+        case UNDERCUT:        return "Undercut";
+        case FINISHING:       return "Finishing";
+        case THREADING:       return "Thread";
+        case FACING:          return "Facing";
+        case DRILL:           return "Drilling";
+        case PARTING:         return "Parting off";
+        case MOVE:            return "Rapid move";
+    }
 
-    if(t == TOOL ) return "Tool";
-    else if(t == CONTOUR ) return "Contour";
-    else if(t == INSIDE_CONTOUR ) return "Inside contour";
-    else if(t == TURN ) return "Turning";
-    else if(t == UNDERCUT ) return "Undercut";
-    else if(t == FINISHING ) return "Finishing";
-    else if(t == THREADING ) return "Thread";
-    else if(t == FACING ) return "Facing";
-    else if(t == DRILL ) return "Drilling";
-    else if(t == PARTING ) return "Parting off";
     return "ERROR";
 };
 
@@ -214,16 +218,25 @@ void operation::draw( color c, bool draw_all )
 
     if( draw_all )
     {
+        
         if( type == TURN )
         {
             r_path.draw( c );
         }
+        
         else if( type == FACING )
         {
             setcolor( DISABLED );
             drawBox( face_begin, face_end );
             f_path.draw( c );
-        }     
+        }   
+        
+        else if( type == MOVE )
+        {
+            setcolor( WARNING );
+            drawCross( rapid_move.z, -rapid_move.x , 3.0/scale);
+        }         
+          
     }
 
 
@@ -358,6 +371,8 @@ void operation::set_tool( tool &T )
 void operation::save_program( FILE *fp )
 {
     
+    fprintf(fp, "(%s)\n", get_name() );
+    
     if( type == TURN )
     {
         r_path.save( fp );
@@ -376,6 +391,11 @@ void operation::save_program( FILE *fp )
         sprintf( strbuf, "M4 (start spindle)\n" ); fprintf(fp, "%s", strbuf );
     }   
     
+    else if( type == MOVE )
+    {
+        fprintf(fp, "G0 X%.10g Z%.10g\n", rapid_move.x, rapid_move.z );
+    }    
+    
 }    
     
 void operation::save( FILE *fp )
@@ -391,6 +411,13 @@ void operation::save( FILE *fp )
         fprintf(fp, "   TOOLN %i\n", tl.tooln );
         fprintf(fp, "END\n" );
     }
+    
+    else if( type == MOVE )
+    {
+        fprintf(fp, "OPERATION %i //rapid move\n", type );
+        fprintf(fp, "   MOVE %.10g %.10g\n", rapid_move.x, rapid_move.z );
+        fprintf(fp, "END\n" );
+    }   
     
     else if( type == FACING )
     {
@@ -509,7 +536,16 @@ void operation::load( FILE *fp )
                 face_end.z = v4;
             }
         }    
-            
+        
+        else if( type == MOVE )
+        {
+            if( strcmp( tag, "MOVE") == 0 )
+            {
+                rapid_move.x = v1;
+                rapid_move.z = v2;
+            }
+        }    
+                       
         else if( type == CONTOUR )
         {
             int s = (int)side;

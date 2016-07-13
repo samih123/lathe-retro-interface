@@ -23,6 +23,10 @@ class operation
     vec2 getf_end(){ return face_end; };
     void setf_begin_end( vec2 fbeg, vec2 fend );
     
+    //move
+    vec2 get_move(){ return rapid_move; };
+    void set_move( vec2 m ){ rapid_move = m; changed = true; };
+    
     //void set_inside( bool s ){ inside = s;} 
     Side get_side(){ return side; }; 
     void draw( color c=NONE, bool all = true );
@@ -65,6 +69,9 @@ class operation
     box_path f_path;
     vec2 face_begin,face_end;
     
+    //move
+    vec2 rapid_move;
+     
     vec2 min,max;
     char name[BUFFSIZE]; 
 };

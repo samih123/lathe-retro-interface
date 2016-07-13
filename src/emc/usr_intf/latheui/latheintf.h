@@ -106,7 +106,8 @@ enum op_type
     THREADING,
     FACING,
     DRILL,
-    PARTING 
+    PARTING,
+    MOVE, 
 };
 
 enum Side

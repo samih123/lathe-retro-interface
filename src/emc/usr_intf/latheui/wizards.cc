@@ -38,7 +38,7 @@ static int menuselect;
 
 static cut ccut;
 static tool ctool;
-
+static vec2 movepos;
 static vec2 face_begin,face_end;
 
 static vec2 start_position;
@@ -83,7 +83,10 @@ void getzd()
             face_begin = cur_op->getf_begin();
             face_end = cur_op->getf_end();
         }
-
+        else if( type == MOVE )
+        {
+            movepos = cur_op->get_move();
+        }
     }
 }
 
@@ -151,6 +154,12 @@ void create_phase_menu()
             Menu.edit( &face_begin.z, "Start Z " );
             Menu.edit( &face_end.z, "End Z " );           
         }
+        
+        else if( type == MOVE )
+        {
+            Menu.edit( &movepos.x, "Diameter " ); Menu.diameter_mode();
+            Menu.edit( &movepos.z, "Z        " );
+        }       
         
     Menu.end();
 }
@@ -221,6 +230,7 @@ void create_main_menu()
                 create_new_phase_menu( FACING );
                 create_new_phase_menu( DRILL );
                 create_new_phase_menu( PARTING );
+                create_new_phase_menu( MOVE );
             Menu.end();
             
         Menu.end();
@@ -315,12 +325,32 @@ void save_program(const char *name )
     fprintf(fp, "%s\n", initcommands );
     
     
+    fprintf(fp, "G0 X%.10g Z%.10g\n", start_position.x, start_position.z );
     
     for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-        fprintf(fp, "G0 X%.10g Z%.10g\n", start_position.x, start_position.z );
         i->save_program( fp ); // must call in order! 
-        fprintf(fp, "G0 X%.10g Z%.10g\n", start_position.x, start_position.z );
+        
+        if( i->get_type() != CONTOUR &&
+            i->get_type() != INSIDE_CONTOUR
+        )
+        {
+            
+            bool b = true;
+            if( std::next(i) != opl.end() )
+            {
+                if( std::next(i)->get_type() == MOVE ) 
+                {
+                    b = false;
+                }
+            }
+            
+            if(b)
+            {
+                fprintf(fp, "G0 X%.10g Z%.10g (start position)\n", start_position.x, start_position.z );
+            }
+        }
+        
     }
         
     fprintf(fp, "M5 (stop spindle)\n");
@@ -784,10 +814,21 @@ void wizards_parse_serialdata()
                     Menu.edited( &face_end.z ) 
                 )
                 {
-                    printf("set\n");
                     cur_op->setf_begin_end( face_begin, face_end );
                 }
             }
+            
+            else if( cur_op->get_type() == MOVE )
+            {
+                if( 
+                    Menu.edited( &movepos.x ) ||
+                    Menu.edited( &movepos.z ) 
+                )
+                {
+                    cur_op->set_move( movepos );
+                }
+            }           
+            
         }
 
     
