@@ -522,6 +522,11 @@ void specialfunc(int key, int x, int y)
     
 }
 
+void specialfuncUp(int key, int x, int y)
+{
+    ser_emul.push_back( "RLKB" );
+}
+
 void mousefunc(int button, int state, int x, int y)
 {
    if ((button == 3) || (button == 4)) // It's a wheel event
@@ -552,6 +557,8 @@ void init_opengl( int argc, char **argv )
     glutDisplayFunc( updatescreen );
     glutKeyboardFunc( keyboardfunc );
     glutSpecialFunc( specialfunc );
+    glutSpecialUpFunc( specialfuncUp );
+    
     glutMouseFunc( mousefunc );
     
     screenw = glutGet(GLUT_WINDOW_WIDTH);
