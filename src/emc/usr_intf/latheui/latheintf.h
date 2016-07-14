@@ -75,6 +75,12 @@ enum color
     DIRECTORY
 };
 
+enum direction
+{
+    DIRZ,
+    DIRX
+};
+
 #define MAXTOOLS 20
 
 

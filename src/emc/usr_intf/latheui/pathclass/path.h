@@ -74,5 +74,5 @@ class undercut_path:public path
 class box_path:public path
 {
     public:
-    void create( const tool &tl, vec2 start, vec2 fdir, vec2 ddir, double flen, double dlen );
+    void create( const tool &tl, vec2 start, vec2 end, int dir );
 };

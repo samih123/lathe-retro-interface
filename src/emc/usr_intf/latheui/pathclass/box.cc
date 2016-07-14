@@ -4,10 +4,29 @@ extern const double retract;
 extern char strbuf[BUFFSIZE];;
 extern const double stockdiameter;
 
-void box_path::create( const tool &tl, vec2 start, vec2 fdir, vec2 ddir, double flen, double dlen )
+void box_path::create( const tool &tl, vec2 begin, vec2 end, int feedd )
 {
-    
 
+    vec2 fdir;
+    vec2 ddir;
+    double flen;
+    double dlen;
+    
+    if( feedd == DIRX )
+    {
+        fdir = vec2( begin.x > end.x ? -1:1 ,0 );
+        ddir = vec2(0, begin.z > end.z ? -1:1 );
+        flen = fabs( end.x - begin.x);
+        dlen = fabs( end.z - begin.z);
+    }
+    else
+    {
+        fdir = vec2(0, begin.z > end.z ? -1:1 );
+        ddir = vec2( begin.x > end.x ? -1:1 ,0);
+        flen = fabs( end.z - begin.z);
+        dlen = fabs( end.x - begin.x);
+    }
+    
     double tool_r = _tools[ tl.tooln ].diameter/2.0f;
     ml.clear();
    
@@ -18,11 +37,11 @@ void box_path::create( const tool &tl, vec2 start, vec2 fdir, vec2 ddir, double 
     vec2 fv = fdir *flen;
     vec2 trv = -ddir * tool_r - fdir * tool_r;
         
-    create_line( start + trv , MOV_RAPID );
+    create_line( begin + trv , MOV_RAPID );
 
     while( count >= 0 )
     {
-        vec2 v = start + ddir*dlen - dv * (double)count + trv;
+        vec2 v = begin + ddir*dlen - dv * (double)count + trv;
         
         create_line( v, MOV_FEED );
         v += fv;

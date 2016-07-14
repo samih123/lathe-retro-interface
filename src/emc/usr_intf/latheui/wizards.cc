@@ -30,6 +30,7 @@ list<operation>::iterator cur_tool;
 static char Dstr[BUFFSIZE];
 static char Zstr[BUFFSIZE];
 static char Name[BUFFSIZE];
+
 static char initcommands[BUFFSIZE] = "";
 
 static int operationcreate;
@@ -40,10 +41,11 @@ static cut ccut;
 static tool ctool;
 static vec2 movepos;
 static vec2 face_begin,face_end;
+int face_feed_dir;
 
 static vec2 start_position;
-
 int maxrpm;
+
 double stockdiameter;
 double scale = 1;
 static vec2 pos(0,0); 
@@ -82,11 +84,13 @@ void getzd()
         {
             face_begin = cur_op->getf_begin();
             face_end = cur_op->getf_end();
+            face_feed_dir = cur_op->get_feed_dir();
         }
         else if( type == MOVE )
         {
             movepos = cur_op->get_move();
         }
+        
     }
 }
 
@@ -117,8 +121,8 @@ void create_operation_menu()
         
         if( type == CONTOUR )
         {
-            sprintf(Dstr,"D start:%.20g end:", ccut.start.x*2.0f );
-            sprintf(Zstr,"Z start:%.20g lenght:", ccut.start.z );
+            sprintf(Dstr,"D start:%.20g   D end ", ccut.start.x*2.0f );
+            sprintf(Zstr,"Z start:%.20g  lenght ", ccut.start.z );
 
             Menu.edit( &ccut.type, typestr[ ccut.type ] );Menu.hiddenvalue();
             Menu.select( &menuselect, MENU_DELETECUT, "Delete" );
@@ -141,18 +145,21 @@ void create_operation_menu()
         }
         else if( type == TOOL )
         {
-            Menu.edit( &ctool.tooln, "Tool number " );
-            Menu.edit( &ctool.feed, "Feedrate mm/min " );
+            Menu.edit( &ctool.tooln, "Tool number       " );
+            Menu.edit( &ctool.feed,  "Feedrate mm/min   " );
             Menu.edit( &ctool.speed, "Surface speed m/s " );
-            Menu.edit( &ctool.depth, "Depth " );
+            Menu.edit( &ctool.depth, "Depth             " );
         }
         
         else if( type == FACING )
         {
+            
+            Menu.edit( &face_feed_dir, face_feed_dir == DIRZ ? "Feed direction Z":"Feed direction X" );Menu.hiddenvalue();
+            
             Menu.edit( &face_begin.x, "Start diameter " ); Menu.diameter_mode();
-            Menu.edit( &face_end.x, "End diameter " ); Menu.diameter_mode();
-            Menu.edit( &face_begin.z, "Start Z " );
-            Menu.edit( &face_end.z, "End Z " );           
+            Menu.edit( &face_end.x,   "End diameter   " ); Menu.diameter_mode();
+            Menu.edit( &face_begin.z, "Start Z        " );
+            Menu.edit( &face_end.z,   "End Z          " );           
         }
         
         else if( type == MOVE )
@@ -195,8 +202,8 @@ void create_main_menu()
         Menu.edit( Name, "Program name:" );
         
         Menu.edit( &scale, "Image scale " ); Menu.shortcut("AX=5" );
-        Menu.edit( &pos.x, "Image x " ); Menu.shortcut("AX=0" );
-        Menu.edit( &pos.z, "Image z " ); Menu.shortcut("AX=2" );
+        Menu.edit( &pos.x, "Image X pos " ); Menu.shortcut("AX=0" );
+        Menu.edit( &pos.z, "Image Z pos " ); Menu.shortcut("AX=2" );
         
         Menu.edit( &start_position.x, "start diameter   " ); Menu.diameter_mode();
         Menu.edit( &start_position.z, "start position Z " );
@@ -448,6 +455,9 @@ void wizards_load( const char *name )
 
 void wizards_init()
 {
+    
+    face_feed_dir = DIRZ;
+    
     if( opl.size() == 0 )
     {
         scale = 2;
@@ -659,7 +669,8 @@ void clamp_values()
      CLAMP( maxrpm, 1, 5000 );
      CLAMP( ccut.end.x, 0, (stockdiameter/2.0) ); 
      CLAMP( scale,0.1,10 ); 
-     CLAMP( ctool.tooln, 0, MAXTOOLS );   
+     CLAMP( ctool.tooln, 0, MAXTOOLS );
+     CLAMP( face_feed_dir, DIRZ, DIRX );   
 }
 
 void wizards_parse_serialdata()
@@ -759,8 +770,6 @@ void wizards_parse_serialdata()
 
         else if( Menu.edited( &operationselect ) )
         {
-            printf("select %d\n", operationselect );
-
             int n = 1;
             cur_contour = cur_op = cur_tool = opl.end();
             for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
@@ -773,7 +782,6 @@ void wizards_parse_serialdata()
             }
             clear_all_operations();
             create_operation_menu();
-
         }
 
         // shape
@@ -811,10 +819,18 @@ void wizards_parse_serialdata()
                     Menu.edited( &face_begin.x ) ||
                     Menu.edited( &face_end.x ) ||
                     Menu.edited( &face_begin.z ) || 
-                    Menu.edited( &face_end.z ) 
+                    Menu.edited( &face_end.z ) ||
+                    Menu.edited( &face_feed_dir ) 
                 )
                 {
-                    cur_op->setf_begin_end( face_begin, face_end );
+                    cur_op->setf_begin_end_dir( face_begin, face_end, face_feed_dir );
+                    
+                    if( Menu.edited( &face_feed_dir ) )
+                    {
+                        clear_all_operations();
+                        create_operation_menu();
+                    }
+        
                 }
             }
             

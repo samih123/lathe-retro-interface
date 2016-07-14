@@ -21,7 +21,8 @@ class operation
     // facing
     vec2 getf_begin(){ return face_begin; };
     vec2 getf_end(){ return face_end; };
-    void setf_begin_end( vec2 fbeg, vec2 fend );
+    int get_feed_dir(){ return feed_dir; };
+    void setf_begin_end_dir( vec2 fbeg, vec2 fend, int d );
     
     //move
     vec2 get_move(){ return rapid_move; };
@@ -68,6 +69,7 @@ class operation
     // facing
     box_path f_path;
     vec2 face_begin,face_end;
+    int feed_dir;
     
     //move
     vec2 rapid_move;

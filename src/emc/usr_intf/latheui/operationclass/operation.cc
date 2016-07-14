@@ -18,7 +18,7 @@ const char* operation_name( int t )
         case UNDERCUT:        return "Undercut";
         case FINISHING:       return "Finishing";
         case THREADING:       return "Thread";
-        case FACING:          return "Facing";
+        case FACING:          return "Simple Box";
         case DRILL:           return "Drilling";
         case PARTING:         return "Parting off";
         case MOVE:            return "Rapid move";
@@ -134,6 +134,7 @@ operation::operation( op_type t )
         face_end.z = 0;
         face_begin.x = stockdiameter/2.0;
         face_end.x = 0;
+        feed_dir = DIRX;
     }
 
 }
@@ -228,6 +229,8 @@ void operation::draw( color c, bool draw_all )
         {
             setcolor( DISABLED );
             drawBox( face_begin, face_end );
+            drawCross( face_begin.z, -face_begin.x , 3.0/scale);
+            drawCircle( face_begin.z, -face_begin.x , 3.0/scale);
             f_path.draw( c );
         }   
         
@@ -341,15 +344,15 @@ void operation::set_cut( cut &c )
     }
 }
 
-void operation::setf_begin_end( vec2 fbeg, vec2 fend )
+void operation::setf_begin_end_dir( vec2 fbeg, vec2 fend, int d )
 { 
     if( type != FACING ) printf( "TYPE ERROR %s\n", __PRETTY_FUNCTION__ );
     
-    {
-        face_begin = fbeg;
-        face_end = fend;
-        changed = true;
-    }
+    face_begin = fbeg;
+    face_end = fend;
+    changed = true;
+    feed_dir = d;
+
 }
 
 
@@ -422,7 +425,8 @@ void operation::save( FILE *fp )
     else if( type == FACING )
     {
         fprintf(fp, "OPERATION %i //facing\n", type );
-        fprintf(fp, "   F_BEGIN_END %.10g %.10g %.10g %.10g\n", face_begin.x, face_begin.z, face_end.x, face_end.z );
+        fprintf(fp, "   BEGIN_END %.10g %.10g %.10g %.10g\n", face_begin.x, face_begin.z, face_end.x, face_end.z );
+        fprintf(fp, "   FEED_DIR %i\n", (int)feed_dir );
         fprintf(fp, "END\n" );
     }
     
@@ -528,13 +532,14 @@ void operation::load( FILE *fp )
         
         else if( type == FACING )
         {
-            if( strcmp( tag, "F_BEGIN_END") == 0 )
+            if( strcmp( tag, "BEGIN_END" ) == 0 )
             {
                 face_begin.x = v1;
                 face_begin.z = v2;
                 face_end.x = v3;
                 face_end.z = v4;
             }
+            findtag( tag, "FEED_DIR", feed_dir, v1 );
         }    
         
         else if( type == MOVE )
@@ -636,7 +641,7 @@ void operation::create_path( operation &ccontour, operation &ctool )
     
     if( type == FACING && changed )
     {
-         f_path.create( ctool.get_tool(), face_begin, vec2(-1,0), vec2(0,-1), fabs(face_end.x - face_begin.x), fabs(face_end.z - face_begin.z));
+         f_path.create( ctool.get_tool(), face_begin, face_end, feed_dir );
          return;
     }
     
