@@ -146,7 +146,7 @@ void create_operation_menu()
         else if( type == TOOL )
         {
             Menu.edit( &ctool.tooln, "Tool number       " );
-            Menu.edit( &ctool.feed,  "Feedrate mm/min   " );
+            Menu.edit( &ctool.feed,  "Feedrate mm/rev.  " );
             Menu.edit( &ctool.speed, "Surface speed m/s " );
             Menu.edit( &ctool.depth, "Depth             " );
         }
@@ -807,8 +807,21 @@ void wizards_parse_serialdata()
         // tool
         if( cur_tool != opl.end() )
         {
-            cur_tool->set_tool( ctool );
-            ctool = cur_tool->get_tool();
+            if( 
+                    Menu.edited( &ctool.tooln ) ||
+                    Menu.edited( &ctool.feed ) ||
+                    Menu.edited( &ctool.speed ) ||
+                    Menu.edited( &ctool.depth ) 
+            )
+            {
+                cur_tool->set_tool( ctool );
+                ctool = cur_tool->get_tool();
+                if( Menu.edited( &ctool.tooln ) )
+                {
+                    clear_all_operations();
+                    create_operation_menu();
+                }              
+            }
         }
         
         if( cur_op != opl.end() )

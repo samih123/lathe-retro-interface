@@ -13,6 +13,7 @@ extern struct machinestatus status;
 extern bool flasher;
 extern list<string> errors;
 extern bool show_last_msg;
+extern char *ttcomments[CANON_POCKETS_MAX];
 
 int print_y = 0;
 int print_x = 0;
@@ -273,19 +274,19 @@ void draw_dro( vec2 *cpos )
         sprintf(strbuf,"X%4.2f", x      ); println( strbuf, 550, 55, 40, axiscolor( AXISX ));  
         sprintf(strbuf,"D%4.2f", x*2.0f ); println( strbuf, axiscolor( AXISX ));  
         sprintf(strbuf,"Z%4.2f", z      ); println( strbuf, axiscolor( AXISZ ));  
-        sprintf(strbuf,"C%4.2f", c     ); println( strbuf, axiscolor( AXISC ));
+        sprintf(strbuf,"C%4.2f", c     );  println( strbuf, axiscolor( AXISC ));
     }   
 
-
-    sprintf(strbuf,"%s X %4.3f",label, emcStatus->task.g5x_offset.tran.x );                          print( strbuf ,550,250+20*0,20 );
-    sprintf(strbuf,"%s Z %4.3f",label, emcStatus->task.g5x_offset.tran.z );                          print( strbuf ,550,250+20*1,20 );
-    sprintf(strbuf,"G92 X %4.3f",emcStatus->task.g92_offset.tran.x );                                print( strbuf ,550,250+20*2,20 );
-    sprintf(strbuf,"G92 Z %4.3f",emcStatus->task.g92_offset.tran.z );                                print( strbuf ,550,250+20*3,20 );
-    sprintf(strbuf,"Tool %d",   emcStatus->io.tool.toolInSpindle );                                  print( strbuf ,550,250+20*4,20 );
-    sprintf(strbuf,"ToolX %4.3f",emcStatus->task.toolOffset.tran.x );                                print( strbuf ,550,250+20*5,20 );
-    sprintf(strbuf,"ToolZ %4.3f",emcStatus->task.toolOffset.tran.z );                                print( strbuf ,550,250+20*6,20 );
-    sprintf(strbuf,"ToolD %4.3f",_tools[ emcStatus->io.tool.toolInSpindle ].diameter );              print( strbuf ,550,250+20*7,20 );
-    sprintf(strbuf,"Vel.%4.1f %d%%",emcStatus->motion.traj.current_vel*60.0f, status.feedoverride ); print( strbuf ,550,250+20*8,20 );
+    int tooln =  emcStatus->io.tool.toolInSpindle;
+    sprintf(strbuf,"%s X %4.3f",label, emcStatus->task.g5x_offset.tran.x );                          println( strbuf ,550,225,16 );
+    sprintf(strbuf,"%s Z %4.3f",label, emcStatus->task.g5x_offset.tran.z );                          println( strbuf );
+    sprintf(strbuf,"G92 X %4.3f",emcStatus->task.g92_offset.tran.x );                                println( strbuf );
+    sprintf(strbuf,"G92 Z %4.3f",emcStatus->task.g92_offset.tran.z );                                println( strbuf );
+    sprintf(strbuf,"Tool %d %s", tooln, ttcomments[ tooln ] );                                       println( strbuf );
+    sprintf(strbuf,"ToolX %4.3f",emcStatus->task.toolOffset.tran.x );                                println( strbuf );
+    sprintf(strbuf,"ToolZ %4.3f",emcStatus->task.toolOffset.tran.z );                                println( strbuf );
+    sprintf(strbuf,"ToolD %4.3f",_tools[ emcStatus->io.tool.toolInSpindle ].diameter );              println( strbuf );
+    sprintf(strbuf,"Vel.%4.1f %d%%",emcStatus->motion.traj.current_vel*60.0f, status.feedoverride ); println( strbuf );
 
 }
 
