@@ -109,12 +109,12 @@ void println( int x, int y, int size, color c )
 {
     print_x = x;
     print_s = size;
-    print_y = y - ( print_s + print_s/16 );
+    print_y = y - ( print_s + print_s/5 );
 }
 
 void println(const char *s, color c )
 {
-    print_y += print_s + print_s/16;
+    print_y += print_s + print_s/5;
     print(s, print_x, print_y , print_s, c);
 }
 
@@ -277,15 +277,15 @@ void draw_dro( vec2 *cpos )
     }   
 
 
-    sprintf(strbuf,"%s X %4.3f",label, emcStatus->task.g5x_offset.tran.x );                          print( strbuf ,550,200+20*0,20 );
-    sprintf(strbuf,"%s Z %4.3f",label, emcStatus->task.g5x_offset.tran.z );                          print( strbuf ,550,200+20*1,20 );
-    sprintf(strbuf,"G92 X %4.3f",emcStatus->task.g92_offset.tran.x );                                print( strbuf ,550,200+20*2,20 );
-    sprintf(strbuf,"G92 Z %4.3f",emcStatus->task.g92_offset.tran.z );                                print( strbuf ,550,200+20*3,20 );
-    sprintf(strbuf,"Tool %d",   emcStatus->io.tool.toolInSpindle );                                  print( strbuf ,550,200+20*4,20 );
-    sprintf(strbuf,"ToolX %4.3f",emcStatus->task.toolOffset.tran.x );                                print( strbuf ,550,200+20*5,20 );
-    sprintf(strbuf,"ToolZ %4.3f",emcStatus->task.toolOffset.tran.z );                                print( strbuf ,550,200+20*6,20 );
-    sprintf(strbuf,"ToolD %4.3f",_tools[ emcStatus->io.tool.toolInSpindle ].diameter );              print( strbuf ,550,200+20*7,20 );
-    sprintf(strbuf,"Vel.%4.1f %d%%",emcStatus->motion.traj.current_vel*60.0f, status.feedoverride ); print( strbuf ,550,200+20*8,20 );
+    sprintf(strbuf,"%s X %4.3f",label, emcStatus->task.g5x_offset.tran.x );                          print( strbuf ,550,250+20*0,20 );
+    sprintf(strbuf,"%s Z %4.3f",label, emcStatus->task.g5x_offset.tran.z );                          print( strbuf ,550,250+20*1,20 );
+    sprintf(strbuf,"G92 X %4.3f",emcStatus->task.g92_offset.tran.x );                                print( strbuf ,550,250+20*2,20 );
+    sprintf(strbuf,"G92 Z %4.3f",emcStatus->task.g92_offset.tran.z );                                print( strbuf ,550,250+20*3,20 );
+    sprintf(strbuf,"Tool %d",   emcStatus->io.tool.toolInSpindle );                                  print( strbuf ,550,250+20*4,20 );
+    sprintf(strbuf,"ToolX %4.3f",emcStatus->task.toolOffset.tran.x );                                print( strbuf ,550,250+20*5,20 );
+    sprintf(strbuf,"ToolZ %4.3f",emcStatus->task.toolOffset.tran.z );                                print( strbuf ,550,250+20*6,20 );
+    sprintf(strbuf,"ToolD %4.3f",_tools[ emcStatus->io.tool.toolInSpindle ].diameter );              print( strbuf ,550,250+20*7,20 );
+    sprintf(strbuf,"Vel.%4.1f %d%%",emcStatus->motion.traj.current_vel*60.0f, status.feedoverride ); print( strbuf ,550,250+20*8,20 );
 
 }
 
@@ -522,6 +522,11 @@ void specialfunc(int key, int x, int y)
     
 }
 
+void specialfuncUp(int key, int x, int y)
+{
+    ser_emul.push_back( "RLKB" );
+}
+
 void mousefunc(int button, int state, int x, int y)
 {
    if ((button == 3) || (button == 4)) // It's a wheel event
@@ -552,6 +557,8 @@ void init_opengl( int argc, char **argv )
     glutDisplayFunc( updatescreen );
     glutKeyboardFunc( keyboardfunc );
     glutSpecialFunc( specialfunc );
+    glutSpecialUpFunc( specialfuncUp );
+    
     glutMouseFunc( mousefunc );
     
     screenw = glutGet(GLUT_WINDOW_WIDTH);
