@@ -64,7 +64,7 @@ void manual_parse_serialdata()
         jogcont_stopped = false;
     }
     
-    if( jogcont && isprefix( "RLKB" ,NULL ) )
+    if( jogcont && ( isprefix( "RLKB" ,NULL ) || isprefix( "RLUP" ,NULL )) )
     {
         jogcont = false;
         jogcont_stopped = true;
