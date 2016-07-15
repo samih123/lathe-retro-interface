@@ -63,7 +63,8 @@ void manual_parse_serialdata()
         reset_position();
         jogcont_stopped = false;
     }
-    
+
+    // stop jogging if button is released
     if( jogcont && ( isprefix( "RLKB" ,NULL ) || isprefix( "RLUP" ,NULL )) )
     {
         jogcont = false;
