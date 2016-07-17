@@ -459,6 +459,8 @@ class menu
     private:
     bool edited( menuitem &m, void *v );
     void update_str( menuitem &m );
+    void update_val( menuitem &m, int v );
+    void update_val( menuitem &m, double v );
     
     char strbuf[BUFFSIZE];
     menuitem rm;

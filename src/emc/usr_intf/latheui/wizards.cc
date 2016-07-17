@@ -10,16 +10,13 @@
 
 #include <list>
 using namespace std;
+
 extern char programPrefix[LINELEN];
-
-
-
 extern char strbuf[BUFFSIZE];
 extern struct machinestatus status;
 extern int screenw, screenh;
 extern char estr[BUFFSIZE];
 static menu Menu;
-
 
 extern list<operation> *wiz_opl;
 static list<operation> opl;

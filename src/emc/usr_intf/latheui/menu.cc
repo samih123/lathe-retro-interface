@@ -71,21 +71,65 @@ void menu::update_str( menuitem &m )
     { 
         case TYPEBEGIN:
         break;
+        
         case TYPEBACK:
         break;
+        
         case TYPESELECT:
-        break;     
+        break;   
+          
         case TYPEINT:
             sprintf( m.str, "%d", *(int *)m.val * m.divider );
+        break;  
+         
         case TYPEBOOL:
+        break; 
+        
         case TYPESTR:
         break;
+        
         case TYPEDOUBLE:
             sprintf( m.str, "%.10g", *(double *)m.val * (double)m.divider );
         break;
     }
 }
 
+void menu::update_val( menuitem &m, int v )
+{    
+    if( m.type != TYPEINT )
+    {
+        printf( "MENU:update_val type ERROR." );
+        return;
+    }
+    
+    if( v != *(int *)m.val )
+    { 
+        m.edited = true;
+        *(int *)m.val = (int)v;
+    }
+    sprintf( m.str, "%d", *(int *)m.val * m.divider );
+
+}
+            
+
+void menu::update_val( menuitem &m, double v )
+{
+
+    if( m.type != TYPEDOUBLE )
+    {
+        printf( "MENU:update_val type ERROR." );
+        return;
+    }
+    
+    if( v != *(double *)m.val )
+    { 
+        m.edited = true;
+        *(double *)m.val = (double)v;
+    }
+    sprintf( m.str, "%.10g", *(double *)m.val * (double)m.divider );
+
+}
+                       
 void menu::setmaxlines( int l )
 {
     maxlines = l;
@@ -283,10 +327,12 @@ bool menu::parse()
     // menu up,down,select
     if( isprefix( "DOWN" ,NULL ) || (usewheel && isprefix( "JG+" ,NULL )) )
     {
+        update_str( *cmi->it );
         if( cmi->it != --cmi->ml.end() ) cmi->it++;
     }
     else if( isprefix( "UP" ,NULL ) || (usewheel && isprefix( "JG-" ,NULL )) )
     {
+        update_str( *cmi->it );
         if( cmi->it != cmi->ml.begin() ) cmi->it--;
     }
     else if( isprefix( "RET" ,NULL ) )
@@ -317,9 +363,7 @@ bool menu::parse()
             break;   
               
             case TYPEINT:
-                (*(int *)cmi->it->val) = atoi( cmi->it->str ) / (int)cmi->it->divider;
-                update_str( *cmi->it );
-                cmi->it->edited = true;
+                update_val( *cmi->it, atoi( cmi->it->str ) / (int)cmi->it->divider );
                 return true;
             case TYPEBOOL:
             
@@ -329,9 +373,7 @@ bool menu::parse()
             break;
             
             case TYPEDOUBLE:
-                (*(double *)cmi->it->val) = atof( cmi->it->str ) / (double)cmi->it->divider;
-                update_str( *cmi->it );
-                cmi->it->edited = true;
+                update_val( *cmi->it, atof( cmi->it->str ) / (double)cmi->it->divider );
                 return true;
             break;
             
@@ -350,16 +392,12 @@ bool menu::parse()
              }
              if( cmi->it->type == TYPEINT )
              {
-                  (*(int *)cmi->it->val)++;
-                  update_str( *cmi->it );
-                  cmi->it->edited = true;
+                  update_val( *cmi->it, (*(int *)cmi->it->val)+1 );
                   return true;
              }             
              if( cmi->it->type == TYPEDOUBLE )
              {
-                  (*(double *)cmi->it->val) += status.incr / (double)cmi->it->divider;
-                  update_str( *cmi->it );
-                  cmi->it->edited = true;
+                  update_val( *cmi->it, (*(double *)cmi->it->val) + status.incr / (double)cmi->it->divider );
                   return true;
              }      
         }
@@ -373,16 +411,12 @@ bool menu::parse()
              }
              if( cmi->it->type == TYPEINT )
              {
-                  (*(int *)cmi->it->val)--;
-                  update_str( *cmi->it );
-                  cmi->it->edited = true;
+                 update_val( *cmi->it, (*(int *)cmi->it->val) - 1 );
                   return true;
              }             
              if( cmi->it->type == TYPEDOUBLE )
              {
-                  (*(double *)cmi->it->val) -= status.incr / (double)cmi->it->divider; 
-                  update_str( *cmi->it );
-                  cmi->it->edited = true;
+                  update_val( *cmi->it, (*(double *)cmi->it->val) - status.incr / (double)cmi->it->divider );
                   return true;
              }             
         }
