@@ -1,0 +1,75 @@
+component pci1761 """Driver for the Advantech PCI-1761 card.""";
+description """This driver supports the Advantech PCI-1761 card.
+ It creates hal pins corresonding to the digital inputs and relay outputs.""";
+
+pin in bit pin-##-out[8] "Output pins";
+pin out bit pin-##-in[8] "Input pins";
+pin out bit pin-##-in-not[8] "Inverted version of each input pin";
+param rw bit pin-##-out-invert[8] "Set to true to invert the sense of the output pin";
+
+function read nofp "Reads each of the digital inputs and updates the HAL pins";
+function write nofp "Writes the values of the output HAL pins to the Relay control register";
+
+variable unsigned base_addr;
+
+option count_function yes;
+option extra_setup yes;
+
+modparam dummy ioaddr """Base address of card. Separate each card base address
+with a comma but no space to load more than one card. eg
+loadrt pci1761 ioaddr=0x200,0x200. use 0xNNN to define addresses in Hex""";
+
+license "GPL";
+author "Sami Helin";
+;;
+
+#include <asm/io.h>
+#define MAX_CHAN 8
+
+static int ioaddr[MAX_CHAN] = {-1, -1, -1, -1, -1, -1, -1, -1};
+RTAPI_MP_ARRAY_INT(ioaddr, MAX_CHAN, "Base addresses")
+
+FUNCTION(read){
+    unsigned R;
+    int i;
+    
+    R =   inb( base_addr + 0x0h )
+    
+    for (i = 0;i <= 7;i++){
+        pin_in(i) = R & (1 << i);
+        pin_in_not(i) = !pin_in(i);
+    }
+}
+
+FUNCTION(write){
+    int i;
+    unsigned char b;
+    unsigned char out;
+    unsigned char inv;
+    
+    for (i = 0;i <= 7 ;i++){
+        out |= pin_out(i) << i;
+        inv |= pin_out_invert(i) << i;
+    }
+    
+    out ^= inv;
+    outb( b, base_addr + 0x1h );
+}
+
+
+EXTRA_SETUP(){
+
+    if (ioaddr[extra_arg] > 0) {
+        base_addr = ioaddr[extra_arg];
+        rtapi_print("Loading Advantech pci1761 driver at base addr %X\n", base_addr);
+        return 0;
+    }
+    return -EINVAL;
+}
+    
+    
+int get_count(void){
+    int i;
+    for (i=0; ioaddr[i] > 0 && i < MAX_CHAN; i++){}
+    return i;
+}
