@@ -33,7 +33,7 @@ FUNCTION(read){
     unsigned R;
     int i;
     
-    R =   inb( base_addr );
+    R =   inb( base_addr + 1 );
     
     for (i = 0;i <= 7;i++){
         pin_in(i) = R & (1 << i);
@@ -53,7 +53,7 @@ FUNCTION(write){
     }
     
     out ^= inv;
-    outb( b, base_addr + 1 );
+    outb( b, base_addr );
 }
 
 
