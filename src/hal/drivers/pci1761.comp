@@ -43,7 +43,6 @@ FUNCTION(read){
 
 FUNCTION(write){
     int i;
-    unsigned char b;
     unsigned char out;
     unsigned char inv;
     
@@ -53,7 +52,7 @@ FUNCTION(write){
     }
     
     out ^= inv;
-    outb( b, base_addr );
+    outb( out, base_addr );
 }
 
 
