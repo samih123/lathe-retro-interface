@@ -198,9 +198,10 @@ void create_main_menu()
     
         Menu.edit( Name, "Program name:" );
         
-        Menu.edit( &scale, "Image scale " ); Menu.shortcut("AX=5" );
-        Menu.edit( &pos.x, "Image X pos " ); Menu.shortcut("AX=0" );
-        Menu.edit( &pos.z, "Image Z pos " ); Menu.shortcut("AX=2" );
+        Menu.coordinate(  &pos.x, &pos.z, &scale, "Display pos " );
+        //Menu.edit( &scale, "Image scale " ); Menu.shortcut("AX=5" );
+        //Menu.edit( &pos.x, "Image X pos " ); Menu.shortcut("AX=0" );
+        //Menu.edit( &pos.z, "Image Z pos " ); Menu.shortcut("AX=2" );
         
         Menu.edit( &start_position.x, "start diameter   " ); Menu.diameter_mode();
         Menu.edit( &start_position.z, "start position Z " );

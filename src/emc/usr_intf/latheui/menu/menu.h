@@ -23,11 +23,14 @@ struct menuitem
         ml.clear();
     }
     
-    void *val;
+    void *val;;
+    void *cval[3];
+    int axis;
     int type;
     int num;
     char name[BUFFSIZE];
     char str[BUFFSIZE];
+    
     const char *shortcut;     
     list<struct menuitem> ml;
     list<struct menuitem>::iterator it;
@@ -61,6 +64,7 @@ class menu
     void edit( double *d, const char *n );
     void edit( char *s, const char *n );
     void edit( bool *b, const char *n );
+    void coordinate( double *x, double *z, double *c, const char *n);
     void back( const char *n );
     void comment( const char *n );
     void clean( menuitem &m );
