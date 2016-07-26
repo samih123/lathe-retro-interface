@@ -17,7 +17,7 @@ option extra_setup yes;
 
 modparam dummy ioaddr """Base address of card. Separate each card base address
 with a comma but no space to load more than one card. eg
-loadrt pci1761 ioaddr=0x200,0x200. use 0xNNN to define addresses in Hex""";
+loadrt pci1761 ioaddr=0x2000,0x3000. use 0xNNN to define addresses in Hex""";
 
 license "GPL";
 author "Sami Helin";

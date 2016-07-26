@@ -5,7 +5,7 @@
 * Copyright (c) 2016 All rights reserved.
 ********************************************************************/
 
-#include "latheintf.h"
+#include "../latheintf.h"
 
 extern struct machinestatus status;
 
