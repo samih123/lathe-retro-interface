@@ -160,6 +160,8 @@ void menu::setcolor( color c )
 void menu::diameter_mode()
 {
     cmi->ml.back().divider = 2;
+    if( cmi->ml.back().type == TYPECOORD && status.axis != AXISX ) cmi->ml.back().divider = 1;
+    cmi->ml.back().diam_mode = true;
     update_str(cmi->ml.back());
 }
 
@@ -217,9 +219,9 @@ void menu::coordinate( double *x, double *z, double *c, const char *n)
     cmi->ml.back().axis = status.axis;
     
     cmi->ml.back().val = x;
-    if( status.axis == AXISX ) cmi->ml.back().val = x;
-    if( status.axis == AXISZ ) cmi->ml.back().val = z;
-    if( status.axis == AXISC ) cmi->ml.back().val = c;
+    if( status.axis == AXISX ){ cmi->ml.back().val = x; }
+    if( status.axis == AXISZ ){ cmi->ml.back().val = z; }
+    if( status.axis == AXISC ){ cmi->ml.back().val = c; }
     update_str( cmi->ml.back() );
     
     strcpy( cmi->ml.back().name, n);
@@ -304,11 +306,11 @@ void menu::draw( int x, int y)
                         char str_z[BUFFSIZE];
                         char str_c[BUFFSIZE];
 
-                        if( i->axis == AXISX ){ strcpy( str_x, i->str ); }else{ sprintf( str_x, "%.10g", *(double *)i->cval[X] * (double)i->divider ); };
+                        if( i->axis == AXISX ){ strcpy( str_x, i->str ); }else{ sprintf( str_x, "%.10g", *(double *)i->cval[X] * ( i->diam_mode ? 2:1 ) ); };
                         if( i->axis == AXISZ ){ strcpy( str_z, i->str ); }else{ sprintf( str_z, "%.10g", *(double *)i->cval[Z] ); };
                         if( i->axis ==AXISC  ){ strcpy( str_c, i->str ); }else{ sprintf( str_c, "%.10g", *(double *)i->cval[C] ); };
 
-                        sprintf(strbuf,"%s%s X[%s] D[%s] C[%s]", arrow, i->name, str_x, str_z, str_c );
+                        sprintf(strbuf,"%s%s %s[%s] Z[%s] C[%s]", arrow, i->name, i->diam_mode ? "D":"X", str_x, str_z, str_c );
                         println( strbuf, i->tcolor );
                     break;
 
@@ -388,9 +390,9 @@ bool menu::parse()
         
             cmi->it->axis = status.axis;
             
-            if     ( cmi->it->axis == AXISX ) cmi->it->val = cmi->it->cval[X];
-            else if( cmi->it->axis == AXISZ ) cmi->it->val = cmi->it->cval[Z];
-            else if( cmi->it->axis == AXISC ) cmi->it->val = cmi->it->cval[C];
+            if     ( cmi->it->axis == AXISX ){ cmi->it->val = cmi->it->cval[X]; cmi->it->divider =  cmi->it->diam_mode ? 2:1; }
+            else if( cmi->it->axis == AXISZ ){ cmi->it->val = cmi->it->cval[Z]; cmi->it->divider = 1; }
+            else if( cmi->it->axis == AXISC ){ cmi->it->val = cmi->it->cval[C]; cmi->it->divider = 1; }
             
             update_str( *cmi->it );
         }
@@ -434,10 +436,6 @@ bool menu::parse()
             break;
 
             case TYPECOORD:
-                update_val( *cmi->it, atof( cmi->it->str ) / (double)cmi->it->divider );
-                return true;
-            break;
-
             case TYPEDOUBLE:
                 update_val( *cmi->it, atof( cmi->it->str ) / (double)cmi->it->divider );
                 return true;

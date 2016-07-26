@@ -17,6 +17,7 @@ struct menuitem
         val = NULL;
         tcolor = TEXT;
         divider = 1;
+        diam_mode = false;
     };
     ~menuitem()
     {
@@ -39,6 +40,7 @@ struct menuitem
     bool edited;
     color tcolor;
     int divider;
+    bool diam_mode;
 }; 
 
 
