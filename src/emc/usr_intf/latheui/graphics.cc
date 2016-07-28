@@ -287,6 +287,7 @@ void draw_dro( vec2 *cpos )
     sprintf(strbuf,"ToolZ %4.3f",emcStatus->task.toolOffset.tran.z );                                println( strbuf );
     sprintf(strbuf,"ToolD %4.3f",_tools[ emcStatus->io.tool.toolInSpindle ].diameter );              println( strbuf );
     sprintf(strbuf,"Vel.%4.1f %d%%",emcStatus->motion.traj.current_vel*60.0f, status.feedoverride ); println( strbuf );
+    sprintf(strbuf,"Spindle rpm. %5.1f", fabs( emcStatus->motion.spindle.speed ) ); println( strbuf );
 
 }
 
