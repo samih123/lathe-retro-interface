@@ -109,11 +109,10 @@ void menu::update_val( menuitem &m, int v )
         return;
     }
 
-    if( v != *(int *)m.val )
-    {
-        m.edited = true;
-        *(int *)m.val = (int)v;
-    }
+
+    m.edited = true;
+    *(int *)m.val = (int)v;
+
     sprintf( m.str, "%d", *(int *)m.val * m.divider );
 
 }
@@ -128,11 +127,9 @@ void menu::update_val( menuitem &m, double v )
         return;
     }
 
-    if( v != *(double *)m.val )
-    {
-        m.edited = true;
-        *(double *)m.val = (double)v;
-    }
+    m.edited = true;
+    *(double *)m.val = (double)v;
+
     sprintf( m.str, "%.10g", *(double *)m.val * (double)m.divider );
 
 }
