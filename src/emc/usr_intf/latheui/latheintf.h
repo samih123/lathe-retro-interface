@@ -401,6 +401,7 @@ void setcolor( color c );
 void print(const char *s, int x, int y ,int size, color c = TEXT );
 void println(const char *s, int x, int y, int size = 10 , color c = TEXT );
 void println(const char *s, color c = TEXT );
+void printp(const char *s, color c = TEXT );
 void println( int x, int y, int size, color c = TEXT );
 
 void draw_dro( vec2 *cpos = NULL );

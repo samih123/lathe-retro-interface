@@ -285,16 +285,21 @@ void menu::draw( int x, int y)
                         println( strbuf, i->tcolor );
                     break;
                     case TYPEINT:
-                        sprintf(strbuf,"%s%s[%s]", arrow, i->name, i->str );
-                        println( strbuf, i->tcolor );
+                        sprintf(strbuf,"%s%s ", arrow, i->name );
+                        printp( strbuf, i->tcolor );
+                        println( i->str, i == cmi->it ? i->edit_color:i->tcolor );
                     break;
+                    
                     case TYPESTR:
-                        sprintf(strbuf,"%s%s[%s]", arrow, i->name, (char *)i->val );
-                        println( strbuf,i->tcolor );
+                        sprintf(strbuf,"%s%s ", arrow, i->name );
+                        printp( strbuf, i->tcolor );
+                        println( (char *)i->val, i == cmi->it ? i->edit_color:i->tcolor );
                     break;
+                    
                     case TYPEDOUBLE:
-                        sprintf(strbuf,"%s%s[%s]", arrow, i->name, i->str );
-                        println( strbuf, i->tcolor );
+                        sprintf(strbuf,"%s%s ", arrow, i->name );
+                        printp( strbuf, i->tcolor );
+                        println( i->str, i == cmi->it ? i->edit_color:i->tcolor );
                     break;
 
                     case TYPECOORD:
@@ -307,8 +312,15 @@ void menu::draw( int x, int y)
                         if( i->axis == AXISZ ){ strcpy( str_z, i->str ); }else{ sprintf( str_z, "%.10g", *(double *)i->cval[Z] ); };
                         if( i->axis ==AXISC  ){ strcpy( str_c, i->str ); }else{ sprintf( str_c, "%.10g", *(double *)i->cval[C] ); };
 
-                        sprintf(strbuf,"%s%s %s[%s] Z[%s] C[%s]", arrow, i->name, i->diam_mode ? "D":"X", str_x, str_z, str_c );
-                        println( strbuf, i->tcolor );
+                        sprintf(strbuf,"%s%s ", arrow, i->name );
+                        printp( strbuf, i->tcolor );
+                        printp( i->diam_mode ? "D":"X", i->tcolor ); 
+                        printp( str_x, i == cmi->it && i->axis == AXISX ? i->edit_color:i->tcolor );
+                        printp( " Z", i->tcolor );
+                        printp( str_z, i == cmi->it && i->axis == AXISZ ? i->edit_color:i->tcolor );
+                        printp( " C", i->tcolor );
+                        println( str_c, i == cmi->it && i->axis == AXISC ? i->edit_color:i->tcolor );
+                        
                     break;
 
                     case TYPEBOOL:

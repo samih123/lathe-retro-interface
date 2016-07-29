@@ -15,9 +15,10 @@ extern list<string> errors;
 extern bool show_last_msg;
 extern char *ttcomments[CANON_POCKETS_MAX];
 
-int print_y = 0;
-int print_x = 0;
-int print_s = 20;
+static int print_y = 0;
+static int print_x = 0;
+static int print_start_x = 0;
+static int print_s = 20;
 list<string> ser_emul;
 
 enum rawcolor
@@ -98,26 +99,39 @@ void print(const char *s, int x, int y ,int size, color c )
     if(s) printStringUsingGlutVectorFont(s,x,y, (float)size / glutStrokeHeight(GLUT_STROKE_MONO_ROMAN), c );
 }
 
+
 void println(const char *s, int x, int y, int size, color c )
 {
-    print( s, x, y, size, c );
-    print_y = y;
-    print_x = x;
     print_s = size;
+    print_y = y;
+    print_x = print_start_x = x;
+    
+    print(s, print_x, print_y , print_s, c);
+    print_x = print_start_x; 
+    print_y += print_s + print_s/5;
 }
 
 void println( int x, int y, int size, color c )
 {
-    print_x = x;
+    print_x = print_start_x = x;
     print_s = size;
-    print_y = y - ( print_s + print_s/5 );
+    print_y = y;// - ( print_s + print_s/5 );
 }
 
 void println(const char *s, color c )
 {
-    print_y += print_s + print_s/5;
     print(s, print_x, print_y , print_s, c);
+    print_x = print_start_x; 
+    print_y += print_s + print_s/5;
 }
+
+void printp(const char *s, color c )
+{
+    print(s, print_x, print_y , print_s, c);
+    print_x += (float)glutStrokeLength( GLUT_STROKE_MONO_ROMAN, (const unsigned char*)s )/(float)print_s*2.2;
+}
+
+
 
 
 void draw_statusbar( const char *s )

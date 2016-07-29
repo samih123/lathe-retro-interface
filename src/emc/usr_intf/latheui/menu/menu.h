@@ -16,6 +16,7 @@ struct menuitem
         shortcut = NULL;
         val = NULL;
         tcolor = TEXT;
+        edit_color = WARNING;
         divider = 1;
         diam_mode = false;
     };
@@ -39,6 +40,7 @@ struct menuitem
     bool hidden;
     bool edited;
     color tcolor;
+    color edit_color;
     int divider;
     bool diam_mode;
 }; 
