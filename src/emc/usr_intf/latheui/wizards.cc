@@ -79,8 +79,8 @@ void getzd()
         
         if( type == RECTANGLE )
         {
-            face_begin = cur_op->getf_begin();
-            face_end = cur_op->getf_end();
+            face_begin = cur_op->get_begin();
+            face_end = cur_op->get_end();
             face_feed_dir = cur_op->get_feed_dir();
         }
         else if( type == MOVE )

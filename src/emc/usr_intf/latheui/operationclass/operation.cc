@@ -550,8 +550,25 @@ void operation::load( FILE *fp )
                 end.z = v4;
             }
             findtag( tag, "FEED_DIR", feed_dir, v1 );
-        }    
+        } 
         
+        else if( type == THREADING )
+        {
+            if( strcmp( tag, "BEGIN_END" ) == 0 )
+            {
+                begin.x = v1;
+                begin.z = v2;
+                end.x = v3;
+                end.z = v4;
+            }
+            findtag( tag, "PITCH", pitch, v1 );
+            findtag( tag, "DEPTH", depth, v1 );
+            findtag( tag, "COMPOUND_ANGLE", compound_angle, v1 );
+            findtag( tag, "DEGRESSION", degression, v1 );
+            findtag( tag, "SPING_PASSES", spring_passes, v1 );
+        }           
+           
+         
         else if( type == MOVE )
         {
             if( strcmp( tag, "MOVE") == 0 )

@@ -18,9 +18,9 @@ class operation
     tool get_tool();
     void set_tool( tool &c );
     
-    // facing
-    vec2 getf_begin(){ return begin; };
-    vec2 getf_end(){ return end; };
+    // rectangle
+    vec2 get_begin(){ return begin; };
+    vec2 get_end(){ return end; };
     int get_feed_dir(){ return feed_dir; };
     void setf_begin_end_dir( vec2 fbeg, vec2 fend, int d );
     
