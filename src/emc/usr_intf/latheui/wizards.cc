@@ -19,13 +19,12 @@ extern char estr[BUFFSIZE];
 static menu Menu;
 
 extern list<operation> *wiz_opl;
-static list<operation> opl;
-list<operation>::iterator cur_op;
-list<operation>::iterator cur_contour;
-list<operation>::iterator cur_tool;
+static list<new_operation *> opl;
 
-static char Dstr[BUFFSIZE];
-static char Zstr[BUFFSIZE];
+list<new_operation *>::iterator cur_op;
+list<new_operation *>::iterator cur_contour;
+list<new_operation *>::iterator cur_tool;
+
 static char Name[BUFFSIZE];
 
 static char initcommands[BUFFSIZE] = "";
@@ -33,12 +32,7 @@ static char initcommands[BUFFSIZE] = "";
 static int operationcreate;
 static int operationselect;
 static int menuselect;
-
-static cut ccut;
-static tool ctool;
-static vec2 movepos;
-static vec2 face_begin,face_end;
-int face_feed_dir;
+static bool main_menu;
 
 static vec2 start_position;
 int maxrpm;
@@ -54,126 +48,17 @@ double retract = 1;
 #define  MENU_PHASE_UP 3
 #define  MENU_PHASE_DOWN 4
 
-#define  MENU_NEWCUT    5
-#define  MENU_DELETECUT 6
-
 #define  MENU_SAVE 7
 #define  MENU_MAIN 8
 #define  MENU_SAVE_PROGRAM 9
 
 
-void getzd()
-{
-    if( cur_contour != opl.end() ){
-         ccut = cur_contour->get_cut();
-    }
-    
-    if( cur_tool != opl.end() )
-    {
-        ctool = cur_tool->get_tool();
-    }
-    
-    if( cur_op != opl.end() )
-    {
-        op_type type = cur_op->get_type();
-        
-        if( type == RECTANGLE )
-        {
-            face_begin = cur_op->get_begin();
-            face_end = cur_op->get_end();
-            face_feed_dir = cur_op->get_feed_dir();
-        }
-        else if( type == MOVE )
-        {
-            movepos = cur_op->get_move();
-        }
-        
-    }
-}
-
-static const char *typestr[] =
-{
-    "cut_Begin",
-    "straight line",
-    "Outside arch",
-    "Inside arch",
-    "Thread",
-    "cut_end"
-};
-
-void create_operation_menu()
-{
-    getzd();
-    if( cur_op == opl.end() )
-    {
-        return;
-    }
-    menuselect = 0;
-    Menu.clear();
-    op_type type = cur_op->get_type();
-    
-    Menu.begin( cur_op->get_name() );
-    
-        Menu.select( &menuselect, MENU_MAIN, "Back" );
-        
-        if( type == CONTOUR )
-        {
-            sprintf(Dstr,"D start:%.20g   D end ", ccut.start.x*2.0f );
-            sprintf(Zstr,"Z start:%.20g  lenght ", ccut.start.z );
-
-            Menu.edit( &ccut.type, typestr[ ccut.type ] );Menu.hiddenvalue();
-            Menu.select( &menuselect, MENU_DELETECUT, "Delete" );
-            Menu.select( &menuselect, MENU_NEWCUT, "New" );
-            Menu.edit( &ccut.end.x, Dstr ); Menu.shortcut("AX=0" ); Menu.diameter_mode();
-            Menu.edit( &ccut.end.z, Zstr ); Menu.shortcut("AX=2" );
-
-            
-            if( ccut.type == CUT_ARC_IN || ccut.type == CUT_ARC_OUT )
-            {
-                Menu.edit( &ccut.r, "Radius " ); Menu.shortcut("AX=5" );
-            }
-            /*
-            if( cur_contour->currentcut->type == THREAD )
-            {
-                Menu.edit( &cur_contour->currentcut->pitch, "Pitch" );
-                Menu.edit( &cur_contour->currentcut->depth, "Depth " );
-            }
-            */
-        }
-        else if( type == TOOL )
-        {
-            Menu.edit( &ctool.tooln, "Tool number       " );
-            Menu.edit( &ctool.feed,  "Feedrate mm/rev.  " );
-            Menu.edit( &ctool.speed, "Surface speed m/s " );
-            Menu.edit( &ctool.depth, "Depth             " );
-        }
-        
-        else if( type == RECTANGLE )
-        {
-            
-            Menu.edit( &face_feed_dir, face_feed_dir == DIRZ ? "Feed direction Z":"Feed direction X" );Menu.hiddenvalue();
-            
-            Menu.edit( &face_begin.x, "Start diameter " ); Menu.diameter_mode();
-            Menu.edit( &face_end.x,   "End diameter   " ); Menu.diameter_mode();
-            Menu.edit( &face_begin.z, "Start Z        " );
-            Menu.edit( &face_end.z,   "End Z          " );           
-        }
-        
-        else if( type == MOVE )
-        {
-            Menu.edit( &movepos.x, "Diameter " ); Menu.diameter_mode();
-            Menu.edit( &movepos.z, "Z        " );
-        }       
-        
-    Menu.end();
-}
-
 void create_operation_select_menus()
 { 
     int n = 1;
-    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
+    for(list<new_operation *>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-        sprintf(strbuf,"  %d:%s%s", n, i->get_type() > CONTOUR ? "  " : "", i->get_name() );
+        sprintf(strbuf,"  %d:%s%s", n, (*i)->type() > CONTOUR ? "  " : "", (*i)->name() );
         Menu.select( &operationselect, n, strbuf );
         if( cur_op == i )
         {
@@ -216,7 +101,7 @@ void create_main_menu()
             {
                 Menu.select( &menuselect, MENU_PHASE_UP, "Move current operation up" );
                 Menu.select( &menuselect, MENU_PHASE_DOWN, "Move current operation down" );
-                sprintf(strbuf,"Delete current operation:%s", cur_op->get_name() );
+                sprintf(strbuf,"Delete current operation:%s", (*cur_op)->name() );
                 Menu.select( &menuselect, MENU_PHASE_DELETE, strbuf );
             }
             
@@ -240,76 +125,36 @@ void create_main_menu()
         create_operation_select_menus();
 
     Menu.end();
-    
     Menu.setmaxlines( 15 );
+    
+    main_menu = true;
 }
+
 
 void clear_all_operations()
 {
-    cur_contour = cur_tool = opl.end();
-    bool ready = false;
-    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
-    {
-        if( ! ready && cur_op != opl.end() )
-        {
-            if( i->get_type() == CONTOUR )
-            {
-                cur_contour = i;
-            }
-
-            if( i->get_type() == TOOL )
-            {
-                cur_tool = i;
-            }
-            
-            if( i == cur_op )
-            {
-                 ready = true;
-            }
-        }
-         
-        i->clear();
-    }
-}
-
-void create_paths()
-{
     
-    list<operation>::iterator contour = opl.end();
-    list<operation>::iterator tool = opl.end();
+    cur_contour = cur_tool = opl.end();
 
-    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
+    for(list<new_operation *>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-        
-        if( tool != opl.end() )
+
+        if( (*i)->type() == CONTOUR )
         {
-            if( i->get_type() == RECTANGLE )
-            {
-                i->create_path( *contour, *tool );
-            }
-        }
-        
-        if( i->get_type() == CONTOUR )
-        {
-            contour = i;
-            i->create_contour();
+            cur_contour = i;
         }
 
-        if( i->get_type() == TOOL )
+        if( (*i)->type() == TOOL )
         {
-            tool = i;
+            cur_tool = i;
         }
         
-        if( tool != opl.end() && contour != opl.end() )
-        {
-            if( i->get_type() == TURN )
-            {
-                i->create_path( *contour, *tool );
-            }
-        }
-        
+        (*i)->set_tool( *cur_tool );
+        (*i)->set_contour( *cur_contour );
+
     }
 }
+
 
 
 void save_program(const char *name )
@@ -329,19 +174,19 @@ void save_program(const char *name )
     
     fprintf(fp, "G0 X%.10g Z%.10g\n", start_position.x, start_position.z );
     
-    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
+    for(list<new_operation *>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-        i->save_program( fp ); // must call in order! 
+        (*i)->save_program( fp ); // must call in order! 
         
-        if( i->get_type() != CONTOUR &&
-            i->get_type() != INSIDE_CONTOUR
+        if( (*i)->type() != CONTOUR &&
+            (*i)->type() != INSIDE_CONTOUR
         )
         {
             
             bool b = true;
             if( std::next(i) != opl.end() )
             {
-                if( std::next(i)->get_type() == MOVE ) 
+                if( (*std::next(i))->type() == MOVE ) 
                 {
                     b = false;
                 }
@@ -362,7 +207,7 @@ void save_program(const char *name )
 
     edit_load( ngc_file );
     auto_load( ngc_file );
-    wiz_opl = &opl;
+    //wiz_opl = &opl;
 
 }
 
@@ -383,9 +228,9 @@ void wizards_save( const char *name )
     fprintf(fp, "POSZ %.20g\n", pos.z );
     fprintf(fp, "SCALE %.20g\n", scale );
     
-    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
+    for(list<new_operation *>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-        i->save( fp );
+        (*i)->save( fp );
     }
 
     fclose( fp );
@@ -427,8 +272,12 @@ void wizards_load( const char *name )
 
         if( strcmp( tag, "OPERATION" ) == 0 )
         {
-            opl.push_back( operation( (op_type)val ) );
-            opl.back().load( fp );
+            if( val == TOOL )
+            {
+                opl.push_back( new op_tool() );
+                opl.back()->load( fp );
+            }
+            
         }
 
         free(line);
@@ -450,8 +299,6 @@ void wizards_load( const char *name )
 
 void wizards_init()
 {
-    
-    face_feed_dir = DIRZ;
     
     if( opl.size() == 0 )
     {
@@ -662,201 +509,118 @@ void clamp_values()
 {
      CLAMP( stockdiameter,0,1000 );
      CLAMP( maxrpm, 1, 5000 );
-     CLAMP( ccut.end.x, 0, (stockdiameter/2.0) ); 
      CLAMP( scale,0.1,10 ); 
-     CLAMP( ctool.tooln, 0, MAXTOOLS );
-     CLAMP( face_feed_dir, DIRZ, DIRX );   
 }
 
 void wizards_parse_serialdata()
 {
 
-    if( cur_contour == cur_op && cur_contour != opl.end() )
+    if( main_menu )
     {
-
-        if( isprefix( "LEFT" ,NULL ) )
-        {
-            cur_contour->next();
-            create_operation_menu();
-        }
-        else if( isprefix( "RIGHT" ,NULL ) )
-        {
-            cur_contour->previous();
-            create_operation_menu();
-        }
-    }
-
-    if( Menu.parse() )
-    {
-        clamp_values();
-
-        if( menuselect == MENU_MAIN )
-        {
-            create_main_menu();
-            return;
-        }
         
-        if( menuselect == MENU_SAVE_PROGRAM )
+        if( Menu.parse() )
         {
-            save_program( Name );
-            return;
-        }
-        
-        if( menuselect == MENU_SAVE )
-        {
-            wizards_save( Name );
-            return;
-        } 
-                      
-        if( menuselect == MENU_NEWCUT )
-        {
-            cur_contour->new_cut(vec2(0,0),CUT_LINE );
-            create_operation_menu();
-            return;
-        }
-        
-        if( menuselect == MENU_DELETECUT )
-        {
-            cur_contour->erase();
-            create_operation_menu();
-            return;
-        }
-        
-        if( menuselect == MENU_PHASE_DELETE && cur_op !=  opl.end() )
-        {
-            opl.erase( cur_op );
-            cur_contour = cur_op = cur_tool = opl.end();
-            clear_all_operations();
-            create_main_menu();
-            return;
-        }
-
-
-        if( menuselect == MENU_PHASE_UP && cur_op !=  opl.end() && cur_op != opl.begin() )
-        {
-            opl.splice( std::prev(cur_op), opl, cur_op );
-            //cur_contour = cur_op = cur_tool = opl.end();
-            clear_all_operations();
-            create_main_menu();
-            return;
-        }
-                
-        if( menuselect == MENU_PHASE_DOWN && cur_op !=  opl.end() && cur_op != --opl.end() )
-        {
-            opl.splice( std::next(cur_op,2), opl, cur_op );
-            //cur_contour = cur_op = cur_tool = opl.end();
-            clear_all_operations();
-            create_main_menu();
-            return;
-        }
-               
-        if( Menu.edited( &operationcreate ) )
-        {
-            opl.push_back( operation( (op_type)operationcreate ) );
-            if( operationcreate == CONTOUR || operationcreate == INSIDE_CONTOUR )
-            {
-                cur_contour = --opl.end();
-                cur_contour->new_cut(vec2(0,10),CUT_BEGIN );
-            }
-            clear_all_operations();
-            create_main_menu();
-            return;
-        }
-
-        else if( Menu.edited( &operationselect ) )
-        {
-            int n = 1;
-            cur_contour = cur_op = cur_tool = opl.end();
-            for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
-            {
-                if( n++ == operationselect )
-                {
-                    cur_op = i;
-                    break;
-                }
-            }
-            clear_all_operations();
-            create_operation_menu();
-        }
-
-        // shape
-        if( cur_contour != opl.end() )
-        {
-            
-            if( cur_op->get_type() == CONTOUR && (
-                Menu.edited( &ccut.end.z ) || 
-                Menu.edited( &ccut.end.x ) ||
-                Menu.edited( &ccut.type ) || 
-                Menu.edited( &ccut.r ) )
-            )
-            {
-                cur_contour->set_cut( ccut );
-                if( Menu.edited( &ccut.type ) )
-                {
-                    create_operation_menu();// refresh type text
-                }
-            }
-
-        }
-
-        // tool
-        if( cur_tool != opl.end() )
-        {
-            if( 
-                    Menu.edited( &ctool.tooln ) ||
-                    Menu.edited( &ctool.feed ) ||
-                    Menu.edited( &ctool.speed ) ||
-                    Menu.edited( &ctool.depth ) 
-            )
-            {
-                cur_tool->set_tool( ctool );
-                ctool = cur_tool->get_tool();
-                if( Menu.edited( &ctool.tooln ) )
-                {
-                    clear_all_operations();
-                    create_operation_menu();
-                }              
-            }
-        }
-        
-        if( cur_op != opl.end() )
-        {
-            if( cur_op->get_type() == RECTANGLE )
-            {
-                if( 
-                    Menu.edited( &face_begin.x ) ||
-                    Menu.edited( &face_end.x ) ||
-                    Menu.edited( &face_begin.z ) || 
-                    Menu.edited( &face_end.z ) ||
-                    Menu.edited( &face_feed_dir ) 
-                )
-                {
-                    cur_op->setf_begin_end_dir( face_begin, face_end, face_feed_dir );
-                    
-                    if( Menu.edited( &face_feed_dir ) )
-                    {
-                        clear_all_operations();
-                        create_operation_menu();
-                    }
-        
-                }
-            }
-            
-            else if( cur_op->get_type() == MOVE )
-            {
-                if( 
-                    Menu.edited( &movepos.x ) ||
-                    Menu.edited( &movepos.z ) 
-                )
-                {
-                    cur_op->set_move( movepos );
-                }
-            }           
-            
-        }
-
+            clamp_values();
     
+            if( menuselect == MENU_MAIN )
+            {
+                create_main_menu();
+                return;
+            }
+            
+            if( menuselect == MENU_SAVE_PROGRAM )
+            {
+                save_program( Name );
+                return;
+            }
+            
+            if( menuselect == MENU_SAVE )
+            {
+                wizards_save( Name );
+                return;
+            } 
+                          
+            if( menuselect == MENU_PHASE_DELETE && cur_op !=  opl.end() )
+            {
+                opl.erase( cur_op );
+                cur_contour = cur_op = cur_tool = opl.end();
+                clear_all_operations();
+                create_main_menu();
+                return;
+            }
+    
+    
+            if( menuselect == MENU_PHASE_UP && cur_op !=  opl.end() && cur_op != opl.begin() )
+            {
+                opl.splice( std::prev(cur_op), opl, cur_op );
+                //cur_contour = cur_op = cur_tool = opl.end();
+                clear_all_operations();
+                create_main_menu();
+                return;
+            }
+                    
+            if( menuselect == MENU_PHASE_DOWN && cur_op !=  opl.end() && cur_op != --opl.end() )
+            {
+                opl.splice( std::next(cur_op,2), opl, cur_op );
+                //cur_contour = cur_op = cur_tool = opl.end();
+                clear_all_operations();
+                create_main_menu();
+                return;
+            }
+                   
+            if( Menu.edited( &operationcreate ) )
+            {
+                
+                if( operationcreate == TOOL )
+                {
+                    opl.push_back( new op_tool() );
+                    cur_op =  --opl.end();
+                    clear_all_operations();
+                    create_main_menu();
+                    return;
+                }
+                
+            }
+    
+            else if( Menu.edited( &operationselect ) )
+            {
+                int n = 1;
+                cur_contour = cur_op = cur_tool = opl.end();
+                for(list<new_operation *>::iterator i = opl.begin(); i != opl.end(); i++)
+                {
+                    if( n++ == operationselect )
+                    {
+                        cur_op = i;
+                        create_main_menu();
+                        break;
+                    }
+                }
+                
+                if( cur_op != opl.end() )
+                {
+                    //clear_all_operations();
+                    main_menu = false;
+                    (*cur_op)->createmenu();
+                }
+               
+            }
+    
+        }
+        
+            
+        
     }
+    else
+    {
+        if( (*cur_op)->parse() )
+        {
+            //create_main_menu();
+            main_menu = true;
+            return;
+        }
+        
+    }
+
 
 }
 
@@ -878,10 +642,7 @@ void show_tool( int x,int y, int t, const char* name )
 void wizards_draw()
 {
     draw_statusbar( "WIZARDS" );
-    
     clamp_values();
-    
-    create_paths();
     
     glLineStipple(1,0x27ff);
     glPushMatrix();
@@ -897,9 +658,9 @@ void wizards_draw()
     glEnd();
     glDisable(GL_LINE_STIPPLE);
 
-    for(list<operation>::iterator i = opl.begin(); i != opl.end(); i++)
+    for(list<new_operation *>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-        i->draw( i == cur_op ? NONE:DISABLED );
+        (*i)->draw( i == cur_op ? NONE:DISABLED );
     }
     
     setcolor( RAPID );
@@ -908,7 +669,14 @@ void wizards_draw()
     
     glPopMatrix();
     
-    Menu.draw(5,50);
+    if( main_menu )
+    {
+        Menu.draw(5,50);
+    }
+    else
+    {
+        (*cur_op)->drawmenu(5,50);
+    }
 
 //double angle = atan2( fabs( currentcut->start.x - currentcut->end.x) , fabs(currentcut->dim.z) )* 180.0f / M_PI;
   //  sprintf(strbuf,"Angle %g", angle );

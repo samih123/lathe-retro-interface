@@ -103,6 +103,7 @@ enum move_type
 
 enum op_type
 {
+    NOOP,
     TOOL,
     CONTOUR,
     INSIDE_CONTOUR,
@@ -466,9 +467,12 @@ void preview_draw();
 void set_previewZoffset( double z );
 void set_previewXoffset( double z );
 
+#include "menu/menu.h"
 #include "pathclass/path.h"
 #include "operationclass/operation.h"
-#include "menu/menu.h"
+#include "operationclass_new/operation_new.h"
+
+
 
 
 
