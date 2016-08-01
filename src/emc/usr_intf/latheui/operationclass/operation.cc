@@ -18,7 +18,7 @@ const char* operation_name( int t )
         case UNDERCUT:        return "Undercut";
         case FINISHING:       return "Finishing";
         case THREADING:       return "Thread";
-        case FACING:          return "Simple Box";
+        case RECTANGLE:       return "Rectangle";
         case DRILL:           return "Drilling";
         case PARTING:         return "Parting off";
         case MOVE:            return "Rapid move";
@@ -128,12 +128,12 @@ operation::operation( op_type t )
         type = CONTOUR;
     }
     
-    if( type == FACING )
+    if( type == RECTANGLE )
     {
-        face_begin.z = 5;
-        face_end.z = 0;
-        face_begin.x = stockdiameter/2.0;
-        face_end.x = 0;
+        begin.z = 5;
+        end.z = 0;
+        begin.x = stockdiameter/2.0;
+        end.x = 0;
         feed_dir = DIRX;
     }
 
@@ -225,13 +225,13 @@ void operation::draw( color c, bool draw_all )
             r_path.draw( c );
         }
         
-        else if( type == FACING )
+        else if( type == RECTANGLE )
         {
             setcolor( DISABLED );
-            drawBox( face_begin, face_end );
-            drawCross( face_begin.z, -face_begin.x , 3.0/scale);
-            drawCircle( face_begin.z, -face_begin.x , 3.0/scale);
-            f_path.draw( c );
+            drawBox( begin, end );
+            drawCross( begin.z, -begin.x , 3.0/scale);
+            drawCircle( begin.z, -begin.x , 3.0/scale);
+            rect_path.draw( c );
         }   
         
         else if( type == MOVE )
@@ -346,10 +346,10 @@ void operation::set_cut( cut &c )
 
 void operation::setf_begin_end_dir( vec2 fbeg, vec2 fend, int d )
 { 
-    if( type != FACING ) printf( "TYPE ERROR %s\n", __PRETTY_FUNCTION__ );
+    if( type != RECTANGLE ) printf( "TYPE ERROR %s\n", __PRETTY_FUNCTION__ );
     
-    face_begin = fbeg;
-    face_end = fend;
+    begin = fbeg;
+    end = fend;
     changed = true;
     feed_dir = d;
 
@@ -381,9 +381,9 @@ void operation::save_program( FILE *fp )
         r_path.save( fp );
     }
     
-    else if( type == FACING )
+    else if( type == RECTANGLE )
     {
-        f_path.save( fp );
+        rect_path.save( fp );
     }   
     
     else if( type == TOOL )
@@ -422,14 +422,24 @@ void operation::save( FILE *fp )
         fprintf(fp, "END\n" );
     }   
     
-    else if( type == FACING )
+    else if( type == RECTANGLE )
     {
-        fprintf(fp, "OPERATION %i //facing\n", type );
-        fprintf(fp, "   BEGIN_END %.10g %.10g %.10g %.10g\n", face_begin.x, face_begin.z, face_end.x, face_end.z );
+        fprintf(fp, "OPERATION %i //rectangle\n", type );
+        fprintf(fp, "   BEGIN_END %.10g %.10g %.10g %.10g\n", begin.x, begin.z, end.x, end.z );
         fprintf(fp, "   FEED_DIR %i\n", (int)feed_dir );
         fprintf(fp, "END\n" );
     }
-    
+    else if( type == THREADING )
+    {
+        fprintf(fp, "OPERATION %i //threading\n", type );
+        fprintf(fp, "   BEGIN_END %.10g %.10g %.10g %.10g\n", begin.x, begin.z, end.x, end.z );
+        fprintf(fp, "   PITCH %.10g\n", pitch );
+        fprintf(fp, "   DEPTH %.10g\n", depth );
+        fprintf(fp, "   COMPOUND_ANGLE %.10g\n", compound_angle );
+        fprintf(fp, "   DEGRESSION %.10g\n", degression );
+        fprintf(fp, "   SPING_PASSES %i\n", spring_passes );
+        fprintf(fp, "END\n" );
+    } 
     else if( type == CONTOUR )
     {
         fprintf(fp, "OPERATION %i //contour\n", type );
@@ -530,14 +540,14 @@ void operation::load( FILE *fp )
             findtag( tag, "TOOLN", tl.tooln, v1 );
         }
         
-        else if( type == FACING )
+        else if( type == RECTANGLE )
         {
             if( strcmp( tag, "BEGIN_END" ) == 0 )
             {
-                face_begin.x = v1;
-                face_begin.z = v2;
-                face_end.x = v3;
-                face_end.z = v4;
+                begin.x = v1;
+                begin.z = v2;
+                end.x = v3;
+                end.z = v4;
             }
             findtag( tag, "FEED_DIR", feed_dir, v1 );
         }    
@@ -639,9 +649,9 @@ void operation::create_contour( contour_path &p )
 void operation::create_path( operation &ccontour, operation &ctool )
 {
     
-    if( type == FACING && changed )
+    if( type == RECTANGLE && changed )
     {
-         f_path.create( ctool.get_tool(), face_begin, face_end, feed_dir );
+         rect_path.create( ctool.get_tool(), begin, end, feed_dir );
          return;
     }
     

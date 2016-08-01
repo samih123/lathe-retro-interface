@@ -4,7 +4,7 @@ extern const double retract;
 extern char strbuf[BUFFSIZE];;
 extern const double stockdiameter;
 
-void box_path::create( const tool &tl, vec2 begin, vec2 end, int feedd )
+void rectangle_path::create( const tool &tl, vec2 begin, vec2 end, int feedd )
 {
 
     vec2 fdir;

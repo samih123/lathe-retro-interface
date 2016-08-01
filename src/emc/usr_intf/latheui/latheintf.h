@@ -110,7 +110,7 @@ enum op_type
     UNDERCUT,
     FINISHING,
     THREADING,
-    FACING,
+    RECTANGLE,
     DRILL,
     PARTING,
     MOVE, 

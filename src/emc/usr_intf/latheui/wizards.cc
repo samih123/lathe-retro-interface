@@ -77,7 +77,7 @@ void getzd()
     {
         op_type type = cur_op->get_type();
         
-        if( type == FACING )
+        if( type == RECTANGLE )
         {
             face_begin = cur_op->getf_begin();
             face_end = cur_op->getf_end();
@@ -148,7 +148,7 @@ void create_operation_menu()
             Menu.edit( &ctool.depth, "Depth             " );
         }
         
-        else if( type == FACING )
+        else if( type == RECTANGLE )
         {
             
             Menu.edit( &face_feed_dir, face_feed_dir == DIRZ ? "Feed direction Z":"Feed direction X" );Menu.hiddenvalue();
@@ -229,7 +229,7 @@ void create_main_menu()
                 create_new_operation_menu( UNDERCUT );
                 create_new_operation_menu( FINISHING );
                 create_new_operation_menu( THREADING );
-                create_new_operation_menu( FACING );
+                create_new_operation_menu( RECTANGLE );
                 create_new_operation_menu( DRILL );
                 create_new_operation_menu( PARTING );
                 create_new_operation_menu( MOVE );
@@ -283,7 +283,7 @@ void create_paths()
         
         if( tool != opl.end() )
         {
-            if( i->get_type() == FACING )
+            if( i->get_type() == RECTANGLE )
             {
                 i->create_path( *contour, *tool );
             }
@@ -821,7 +821,7 @@ void wizards_parse_serialdata()
         
         if( cur_op != opl.end() )
         {
-            if( cur_op->get_type() == FACING )
+            if( cur_op->get_type() == RECTANGLE )
             {
                 if( 
                     Menu.edited( &face_begin.x ) ||

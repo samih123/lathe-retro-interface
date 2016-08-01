@@ -19,8 +19,8 @@ class operation
     void set_tool( tool &c );
     
     // facing
-    vec2 getf_begin(){ return face_begin; };
-    vec2 getf_end(){ return face_end; };
+    vec2 getf_begin(){ return begin; };
+    vec2 getf_end(){ return end; };
     int get_feed_dir(){ return feed_dir; };
     void setf_begin_end_dir( vec2 fbeg, vec2 fend, int d );
     
@@ -32,7 +32,7 @@ class operation
     Side get_side(){ return side; }; 
     void draw( color c=NONE, bool all = true );
     void new_cut( vec2 p, cut_type t );
-    void clear(){ f_path.clear();r_path.clear(); changed = true; };
+    void clear(){ rect_path.clear();r_path.clear(); changed = true; };
     
     void erase();
     void previous();
@@ -66,13 +66,17 @@ class operation
     // rough 
     rough_path r_path;
     
-    // facing
-    box_path f_path;
-    vec2 face_begin,face_end;
+    // rectangle
+    rectangle_path rect_path;
+    vec2 begin,end;
     int feed_dir;
     
     //move
     vec2 rapid_move;
+     
+    //thread
+    double pitch, depth, degression, compound_angle;
+    int count, spring_passes;
      
     vec2 min,max;
     char name[BUFFSIZE]; 
