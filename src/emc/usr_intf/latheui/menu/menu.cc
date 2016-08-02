@@ -354,8 +354,9 @@ void menu::draw( int x, int y)
                     break;
 
                     case TYPEBOOL:
-                        sprintf(strbuf,"%s%s[%s]", arrow, i->name, *(bool *)i->val ? "On":"Off" );
-                        println( strbuf, i->tcolor );
+                        sprintf( strbuf,"%s%s ", arrow, i->name );
+                        printp( strbuf, i->tcolor );
+                        println( *(bool *)i->val ? "On":"Off", i == cmi->it ? i->edit_color:i->tcolor );
                     break;
                     
                     case TYPERADIO:
@@ -483,8 +484,13 @@ bool menu::parse()
                 return true;
             break;
 
+            case TYPEBOOL:
+                *(bool *)cmi->it->val = ! *(bool *)cmi->it->val;
+                cmi->it->edited = true;
+                return true;
+            break;
+
             case TYPERADIO:
-            
                 cmi->it->bsel++;
                 if( cmi->it->bsel > (cmi->it->bstr[2][0] == 0 ? 1:2) ) 
                 {
@@ -499,7 +505,7 @@ bool menu::parse()
             case TYPEINT:
                 update_val( *cmi->it, atoi( cmi->it->str ) / (int)cmi->it->divider );
                 return true;
-            case TYPEBOOL:
+            break;
 
             case TYPESTR:
                 cmi->it->edited = true;
@@ -558,24 +564,6 @@ bool menu::parse()
         }
     }
 
-    if( isprefix( "LEFT" ,NULL ) )
-    {
-        if( cmi->it->type == TYPEBOOL)
-        {
-            (*(bool *)cmi->it->val) = false;
-            cmi->it->edited = true;
-            return true;
-        }
-    }
-    if( isprefix( "RIGHT" ,NULL ) )
-    {
-        if( cmi->it->type == TYPEBOOL)
-        {
-            (*(bool *)cmi->it->val) = true;
-            cmi->it->edited = true;
-            return true;
-        }
-    }
 
     if( isprefix( "DEL" ,NULL ) || isprefix( "BACK" ,NULL ) )
     {

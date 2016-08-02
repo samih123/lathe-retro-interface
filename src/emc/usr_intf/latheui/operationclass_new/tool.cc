@@ -116,11 +116,13 @@ int op_tool::parsemenu()
     return OP_NOP;
 }
 
+bool b;
+
 void op_tool::createmenu()
 {
     Menu.clear();
     Menuselect = 0;
-    Menu.begin( name() );
+    Menu.begin( "Tool" );
         Menu.select(&Menuselect, MENU_BACK, "Back" );
         Menu.edit( &tl.tooln, "Tool number       " );
         Menu.edit( &tl.feed,  "Feedrate mm/rev.  " );
