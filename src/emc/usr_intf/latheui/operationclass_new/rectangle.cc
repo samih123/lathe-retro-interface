@@ -108,7 +108,9 @@ int op_rectangle::parsemenu()
         {
             return OP_EXIT;
         }
+        printf("dir =%i\n",feed_dir);
         return OP_EDITED;
+        
     }
     return OP_NOP;
 }
@@ -119,7 +121,8 @@ void op_rectangle::createmenu()
     Menuselect = 0;
     Menu.begin( name() );
         Menu.select(&Menuselect, MENU_BACK, "Back" );            
-        Menu.edit( &feed_dir, feed_dir == DIRZ ? "Feed direction Z":"Feed direction X" );Menu.hiddenvalue();
+        //Menu.edit( &feed_dir, feed_dir == DIRZ ? "Feed direction Z":"Feed direction X" );Menu.hiddenvalue();
+        Menu.radiobuttons( &feed_dir, "Feed direction", DIRZ, "Z", DIRX, "X" );
         Menu.edit( &begin.x, "Start diameter " ); Menu.diameter_mode();
         Menu.edit( &end.x,   "End diameter   " ); Menu.diameter_mode();
         Menu.edit( &begin.z, "Start Z        " );
@@ -137,7 +140,6 @@ void op_rectangle::update()
     if( Tool != NULL )
     {
         rect_path.create( Tool->tl, begin, end, feed_dir );
-        printf("%s:update\n",name());
     }
 }
     

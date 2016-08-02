@@ -30,6 +30,11 @@ struct menuitem
     int axis;
     int type;
     int num;
+    
+    char bstr[3][BUFFSIZE];
+    int bnum[3];
+    int bsel;
+    
     char name[BUFFSIZE];
     char str[BUFFSIZE];
     
@@ -65,6 +70,7 @@ class menu
     
     void edit( int *i, const char *n);
     void select( int *i, int num, const char *n );
+    void radiobuttons( int *i, const char *n, int num1, const char *n1, int num2, const char *n2, int num3=0, const char *n3 = NULL );
     void edit( double *d, const char *n );
     void edit( char *s, const char *n );
     void edit( bool *b, const char *n );

@@ -21,6 +21,7 @@ extern char buf[BUFFSIZE];
 #define TYPEBACK 6
 #define TYPECOMMENT 7
 #define TYPECOORD 8
+#define TYPERADIO 9
 
 #define SELECT 1
 #define SET 2
@@ -235,6 +236,35 @@ void menu::select( int *i, int num, const char *n )
     cmi->ml.back().num = num;
 }
 
+void menu::radiobuttons( int *i, const char *n, int n1, const char *s1, int n2, const char *s2, int n3, const char *s3 )
+{
+    if( *i != n1 && *i != n2 && *i != n3 )
+    {
+        *i = n1;
+    } 
+    
+    cmi->ml.push_back( menuitem() );
+    cmi->ml.back().type = TYPERADIO;
+    cmi->ml.back().val = (void *)i;
+    strcpy( cmi->ml.back().name, n);
+    
+    cmi->ml.back().bsel = 0;
+    if( *i == n1 ) cmi->ml.back().bsel = 0;
+    if( *i == n2 ) cmi->ml.back().bsel = 1;
+    if( *i == n3 && s1 != NULL ) cmi->ml.back().bsel = 2;
+    
+    cmi->ml.back().bstr[0][0] = 0;
+    cmi->ml.back().bstr[1][0] = 0;
+    cmi->ml.back().bstr[2][0] = 0;
+ 
+    if( s1 != NULL ) strcpy( cmi->ml.back().bstr[0], s1 );
+    if( s2 != NULL ) strcpy( cmi->ml.back().bstr[1], s2 );
+    if( s3 != NULL ) strcpy( cmi->ml.back().bstr[2], s3 );
+    cmi->ml.back().bnum[0] = n1;
+    cmi->ml.back().bnum[1] = n2;
+    cmi->ml.back().bnum[2] = n3;
+}
+
 void menu::back( const char *n )
 {
     cmi->ml.push_back( menuitem() );
@@ -327,6 +357,25 @@ void menu::draw( int x, int y)
                         sprintf(strbuf,"%s%s[%s]", arrow, i->name, *(bool *)i->val ? "On":"Off" );
                         println( strbuf, i->tcolor );
                     break;
+                    
+                    case TYPERADIO:
+                        sprintf(strbuf,"%s%s", arrow, i->name );
+                        printp( strbuf, i->tcolor );
+                        for( int a=0; a<3; a++ )
+                        {
+                            if( i->bstr[a][0] != 0 )
+                            {
+                             
+                                bool s = i->bnum[a] == *(int *)i->val;
+                                printp( s ? " [":"  ", i->tcolor);
+                                printp( i->bstr[a], i == cmi->it && s ? i->edit_color:i->tcolor );
+                                printp( s ? "]":" ", i->tcolor);
+                               
+                            }
+                        }
+                        println("");
+                    break;    
+                                   
                 }
             }
             else
@@ -434,6 +483,19 @@ bool menu::parse()
                 return true;
             break;
 
+            case TYPERADIO:
+            
+                cmi->it->bsel++;
+                if( cmi->it->bsel > (cmi->it->bstr[2][0] == 0 ? 1:2) ) 
+                {
+                    cmi->it->bsel = 0;
+                }
+                *(int *)cmi->it->val = cmi->it->bnum[ cmi->it->bsel ];
+                
+                cmi->it->edited = true;
+                return true;
+            break;
+
             case TYPEINT:
                 update_val( *cmi->it, atoi( cmi->it->str ) / (int)cmi->it->divider );
                 return true;
@@ -449,6 +511,7 @@ bool menu::parse()
                 update_val( *cmi->it, atof( cmi->it->str ) / (double)cmi->it->divider );
                 return true;
             break;
+            
 
         }
 
