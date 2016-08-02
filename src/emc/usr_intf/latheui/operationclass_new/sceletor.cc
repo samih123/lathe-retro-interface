@@ -4,8 +4,7 @@ extern const double retract;
 extern const double stockdiameter;
 extern char strbuf[BUFFSIZE];
 extern const int maxrpm;
-extern double scale;
-extern char *ttcomments[CANON_POCKETS_MAX];
+
 
 op_tool::op_tool()
 {
@@ -30,46 +29,6 @@ op_type op_tool::type()
 void op_tool::draw( color c )
 {
     
-}
-
-void op_tool::save( FILE *fp )
-{
-    if (fp == NULL) return;
-    fprintf(fp, "OPERATION %i %s\n", type(), name() );
-    
-    fprintf(fp, "END\n" );
-}
-
-void op_tool::load( FILE *fp )
-{
-     if (fp == NULL) return;
-    
-    char *line = NULL;
-    size_t len = 0;   
-    ssize_t read;
-    char tag[BUFFSIZE+1];
-    
-    double v1,v2,v3,v4,v5,v6;
-
-    while ((read = getline( &line, &len, fp)) != -1)
-    {
-
-        printf("load %s", line);
-        v1 = v2 = v3 = v4 = v5 = v6 = 0;
-        
-        sscanf(line, "%s %lf %lf %lf %lf %lf %lf", tag, &v1, &v2, &v3, &v4, &v5, &v6 );
-
-       // findtag( tag, "DEPTH", tl.depth, v1 );
-
-        free(line);
-        line = NULL;
-        
-        if( strcmp( tag, "END" ) == 0 )
-        {
-            break;
-        }      
-    }
-
 }
 
 void op_tool::save_program( FILE *fp )

@@ -9,15 +9,18 @@ extern char *ttcomments[CANON_POCKETS_MAX];
 
 
 
-
 op_tool::op_tool()
 {
+    tagl.push_front( ftag( "DEPTH", &tl.depth ) );
+    tagl.push_front( ftag( "FEED",  &tl.feed ) );
+    tagl.push_front( ftag( "SPEED", &tl.speed ) );
+    tagl.push_front( ftag( "TOOLN", &tl.tooln ) );
     createmenu();
 }
 
 op_tool::~op_tool()
 {
-
+    tagl.clear();
 }
 
 const char* op_tool::name()
@@ -31,11 +34,11 @@ op_type op_tool::type()
     return TOOL;
 }
 
-void op_tool::draw( color c )
+void op_tool::draw( color c, bool drawpath )
 {
 
 }
-
+/*
 void op_tool::save( FILE *fp )
 {
     if (fp == NULL) return;
@@ -81,7 +84,7 @@ void op_tool::load( FILE *fp )
     }
     
 }
-
+*/
 void op_tool::save_program( FILE *fp )
 {
     fprintf(fp, "(%s)\n", name() );  

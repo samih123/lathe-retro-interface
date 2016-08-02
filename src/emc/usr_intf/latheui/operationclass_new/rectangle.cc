@@ -15,12 +15,19 @@ op_rectangle::op_rectangle()
     begin.x = stockdiameter/2.0;
     end.x = 0;
     feed_dir = DIRX;
+    
+    tagl.push_front( ftag( "FEED_DIR", &feed_dir ) );
+    tagl.push_front( ftag( "BEGIN_X", &begin.x ) );
+    tagl.push_front( ftag( "BEGIN_Z", &begin.z ) );
+    tagl.push_front( ftag( "END_X", &end.x ) );
+    tagl.push_front( ftag( "END_Z", &end.z ) );
+    
     createmenu();
 }
 
 op_rectangle::~op_rectangle()
 {
-
+    tagl.clear();
 }
 
 const char* op_rectangle::name()
@@ -33,15 +40,15 @@ op_type op_rectangle::type()
     return RECTANGLE;
 }
 
-void op_rectangle::draw( color c )
+void op_rectangle::draw( color c, bool drawpath )
 {
     setcolor( DISABLED );
     drawBox( begin, end );
     drawCross( begin.z, -begin.x , 3.0/scale);
     drawCircle( begin.z, -begin.x , 3.0/scale);
-    rect_path.draw( c );
+    if( drawpath ) rect_path.draw( c );
 }
-
+/*
 void op_rectangle::save( FILE *fp )
 {
     if (fp == NULL) return;
@@ -53,7 +60,7 @@ void op_rectangle::save( FILE *fp )
 
 void op_rectangle::load( FILE *fp )
 {
-     if (fp == NULL) return;
+    if (fp == NULL) return;
     
     char *line = NULL;
     size_t len = 0;   
@@ -89,7 +96,7 @@ void op_rectangle::load( FILE *fp )
     }
     
 }
-
+*/
 void op_rectangle::save_program( FILE *fp )
 {
     update();

@@ -48,9 +48,8 @@ InterpBase *pinterp;
 #define interp_set_loglevel interp_new.set_loglevel
 #define interp_task_init interp_new.task_init
 
-
 extern char ttfile[LINELEN];
-extern list<operation> *wiz_opl;
+extern bool draw_wiz;
 
 static float xmax,ymax,xmin,ymin;
 
@@ -123,6 +122,10 @@ void preview_draw()
     glTranslatef(5+ -xmin2*scale,300 , 0);
     glScalef(scale, scale,scale);
         
+    if( draw_wiz )
+    {
+        wizards_draw_outlines();
+    }
     
     setcolor( OUTLINE );
     glBegin(GL_LINE_LOOP);
@@ -157,14 +160,6 @@ void preview_draw()
         glVertex2f( 15,0 );
         glVertex2f( -15,0 );
     glEnd();
-    
-    if( wiz_opl != NULL )
-    {
-        for(list<operation>::iterator i = wiz_opl->begin(); i != wiz_opl->end(); i++)
-        {
-            i->draw( NONE, true );
-        }
-    }
     
     glTranslatef( x, y , 0);
     draw_tool( emcStatus->io.tool.toolInSpindle );

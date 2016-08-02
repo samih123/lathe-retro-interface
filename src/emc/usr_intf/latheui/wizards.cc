@@ -18,8 +18,8 @@ extern int screenw, screenh;
 extern char estr[BUFFSIZE];
 static menu Menu;
 
-extern list<operation> *wiz_opl;
 static list<new_operation *> opl;
+static list<ftag> tagl;
 
 list<new_operation *>::iterator cur_op;
 list<new_operation *>::iterator cur_contour;
@@ -41,7 +41,7 @@ double stockdiameter;
 double scale = 1;
 static vec2 pos(0,0); 
 double retract = 1;
-
+bool draw_wiz;
 
 #define  MENU_PHASE_NEW 1
 #define  MENU_PHASE_DELETE 2
@@ -69,9 +69,9 @@ void create_operation_select_menus()
 }
 
 
-void create_new_operation_menu( int type )
+void create_new_operation_menu( int type, const char *name )
 {
-    Menu.select( &operationcreate, type, operation_name( type ) );
+    Menu.select( &operationcreate, type, name );
 }
 
 void create_main_menu()
@@ -107,8 +107,13 @@ void create_main_menu()
             
             Menu.begin( "Create new operation" );
                 Menu.back("Back");
-                create_new_operation_menu( TOOL );
-                create_new_operation_menu( CONTOUR );
+                
+                create_new_operation_menu( TOOL, "Tool" );
+                create_new_operation_menu( RECTANGLE, "Rectangle" );
+                create_new_operation_menu( THREADING, "Threading" );
+                create_new_operation_menu( RAPIDMOVE, "Rapid move" );
+                /*
+                create_new_operation_menu( CONTOUR "");
                 create_new_operation_menu( INSIDE_CONTOUR );
                 create_new_operation_menu( TURN );
                 create_new_operation_menu( UNDERCUT );
@@ -117,7 +122,8 @@ void create_main_menu()
                 create_new_operation_menu( RECTANGLE );
                 create_new_operation_menu( DRILL );
                 create_new_operation_menu( PARTING );
-                create_new_operation_menu( MOVE );
+                create_new_operation_menu( RAPIDMOVE );
+                */
             Menu.end();
             
         Menu.end();
@@ -133,7 +139,6 @@ void create_main_menu()
 
 void clear_all_operations()
 {
-    
     cur_contour = cur_tool = opl.end();
 
     for(list<new_operation *>::iterator i = opl.begin(); i != opl.end(); i++)
@@ -148,8 +153,16 @@ void clear_all_operations()
             cur_tool = i;
         }
         
-        (*i)->set_tool( (op_tool*)*cur_tool );
-        (*i)->set_contour( (op_contour*)*cur_contour );
+        if( cur_tool != opl.end() )
+        {
+            (*i)->set_tool( (op_tool*)*cur_tool );
+        }
+        
+        if( cur_contour != opl.end() )
+        {
+            (*i)->set_contour( (op_contour*)*cur_contour );
+        }
+        
         (*i)->update();
     }
 }
@@ -185,7 +198,7 @@ void save_program(const char *name )
             bool b = true;
             if( std::next(i) != opl.end() )
             {
-                if( (*std::next(i))->type() == MOVE ) 
+                if( (*std::next(i))->type() == RAPIDMOVE ) 
                 {
                     b = false;
                 }
@@ -206,8 +219,7 @@ void save_program(const char *name )
 
     edit_load( ngc_file );
     auto_load( ngc_file );
-    //wiz_opl = &opl;
-
+    draw_wiz = true;
 }
 
 
@@ -215,17 +227,13 @@ void wizards_save( const char *name )
 {
     FILE *fp;
 
+    
     sprintf(strbuf,"%s/%s.wiz", programPrefix, name );
     printf("save:%s\n",strbuf);
     fp = fopen( strbuf, "w");
     if (fp == NULL) return;
-    fprintf(fp, "NAME %s\n", name );
-    fprintf(fp, "INIT \"%s\"\n", initcommands );
-    fprintf(fp, "STOCKDIAM %.20g\n", stockdiameter );
-    fprintf(fp, "MAXRPM %i\n", maxrpm );
-    fprintf(fp, "POSX %.20g\n", pos.x );
-    fprintf(fp, "POSZ %.20g\n", pos.z );
-    fprintf(fp, "SCALE %.20g\n", scale );
+    
+    savetagl( fp, tagl );
     
     for(list<new_operation *>::iterator i = opl.begin(); i != opl.end(); i++)
     {
@@ -255,21 +263,14 @@ void wizards_load( const char *name )
     opl.clear();
     wizards_init();
 
+    loadtagl( fp, tagl );
+
+
     while ((read = getline( &line, &len, fp)) != -1)
     {
-
         printf("%s", line);
-        
         val = 0;
         sscanf(line, "%s %lf", tag, &val );
-        
-        findtag( tag, "STOCKDIAM", stockdiameter, val );
-        findtag( tag, "MAXRPM", maxrpm, val );
-        findtag( line, "INIT", initcommands );
-        findtag( tag, "POSX", pos.x, val );
-        findtag( tag, "POSZ", pos.z, val );
-        findtag( tag, "SCALE", scale, val );
-
         if( strcmp( tag, "OPERATION" ) == 0 )
         {
             if( val == TOOL )
@@ -290,13 +291,14 @@ void wizards_load( const char *name )
 
     fclose( fp );
 
+
     // strip name
     const char *n = name + strlen(name);
     while( *n != '/' && n > name ) n--;
     strcpy( Name, n+1 );
     n = strstr(Name, ".wiz" );
     if( n ) *(char *)n = 0;
-    
+  
     clear_all_operations();
 
 }
@@ -304,7 +306,18 @@ void wizards_load( const char *name )
 
 void wizards_init()
 {
+    tagl.clear();
+    tagl.push_front( ftag( "STOCKDIAM", &stockdiameter ));
+    tagl.push_front( ftag( "MAXRPM", &maxrpm ));
+    tagl.push_front( ftag( "INIT", initcommands ));
+    tagl.push_front( ftag( "POSX", &pos.x ));
+    tagl.push_front( ftag( "POSZ", &pos.z ));
+    tagl.push_front( ftag( "SCALE", &scale ));
+    tagl.push_front( ftag( "NAME", Name ));
+    tagl.push_front( ftag( "START_X", &start_position.x ));
+    tagl.push_front( ftag( "START_Z", &start_position.z ));
     
+        
     if( opl.size() == 0 )
     {
         scale = 2;
@@ -315,6 +328,7 @@ void wizards_init()
         start_position.z = 20;
         cur_contour = cur_op = cur_tool= opl.end();
         strcpy( initcommands, "G18 G8 G21 G95 G40 G64 P0.01 Q0.01" );
+        draw_wiz = false;
     }
 
     if( status.screenmode == SCREENWIZARDS )
@@ -493,6 +507,13 @@ void show_tool( int x,int y, int t, const char* name )
     println( name ,x-25,y+50,16);
 }
 
+void wizards_draw_outlines()
+{
+    for(list<new_operation *>::iterator i = opl.begin(); i != opl.end(); i++)
+    {
+        (*i)->draw( DISABLED, false );
+    }
+}
 
 void wizards_draw()
 {

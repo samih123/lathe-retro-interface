@@ -114,3 +114,126 @@ int get_line_intersection( vec2 S1P0, vec2 S1P1 , vec2 S2P0, vec2 S2P1, vec2 &I0
 }
 //===================================================================
 
+
+void findtag( const char *line, const char *tag, double &val,const double v )
+{
+    if( strcmp( tag, line ) == 0 )
+    {
+        val = v;
+    }      
+}
+
+void findtag( const char *line, const char *tag, int &val,const int v )
+{
+    if( strcmp( tag, line ) == 0 )
+    {
+        val = v;
+    }      
+}
+
+void findtag( const char *line, const char *tag, bool &val,const int v )
+{
+    if( strcmp( tag, line ) == 0 )
+    {
+        val = (bool)v;
+    }      
+}
+
+
+void findtag( const char *line, const char *tag, char *str )
+{
+    
+    if( strstr( line, line ) == line )
+    {
+        sscanf( line, "%*[^\"]\"%255[^\"]\"", str);
+    }      
+}
+
+void loadtagl( FILE *fp, list<ftag> &tagl )
+{
+    if (fp == NULL) return;
+    
+    char *line = NULL;
+    size_t len = 0;   
+    ssize_t read;
+    char tag[BUFFSIZE+1];
+    
+    double val;
+
+    while ((read = getline( &line, &len, fp)) != -1)
+    {
+
+        printf("load %s", line);
+        
+        val = 0;
+        sscanf(line, "%s %lf", tag, &val );
+        
+        for( list<ftag>::iterator i = tagl.begin(); i != tagl.end(); i++)
+        {
+            if( strcmp( tag, i->tag ) == 0 )
+            {
+                switch( i->type )
+                {
+                    case T_INT:
+                        *(int*)i->val = (int)val;
+                    break;
+                    
+                    case T_DOUBLE:
+                        *(double*)i->val = val;
+                    break;
+                  
+                    case T_BOOL:
+                        *(bool*)i->val = (bool)val;
+                    break;  
+                             
+                    case T_CHAR:
+                        sscanf( line, "%*[^\"]\"%255[^\"]\"", (char*)i->val);
+                    break;               
+                } 
+            }
+        }
+        
+        free(line);
+        line = NULL;
+        
+        if( strcmp( tag, "END" ) == 0 )
+        {
+            break;
+        }      
+    }
+       
+}
+
+void savetagl( FILE *fp, list<ftag> &tagl )
+{
+    if (fp == NULL) return;
+    
+    for( list<ftag>::iterator i = tagl.begin(); i != tagl.end(); i++)
+    {
+        switch( i->type )
+        {
+            case T_INT:
+                fprintf(fp, "   %s %i\n", i->tag, *(int*)i->val );
+            break;
+            
+            case T_DOUBLE:
+                fprintf(fp, "   %s %.8g\n", i->tag, *(double*)i->val );
+            break;
+          
+            case T_BOOL:
+                fprintf(fp, "   %s %i\n", i->tag, (int)*(bool*)i->val );
+            break;  
+                     
+            case T_CHAR:
+                fprintf(fp, "   %s %s\n", i->tag, (char*)i->val );
+            break;               
+        }
+    }
+    
+    fprintf(fp, "END\n" );
+}
+
+
+
+
+

@@ -114,13 +114,32 @@ enum op_type
     RECTANGLE,
     DRILL,
     PARTING,
-    MOVE, 
+    RAPIDMOVE
 };
 
 enum Side
 {
     OUTSIDE,
     INSIDE
+};
+
+enum t_type
+{
+    T_INT,
+    T_DOUBLE,
+    T_CHAR,
+    T_BOOL
+};
+
+struct ftag
+{
+    ftag( const char *t, double *d ){ tag = t; val = (void*)d; type = T_DOUBLE; };
+    ftag( const char *t, int *d )   { tag = t; val = (void*)d; type = T_INT; };
+    ftag( const char *t, char *d )  { tag = t; val = (void*)d; type = T_CHAR; };
+    ftag( const char *t, bool *d )  { tag = t; val = (void*)d; type = T_BOOL; };
+    const char *tag;
+    void *val;
+    t_type type;
 };
 
 class vec2
@@ -451,11 +470,15 @@ void wizards_init();
 void wizards_parse_serialdata();
 void wizards_draw();
 void wizards_load( const char *name );
+void wizards_draw_outlines();
 
 void findtag( const char *line, const char *tag, double &val,const double v );
 void findtag( const char *line, const char *tag, int &val,const int v );
 void findtag( const char *line, const char *tag, bool &val,const int v );
 void findtag( const char *line, const char *tag, char *str );
+
+void savetagl( FILE *fp, list<ftag> &tagl );
+void loadtagl( FILE *fp, list<ftag> &tagl );
 
 const char* isprefix( const char*  prefix, int* n);
 
