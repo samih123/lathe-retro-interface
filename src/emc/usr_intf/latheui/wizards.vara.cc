@@ -152,7 +152,6 @@ void create_operation_menu()
         {
             
             Menu.edit( &face_feed_dir, face_feed_dir == DIRZ ? "Feed direction Z":"Feed direction X" );Menu.hiddenvalue();
-            
             Menu.edit( &face_begin.x, "Start diameter " ); Menu.diameter_mode();
             Menu.edit( &face_end.x,   "End diameter   " ); Menu.diameter_mode();
             Menu.edit( &face_begin.z, "Start Z        " );

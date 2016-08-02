@@ -138,7 +138,6 @@ void clear_all_operations()
 
     for(list<new_operation *>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-
         if( (*i)->type() == CONTOUR )
         {
             cur_contour = i;
@@ -149,9 +148,9 @@ void clear_all_operations()
             cur_tool = i;
         }
         
-        (*i)->set_tool( *cur_tool );
-        (*i)->set_contour( *cur_contour );
-
+        (*i)->set_tool( (op_tool*)*cur_tool );
+        (*i)->set_contour( (op_contour*)*cur_contour );
+        (*i)->update();
     }
 }
 
@@ -261,6 +260,7 @@ void wizards_load( const char *name )
 
         printf("%s", line);
         
+        val = 0;
         sscanf(line, "%s %lf", tag, &val );
         
         findtag( tag, "STOCKDIAM", stockdiameter, val );
@@ -277,7 +277,11 @@ void wizards_load( const char *name )
                 opl.push_back( new op_tool() );
                 opl.back()->load( fp );
             }
-            
+            else if( val == RECTANGLE )
+            {
+                opl.push_back( new op_rectangle() );
+                opl.back()->load( fp );
+            }
         }
 
         free(line);
@@ -293,6 +297,7 @@ void wizards_load( const char *name )
     n = strstr(Name, ".wiz" );
     if( n ) *(char *)n = 0;
     
+    clear_all_operations();
 
 }
 
@@ -319,192 +324,6 @@ void wizards_init()
 }
 
 
-void draw_thread(double x1, double y1, double x2, double y2, double pitch, double depth )
-{
-    double dx =  x1 - x2;
-    double dy =  y1 - y2;
-    double l = sqrtf( dx*dx + dy*dy );
-    if( l == 0.0f ) return;
-
-    int n = l / pitch;
-
-    vec2 v(x1,y1);
-    v = v.normal( vec2(x2,y2) ) * depth;
-
-    double nx = v.x;
-    double ny = v.z;
-
-    double dl = 1.0f / l;
-    dl *= l / (double)n;
-
-    dx *= dl;
-    dy *= dl;
-
-    double x = x1;
-    double y = y1;
-    glBegin(GL_LINE_STRIP);
-        setcolor( CONTOUR_LINE );
-        glVertex2f( x1, y1 );
-        for( int i=0 ; i < n-1 ; i++ )
-        {
-            x -= dx;
-            y -= dy;
-            if( i & 1 )
-            {
-                glVertex2f( x , y );
-            }
-            else
-            {
-                glVertex2f( x - nx, y - ny );
-            }
-
-        }
-        glVertex2f( x2, y2 );
-    glEnd();
-
-    x = x1;
-    y = y1;
-    glBegin(GL_LINE_STRIP);
-        setcolor( CONTOUR_LINE );
-        glVertex2f( x1, -y1 );
-        for( int i=0 ; i < n-1 ; i++ )
-        {
-            x -= dx;
-            y -= dy;
-            if( i & 1 )
-            {
-                glVertex2f( x , -y );
-            }
-            else
-            {
-                glVertex2f( x - nx, -(y - ny) );
-            }
-
-        }
-        glVertex2f( x2, -y2 );
-    glEnd();
-
-}
-
-
-
-// inSegment(): determine if a point is inside a segment
-//    Input:  a point P, and a collinear segment S
-//    Return: 1 = P is inside S
-//            0 = P is  not inside S
-int
-inSegment( vec2 P, vec2 S1, vec2 S2)
-{
-    if (S1.x != S2.x) {    // S is not  vertical
-        if (S1.x <= P.x && P.x <= S2.x)
-            return 1;
-        if (S1.x >= P.x && P.x >= S2.x)
-            return 1;
-    }
-    else {    // S is vertical, so test y  coordinate
-        if (S1.z <= P.z && P.z <= S2.z)
-            return 1;
-        if (S1.z >= P.z && P.z >= S2.z)
-            return 1;
-    }
-    return 0;
-}
-
-#define SMALL_NUM 0.000001
-//===================================================================
-// dot product (3D) which allows vector operations in arguments
-#define DOT(u,v)   (u.dot(v))  //)((u).x * (v).x + (u).z * (v).z)
-#define PERP(u,v)  (u.perp(v))
-
-int get_line_intersection( vec2 S1P0, vec2 S1P1 , vec2 S2P0, vec2 S2P1, vec2 &I0 )
-{
-    vec2    u = S1P1 - S1P0;
-    vec2   v = S2P1 - S2P0;
-    vec2    w = S1P0 - S2P0;
-    double     D = PERP(u,v);
-
-    // test if  they are parallel (includes either being a point)
-    if (fabs(D) < SMALL_NUM) {           // S1 and S2 are parallel
-        if (PERP(u,w) != 0 || PERP(v,w) != 0)  {
-            return 0;                    // they are NOT collinear
-        }
-        // they are collinear or degenerate
-        // check if they are degenerate  points
-        double du = DOT(u,u);
-        double dv = DOT(v,v);
-        if (du==0 && dv==0) {            // both segments are points
-            if (S1P0 !=  S2P0)         // they are distinct  points
-                 return 0;
-            I0 = S1P0;                 // they are the same point
-            return 1;
-        }
-        if (du==0) {                     // S1 is a single point
-            if  (inSegment(S1P0, S2P0, S2P1 ) == 0)  // but is not in S2
-                 return 0;
-            I0 = S1P0;
-            return 1;
-        }
-        if (dv==0) {                     // S2 a single point
-            if  (inSegment(S2P0, S1P0, S1P1 ) == 0)  // but is not in S1
-                 return 0;
-            I0 = S2P0;
-            return 1;
-        }
-        // they are collinear segments - get  overlap (or not)
-        double t0, t1;                    // endpoints of S1 in eqn for S2
-        vec2 w2 = S1P1 - S2P0;
-        if (v.x != 0) {
-                 t0 = w.x / v.x;
-                 t1 = w2.x / v.x;
-        }
-        else {
-                 t0 = w.z / v.z;
-                 t1 = w2.z / v.z;
-        }
-        if (t0 > t1) {                   // must have t0 smaller than t1
-                 double t=t0; t0=t1; t1=t;    // swap if not
-        }
-        if (t0 > 1 || t1 < 0) {
-            return 0;      // NO overlap
-        }
-        t0 = t0<0? 0 : t0;               // clip to min 0
-        t1 = t1>1? 1 : t1;               // clip to max 1
-        if (t0 == t1) {                  // intersect is a point
-            I0 = S2P0 +  v*t0;
-            return 1;
-        }
-
-        // they overlap in a valid subsegment
-        if( S1P0.dist_squared( S2P0 + v*t0 ) <  S1P0.dist_squared( S2P0 + v*t1 ))
-        {
-            I0 = S2P0 + v*t0;
-        }
-        else
-        {
-            I0 = S2P0 + v*t1;
-        }
-        return 2;
-    }
-
-    // the segments are skew and may intersect in a point
-    // get the intersect parameter for S1
-    double     sI = PERP(v,w) / D;
-    if (sI < 0 || sI > 1)                // no intersect with S1
-        return 0;
-
-    // get the intersect parameter for S2
-    double     tI = PERP(u,w) / D;
-    if (tI < 0 || tI > 1)                // no intersect with S2
-        return 0;
-
-    I0 = S1P0 + u*sI;                // compute S1 intersect point
-    return 1;
-}
-//===================================================================
-
-
-
-
 void clamp_values()
 {
      CLAMP( stockdiameter,0,1000 );
@@ -517,7 +336,7 @@ void wizards_parse_serialdata()
 
     if( main_menu )
     {
-        
+        menuselect = 0;
         if( Menu.parse() )
         {
             clamp_values();
@@ -553,7 +372,6 @@ void wizards_parse_serialdata()
             if( menuselect == MENU_PHASE_UP && cur_op !=  opl.end() && cur_op != opl.begin() )
             {
                 opl.splice( std::prev(cur_op), opl, cur_op );
-                //cur_contour = cur_op = cur_tool = opl.end();
                 clear_all_operations();
                 create_main_menu();
                 return;
@@ -562,7 +380,6 @@ void wizards_parse_serialdata()
             if( menuselect == MENU_PHASE_DOWN && cur_op !=  opl.end() && cur_op != --opl.end() )
             {
                 opl.splice( std::next(cur_op,2), opl, cur_op );
-                //cur_contour = cur_op = cur_tool = opl.end();
                 clear_all_operations();
                 create_main_menu();
                 return;
@@ -574,11 +391,16 @@ void wizards_parse_serialdata()
                 if( operationcreate == TOOL )
                 {
                     opl.push_back( new op_tool() );
-                    cur_op =  --opl.end();
-                    clear_all_operations();
-                    create_main_menu();
-                    return;
                 }
+                else if( operationcreate == RECTANGLE )
+                {
+                    opl.push_back( new op_rectangle() );
+                }
+                
+                cur_op =  --opl.end();
+                clear_all_operations();
+                create_main_menu();
+                return;
                 
             }
     
@@ -612,15 +434,48 @@ void wizards_parse_serialdata()
     }
     else
     {
-        if( (*cur_op)->parse() )
+        int a = (*cur_op)->parsemenu();
+        if( a == OP_EXIT )
         {
-            //create_main_menu();
+            create_main_menu();
             main_menu = true;
             return;
         }
         
-    }
+        if( a == OP_EDITED )
+        {
+            
+            (*cur_op)->update();
+            op_type t = (*cur_op)->type();
+            
+            if( t == TOOL || t == CONTOUR )
+            {
+                
+                list<new_operation *>::iterator i = cur_op;
+                for( i++; i != opl.end(); i++)
+                {
 
+                    if( (*i)->type() == t )
+                    {
+                        break;
+                    }
+                    
+                    if( t == TOOL )
+                    {
+                        (*i)->set_tool( (op_tool*)*cur_op );
+                        (*i)->update();
+                    }
+                    
+                    else if( t == CONTOUR )
+                    {
+                        (*i)->set_contour( (op_contour*)*cur_op );
+                        (*i)->update();
+                    }                  
+                }
+            }
+            
+        }
+    }
 
 }
 

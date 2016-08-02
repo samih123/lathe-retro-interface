@@ -7,9 +7,6 @@ extern const int maxrpm;
 extern double scale;
 extern char *ttcomments[CANON_POCKETS_MAX];
 
-
-
-
 op_tool::op_tool()
 {
     createmenu();
@@ -17,13 +14,12 @@ op_tool::op_tool()
 
 op_tool::~op_tool()
 {
-
+    Menu.clean();
 }
 
 const char* op_tool::name()
 {
-    sprintf( Name, "Tool: %s", ttcomments[ tl.tooln ]);
-    return Name;
+    return "Operation";
 }
 
 op_type op_tool::type()
@@ -33,17 +29,14 @@ op_type op_tool::type()
 
 void op_tool::draw( color c )
 {
-
+    
 }
 
 void op_tool::save( FILE *fp )
 {
     if (fp == NULL) return;
     fprintf(fp, "OPERATION %i %s\n", type(), name() );
-    fprintf(fp, "   DEPTH %.10g\n", tl.depth );
-    fprintf(fp, "   FEED %.10g\n", tl.feed );
-    fprintf(fp, "   SPEED %.10g\n", tl.speed );
-    fprintf(fp, "   TOOLN %i\n", tl.tooln );
+    
     fprintf(fp, "END\n" );
 }
 
@@ -65,11 +58,8 @@ void op_tool::load( FILE *fp )
         v1 = v2 = v3 = v4 = v5 = v6 = 0;
         
         sscanf(line, "%s %lf %lf %lf %lf %lf %lf", tag, &v1, &v2, &v3, &v4, &v5, &v6 );
-        
-        findtag( tag, "DEPTH", tl.depth, v1 );
-        findtag( tag, "FEED",  tl.feed, v1 );
-        findtag( tag, "SPEED", tl.speed, v1 );
-        findtag( tag, "TOOLN", tl.tooln, v1 );
+
+       // findtag( tag, "DEPTH", tl.depth, v1 );
 
         free(line);
         line = NULL;
@@ -79,21 +69,15 @@ void op_tool::load( FILE *fp )
             break;
         }      
     }
-    
+
 }
 
 void op_tool::save_program( FILE *fp )
 {
-    fprintf(fp, "(%s)\n", name() );  
-    fprintf(fp, "T%d M6 F%f (change tool)\n", tl.tooln, tl.feed ); 
-    fprintf(fp, "G43 (enable tool lenght compensation)\n" ); 
-    fprintf(fp, "G96 D%d S%f (set maxrpm & surface speed)\n", maxrpm, tl.speed ); 
-    fprintf(fp, "M4 (start spindle)\n" ); 
-    fprintf(fp, "G4 P1 (wait 1 second)\n" );
+    fprintf(fp, "(%s)\n", name() );
 }
 
 #define MENU_BACK 1
-
 
 int op_tool::parsemenu()
 {
@@ -105,13 +89,6 @@ int op_tool::parsemenu()
             return OP_EXIT;
         }
         
-        CLAMP( tl.depth, 0.01, 10 );
-        CLAMP( tl.feed, 0, 1000 );
-        CLAMP( tl.speed, 0, 1000 );
-        CLAMP( tl.tooln, 0, MAXTOOLS );
-        
-        return OP_EDITED;
-        
     }
     return OP_NOP;
 }
@@ -122,10 +99,6 @@ void op_tool::createmenu()
     Menuselect = 0;
     Menu.begin( name() );
         Menu.select(&Menuselect, MENU_BACK, "Back" );
-        Menu.edit( &tl.tooln, "Tool number       " );
-        Menu.edit( &tl.feed,  "Feedrate mm/rev.  " );
-        Menu.edit( &tl.speed, "Surface speed m/s " );
-        Menu.edit( &tl.depth, "Depth             " );
     Menu.end();
 } 
 
@@ -134,7 +107,8 @@ void op_tool::drawmenu(int x,int y)
     Menu.draw(x,y);
 } 
 
-void op_tool::update()
+void op_rectangle::update()
 {
-    printf("%s:update\n",name());
+
 }
+
