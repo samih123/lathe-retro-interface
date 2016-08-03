@@ -85,3 +85,29 @@ class op_rectangle:public new_operation
     int feed_dir;
     
 };
+
+
+class op_threading:public new_operation
+{
+    public:
+    op_threading();
+    ~op_threading();
+    const char* name() ;
+    op_type type();
+    void draw( color c=NONE, bool path = true  );
+    void save_program( FILE *fp );
+    int parsemenu();
+    void createmenu();
+    void drawmenu(int x,int y);   
+    void update();
+    
+    protected:
+    
+    vec2 begin,end;
+    double pitch, depth, degression, compound_angle, multip;
+    int count, spring_passes;
+    
+};
+
+
+

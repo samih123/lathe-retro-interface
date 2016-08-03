@@ -431,6 +431,8 @@ void drawCross(GLfloat x, GLfloat y, GLfloat size);
 void drawCircle(GLfloat x, GLfloat y, GLfloat radius);
 void drawBox( vec2 v1, vec2 v2 );
 void draw_tool( int i );
+void draw_thread(double x1, double y1, double x2, double y2, double pitch, double depth );
+
 vec2 tool_cpoint( int t );
 
 

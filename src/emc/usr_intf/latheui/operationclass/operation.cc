@@ -17,7 +17,7 @@ const char* operation_name( int t )
         case TURN:            return "Turning";
         case UNDERCUT:        return "Undercut";
         case FINISHING:       return "Finishing";
-        case THREADING:       return "Thread";
+        case THREADING:       return "Threading";
         case RECTANGLE:       return "Rectangle";
         case DRILL:           return "Drilling";
         case PARTING:         return "Parting off";
@@ -44,73 +44,6 @@ const char* operation::get_name()
     
 };
 
-
-static void draw_thread(double x1, double y1, double x2, double y2, double pitch, double depth )
-{
-    double dx =  x1 - x2;
-    double dy =  y1 - y2;
-    double l = sqrtf( dx*dx + dy*dy );
-    if( l == 0.0f ) return;
-
-    int n = l / pitch;
-
-    vec2 v(x1,y1);
-    v = v.normal( vec2(x2,y2) ) * depth;
-
-    double nx = v.x;
-    double ny = v.z;
-
-    double dl = 1.0f / l;
-    dl *= l / (double)n;
-
-    dx *= dl;
-    dy *= dl;
-
-    double x = x1;
-    double y = y1;
-    glBegin(GL_LINE_STRIP);
-        setcolor( CONTOUR_LINE );
-        glVertex2f( x1, y1 );
-        for( int i=0 ; i < n-1 ; i++ )
-        {
-            x -= dx;
-            y -= dy;
-            if( i & 1 )
-            {
-                glVertex2f( x , y );
-            }
-            else
-            {
-                glVertex2f( x - nx, y - ny );
-            }
-
-        }
-        glVertex2f( x2, y2 );
-    glEnd();
-
-    x = x1;
-    y = y1;
-    glBegin(GL_LINE_STRIP);
-        setcolor( CONTOUR_LINE );
-        glVertex2f( x1, -y1 );
-        for( int i=0 ; i < n-1 ; i++ )
-        {
-            x -= dx;
-            y -= dy;
-            if( i & 1 )
-            {
-                glVertex2f( x , -y );
-            }
-            else
-            {
-                glVertex2f( x - nx, -(y - ny) );
-            }
-
-        }
-        glVertex2f( x2, -y2 );
-    glEnd();
-
-}
 
 operation::operation( op_type t )
 {

@@ -25,7 +25,10 @@ struct menuitem
         ml.clear();
     }
     
-    void *val;;
+    void *val;
+    int cur_val_i;
+    double cur_val_d;
+    
     void *cval[3];
     int axis;
     int type;

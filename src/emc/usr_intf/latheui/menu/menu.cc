@@ -113,6 +113,7 @@ void menu::update_val( menuitem &m, int v )
 
     m.edited = true;
     *(int *)m.val = (int)v;
+    m.cur_val_i = v;
 
     sprintf( m.str, "%d", *(int *)m.val * m.divider );
 
@@ -130,7 +131,8 @@ void menu::update_val( menuitem &m, double v )
 
     m.edited = true;
     *(double *)m.val = (double)v;
-
+    m.cur_val_d = v;
+    
     sprintf( m.str, "%.10g", *(double *)m.val * (double)m.divider );
 
 }
@@ -397,10 +399,24 @@ void menu::clean( menuitem &m )
              *(int *)i->val = 0;
         }
 
+        
         if( i->edited )
         {
             update_str( *i );
             i->edited = false;
+        }
+        else
+        {
+            if( i->type == TYPEDOUBLE && i->cur_val_d != *(double *)i->val )
+            {
+                i->cur_val_d = *(double *)i->val;
+                update_str( *i );
+            }
+            else  if( i->type == TYPEINT && i->cur_val_i != *(int *)i->val )
+            {
+                i->cur_val_i = *(int *)i->val;
+                update_str( *i );
+            }            
         }
 
         clean( *i );

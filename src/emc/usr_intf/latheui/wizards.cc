@@ -112,6 +112,7 @@ void create_main_menu()
                 create_new_operation_menu( RECTANGLE, "Rectangle" );
                 create_new_operation_menu( THREADING, "Threading" );
                 create_new_operation_menu( RAPIDMOVE, "Rapid move" );
+                
                 /*
                 create_new_operation_menu( CONTOUR "");
                 create_new_operation_menu( INSIDE_CONTOUR );
@@ -157,11 +158,19 @@ void clear_all_operations()
         {
             (*i)->set_tool( (op_tool*)*cur_tool );
         }
+        else
+        {
+            (*i)->set_tool( NULL );
+        }
         
         if( cur_contour != opl.end() )
         {
             (*i)->set_contour( (op_contour*)*cur_contour );
         }
+        else
+        {
+            (*i)->set_contour( NULL );
+        }       
         
         (*i)->update();
     }
@@ -281,6 +290,11 @@ void wizards_load( const char *name )
             else if( val == RECTANGLE )
             {
                 opl.push_back( new op_rectangle() );
+                opl.back()->load( fp );
+            }
+            else if( val == THREADING )
+            {
+                opl.push_back( new op_threading() );
                 opl.back()->load( fp );
             }
         }
@@ -410,7 +424,11 @@ void wizards_parse_serialdata()
                 {
                     opl.push_back( new op_rectangle() );
                 }
-                
+                else if( operationcreate == THREADING )
+                {
+                    opl.push_back( new op_threading() );
+                }
+                                
                 cur_op =  --opl.end();
                 clear_all_operations();
                 create_main_menu();
