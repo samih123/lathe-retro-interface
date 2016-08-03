@@ -20,7 +20,7 @@ op_threading::op_threading()
     multip = 0.613;
     depth = pitch * multip;
     compound_angle = 29;
-    degression = 1.5;
+    degression = 2;
     spring_passes = 1;
     
     tagl.push_front( ftag( "BEGIN_X", &begin.x ) );
@@ -67,7 +67,36 @@ void op_threading::draw( color c, bool drawpath )
 
 void op_threading::save_program( FILE *fp )
 {
-    fprintf(fp, "(%s)\n", name() );  
+    if( Tool != NULL)
+    {
+        double tool_r = _tools[ Tool->tl.tooln ].diameter/2.0f;
+        vec2 dv = vec2( tool_r, tool_r ) + tool_cpoint( Tool->tl.tooln );
+        vec2 v1 = begin + dv;
+        vec2 v2 = end + dv;
+        
+        double Z = v2.z;
+        double P = pitch;
+        double Q = compound_angle;
+        double I = -retract;
+        double K = depth;
+        double J = Tool->tl.depth;
+        double R = degression;
+        int H = spring_passes;
+        
+        
+        fprintf(fp, "(%s)\n", name() );
+        fprintf(fp, "G0 X%.8g Z%.8g\n", v1.x + retract, v1.z );
+        fprintf(fp, "G76 " );
+        fprintf(fp, "Z%.8g ", Z );
+        fprintf(fp, "P%.8g ", P );
+        fprintf(fp, "Q%.8g ", Q );
+        fprintf(fp, "I%.8g ", I );
+        fprintf(fp, "K%.8g ", K );
+        fprintf(fp, "J%.8g ", J );
+        fprintf(fp, "R%.8g ", R );
+        fprintf(fp, "H%i\n", H );
+        
+    }
 }
 
 #define MENU_BACK 1
@@ -91,7 +120,7 @@ int op_threading::parsemenu()
             CLAMP( multip, 0.01, 20 );
             CLAMP( pitch, 0.01, 1000 );
             CLAMP( compound_angle, 0, 90 );
-            CLAMP( degression, 1, 2 );
+            CLAMP( degression, 1, 3 );
             CLAMP( spring_passes, 0, 10 );
             
             end.x = begin.x;
