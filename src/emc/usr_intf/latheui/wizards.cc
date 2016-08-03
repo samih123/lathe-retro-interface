@@ -354,7 +354,7 @@ void wizards_init()
 
 void clamp_values()
 {
-     CLAMP( stockdiameter,0,1000 );
+     CLAMP( stockdiameter,1,1000 );
      CLAMP( maxrpm, 1, 5000 );
      CLAMP( scale,0.1,10 ); 
 }

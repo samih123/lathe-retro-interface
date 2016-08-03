@@ -444,17 +444,34 @@ bool menu::parse()
     clean( rm );
 
     // menu up,down,select
-    if( isprefix( "DOWN" ,NULL ) || (usewheel && isprefix( "JG+" ,NULL )) )
+    if( isprefix( "DOWN" ,NULL ) )
     {
         update_str( *cmi->it );
         if( cmi->it != --cmi->ml.end() ) cmi->it++;
     }
-    else if( isprefix( "UP" ,NULL ) || (usewheel && isprefix( "JG-" ,NULL )) )
+    else if( isprefix( "UP" ,NULL ) )
     {
         update_str( *cmi->it );
         if( cmi->it != cmi->ml.begin() ) cmi->it--;
     }
-
+    
+    if( usewheel &&  status.jogged_raw > 0 )
+    {
+        update_str( *cmi->it );
+        for(int i=0;i<status.jogged_raw;i++) 
+        {
+            if( cmi->it != --cmi->ml.end() ) cmi->it++;
+        }
+    }
+    
+    if( usewheel &&  status.jogged_raw < 0 )
+    {
+        update_str( *cmi->it );
+        for(int i=0;i<-status.jogged_raw;i++) 
+        {
+            if( cmi->it != cmi->ml.begin() ) cmi->it--;
+        }
+    }
 
     // coordinate
     if( cmi->it->type == TYPECOORD )
@@ -540,44 +557,24 @@ bool menu::parse()
     }
 
     if( ! usewheel ){
-        if( isprefix( "JG+" ,NULL ) )
+        
+        if( status.jogged_raw != 0 )
         {
-             if( cmi->it->type == TYPEBOOL)
-             {
-                  (*(bool *)cmi->it->val) = true;
-                  cmi->it->edited = true;
-                  return true;
-             }
+
              if( cmi->it->type == TYPEINT )
              {
-                  update_val( *cmi->it, (*(int *)cmi->it->val)+1 );
+                  update_val( *cmi->it, (*(int *)cmi->it->val) + status.jogged_raw );
                   return true;
              }
              if( cmi->it->type == TYPEDOUBLE || cmi->it->type == TYPECOORD )
              {
-                  update_val( *cmi->it, (*(double *)cmi->it->val) + status.incr / (double)cmi->it->divider );
+                
+                  double v = status.jogged / (double)cmi->it->divider;
+                  update_val( *cmi->it, (*(double *)cmi->it->val) + v );
                   return true;
              }
         }
-        else if( isprefix( "JG-" ,NULL ) )
-        {
-             if( cmi->it->type == TYPEBOOL)
-             {
-                  (*(bool *)cmi->it->val) = false;
-                  cmi->it->edited = true;
-                  return true;
-             }
-             if( cmi->it->type == TYPEINT )
-             {
-                 update_val( *cmi->it, (*(int *)cmi->it->val) - 1 );
-                  return true;
-             }
-             if( cmi->it->type == TYPEDOUBLE || cmi->it->type == TYPECOORD )
-             {
-                  update_val( *cmi->it, (*(double *)cmi->it->val) - status.incr / (double)cmi->it->divider );
-                  return true;
-             }
-        }
+        
     }
 
 

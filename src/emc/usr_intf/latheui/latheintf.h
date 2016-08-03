@@ -406,6 +406,7 @@ struct machinestatus
     int maxrpm;
     double incr;
     double jogged;
+    int jogged_raw;
     bool singleblock;
     bool skipblock;
     bool optionalstop;

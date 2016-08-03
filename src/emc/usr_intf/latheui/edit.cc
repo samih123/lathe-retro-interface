@@ -22,16 +22,11 @@ void edit_init()
 
 void edit_parse_serialdata()
 {
-    if( isprefix( "JG+" ,NULL ) )
-    {
-        currentline++;
-    }
-
-    if( isprefix( "JG-" ,NULL ) )
-    {
-        currentline--;
-    }
+    
+    currentline += status.jogged_raw;
     if( currentline < 0 ) currentline = 0;
+    if( currentline > (int)lines.size() ) currentline = lines.size();
+    
 }
 
 void edit_draw()

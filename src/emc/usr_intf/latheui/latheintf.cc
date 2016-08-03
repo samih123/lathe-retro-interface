@@ -286,7 +286,7 @@ void initstatus()
     status.optionalstop = false;
     status.slowrapid = false;
     
-    status.maxrpm = 3000;
+    status.maxrpm = 200;
 }
 
 const char* isprefix( const char*  prefix, int* n)
@@ -342,29 +342,29 @@ void  parse_serialdata()
     int n;
     int old_screenmode = status.screenmode; 
     status.jogged = 0;
+    status.jogged_raw = 0;
+    parseagain: // handle jog wheel, screen mode, potentiometers and increment here:
     
-    parseagain: // handle manual jog wheel, screen mode, potentiometers and increment here:
-    
-    if( status.screenmode == SCREENMANUAL )
+
+    if( isprefix( "JG+" ,&n ) )
     {
-        if( isprefix( "JG+" ,&n ) )
+        status.jogged += status.incr;
+        status.jogged_raw++;
+        if( readserial() )
         {
-            status.jogged += status.incr;
-            if( readserial() )
-            {
-                goto parseagain;
-            } 
-        }
-        
-        if( isprefix( "JG-" ,&n ) )
-        {
-            status.jogged -= status.incr;
-            if( readserial() )
-            {
-                goto parseagain;
-            } 
-        }    
+            goto parseagain;
+        } 
     }
+    
+    if( isprefix( "JG-" ,&n ) )
+    {
+        status.jogged -= status.incr;
+        status.jogged_raw--;
+        if( readserial() )
+        {
+            goto parseagain;
+        } 
+    }    
     
     if( isprefix( "MO=" ,&n ) )
     {
