@@ -53,15 +53,15 @@ op_type op_threading::type()
     return THREADING;
 }
 
-//void draw_thread(double x1, double y1, double x2, double y2, double pitch, double depth )
-
-            
 void op_threading::draw( color c, bool drawpath )
 {
     if( Tool != NULL)
     {
-        setcolor( c == NONE ? CONTOUR_LINE:c );
-        draw_thread( begin.z, -begin.x, end.z, -end.x, pitch, depth );
+        if( ! Tool->tl.csspeed )
+        {
+            setcolor( c == NONE ? CONTOUR_LINE:c );
+            draw_thread( begin.z, -begin.x, end.z, -end.x, pitch, depth );
+        }
     }
 }
 
@@ -121,6 +121,10 @@ void op_threading::createmenu()
         if( Tool == NULL )
         {
             Menu.comment( "Missing Tool!" );
+        }
+        else if( Tool->tl.csspeed )
+        {
+            Menu.comment( "Dont use constant surface speed!" );
         }
         else
         {

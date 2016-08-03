@@ -6,7 +6,7 @@
 class op_tool;
 class op_contour;
 class op_rectangle;
-
+class op_threading;
 
 class new_operation
 {
@@ -45,6 +45,7 @@ class new_operation
 class op_tool:public new_operation
 {
     friend op_rectangle;
+    friend op_threading;
     public:
     op_tool();
     ~op_tool();

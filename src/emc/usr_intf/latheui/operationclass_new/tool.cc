@@ -15,6 +15,7 @@ op_tool::op_tool()
     tagl.push_front( ftag( "FEED",  &tl.feed ) );
     tagl.push_front( ftag( "SPEED", &tl.speed ) );
     tagl.push_front( ftag( "TOOLN", &tl.tooln ) );
+    tagl.push_front( ftag( "CSS", &tl.csspeed ) );
     createmenu();
 }
 
@@ -25,7 +26,14 @@ op_tool::~op_tool()
 
 const char* op_tool::name()
 {
-    sprintf( Name, "Tool: %s", ttcomments[ tl.tooln ]);
+    if( tl.csspeed )
+    {
+        sprintf( Name, "Tool: %s css %.8g feed %.8g depth %.8g", ttcomments[ tl.tooln ], tl.speed, tl.feed, tl.depth );
+    }
+    else
+    {
+        sprintf( Name, "Tool: %s rpm %.8g feed %.8g depth %.8g", ttcomments[ tl.tooln ], tl.speed, tl.feed, tl.depth );
+    }
     return Name;
 }
 
@@ -48,7 +56,14 @@ void op_tool::save_program( FILE *fp )
     fprintf(fp, "(%s)\n", name() );  
     fprintf(fp, "T%d M6 F%f (change tool)\n", tl.tooln, tl.feed ); 
     fprintf(fp, "G43 (enable tool lenght compensation)\n" ); 
-    fprintf(fp, "G96 D%d S%f (set maxrpm & surface speed)\n", maxrpm, tl.speed ); 
+    if( tl.csspeed )
+    {
+        fprintf(fp, "G96 D%d S%f (set maxrpm & surface speed)\n", maxrpm, tl.speed ); 
+    }
+    else
+    {
+        fprintf(fp, "G97 S%f (set rpm)\n", tl.speed ); 
+    }
     fprintf(fp, "M4 (start spindle)\n" ); 
     fprintf(fp, "G4 P1 (wait 1 second)\n" );
 }
@@ -71,6 +86,11 @@ int op_tool::parsemenu()
         CLAMP( tl.speed, 0, 1000 );
         CLAMP( tl.tooln, 0, MAXTOOLS );
         
+        if( Menu.edited( &tl.csspeed ) )
+        {
+            createmenu();
+        }
+        
         return OP_EDITED;
         
     }
@@ -83,10 +103,11 @@ void op_tool::createmenu()
     Menuselect = 0;
     Menu.begin( "Tool" );
         Menu.select(&Menuselect, MENU_BACK, "Back" );
+        Menu.edit( &tl.csspeed, "Constant surface speed " );
         Menu.edit( &tl.tooln, "Tool number       " );
-        Menu.edit( &tl.feed,  "Feedrate mm/rev.  " );
-        Menu.edit( &tl.speed, "Surface speed m/s " );
         Menu.edit( &tl.depth, "Depth             " );
+        Menu.edit( &tl.feed,  tl.csspeed ? "Feedrate mm/rev. ":"Feedrate mm/min. "  );
+        Menu.edit( &tl.speed, tl.csspeed ? "Surface speed m/s ":"RPM " );
     Menu.end();
 } 
 

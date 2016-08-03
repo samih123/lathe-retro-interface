@@ -336,9 +336,10 @@ struct tool
     tool()
     {
         tooln =1;
-        depth = 2;
-        feed = 0.2;
-        speed = 200;
+        depth = 0.2;
+        feed = 0.1;
+        speed = 50;
+        csspeed = true;
     }
     ~tool()
     {
@@ -347,7 +348,7 @@ struct tool
     double depth;
     double feed;
     double speed;
-    
+    bool csspeed;
     int tooln;
    
 };
