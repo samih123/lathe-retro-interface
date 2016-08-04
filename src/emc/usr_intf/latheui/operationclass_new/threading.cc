@@ -146,7 +146,7 @@ void op_threading::createmenu()
 {
     Menu.clear();
     Menuselect = 0;
-    multip = pitch / depth;
+    multip = depth / pitch;
     Menu.begin( "Threading" );
         Menu.select(&Menuselect, MENU_BACK, "Back" );
         if( Tool == NULL )
