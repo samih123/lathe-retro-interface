@@ -81,6 +81,11 @@ void op_threading::save_program( FILE *fp )
         double Q = compound_angle;
         double I = -retract;
         double K = depth;
+        
+        // exit taper 45 deg.
+        double E = K;
+        int L = 2;
+        
         double J = Tool->tl.depth;
         double R = degression;
         int H = spring_passes;
@@ -96,7 +101,9 @@ void op_threading::save_program( FILE *fp )
         fprintf(fp, "K%.8g ", K );
         fprintf(fp, "J%.8g ", J );
         fprintf(fp, "R%.8g ", R );
-        fprintf(fp, "H%i\n", H );
+        fprintf(fp, "E%.8g ", E );
+        fprintf(fp, "H%i ", H );
+        fprintf(fp, "L%i\n", L );
         
     }
 }
