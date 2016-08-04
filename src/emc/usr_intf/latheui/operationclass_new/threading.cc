@@ -23,6 +23,8 @@ op_threading::op_threading()
     degression = 2;
     spring_passes = 1;
     
+    Tool = NULL;
+    
     tagl.push_front( ftag( "BEGIN_X", &begin.x ) );
     tagl.push_front( ftag( "BEGIN_Z", &begin.z ) );
     //tagl.push_front( ftag( "END_X", &end.x ) );
