@@ -22,6 +22,7 @@ extern list<string> errors;
 int mode;
 double offsetD,offsetZ;
 double add_offsetD,add_offsetZ;
+double radius;
 static menu Menu;
 static int menuselect;
 bool show_messages;
@@ -88,8 +89,6 @@ static int saveToolTable(const char *filename,
 static void createmenu()
 {
     Menu.clear();
-    add_offsetZ = 0;
-    add_offsetD = 0;
     
     if( mode == MODE_SELECT_TOOL )
     {
@@ -123,11 +122,16 @@ static void createmenu()
     }
     else if( mode == MODE_SET_TOOL )
     {
+        
+        add_offsetZ = 0;
+        add_offsetD = 0;
+        radius = _tools[ tool ].diameter /2.0;
+        
         sprintf(strbuf,"Tool %i", tool);
         Menu.begin( strbuf );
             Menu.select( &menuselect, MENU_BACK, "Back" );
             Menu.edit( ttcomments[tool], "Name:" );
-            Menu.edit( &_tools[ tool ].diameter, "Tip Radius " );Menu.diameter_mode();
+            Menu.edit( &radius, "Tip Radius " );
             Menu.edit( &offsetD,     "set Diameter offset " );
             Menu.edit( &offsetZ,     "set Z offset        " );
             Menu.edit( &add_offsetD, "Adjust Diameter " );
@@ -248,10 +252,10 @@ void set_parse_serialdata()
         else
         {
             
-            if( _tools[ tool ].diameter < 0) _tools[ tool ].diameter = 0;
-            if( _tools[ tool ].orientation > 9) _tools[ tool ].orientation = 1; // wrap
-            if( _tools[ tool ].orientation < 1) _tools[ tool ].orientation = 9;
-        
+            if( _tools[ tool ].orientation > 9) _tools[ tool ].orientation = 9; 
+            if( _tools[ tool ].orientation < 1) _tools[ tool ].orientation = 1;
+            if( radius < 0 ) radius = 0;
+
             else if( Menu.edited( &menuselect ) && menuselect == MENU_BACK )
             {
                 mode = MODE_SELECT_TOOL;
@@ -260,23 +264,21 @@ void set_parse_serialdata()
                 sendLoadToolTable(ttfile);
             }
              
-            if(  Menu.edited( &add_offsetD ) )
+            else if(  Menu.edited( &add_offsetD ) || Menu.edited( &add_offsetZ ) || Menu.edited( &radius )  )
             {
                 _tools[ tool ].offset.tran.x += add_offsetD / 2.0;
+                _tools[ tool ].offset.tran.z += add_offsetZ;
+                _tools[ tool ].diameter = radius * 2.0;
+                 
                 saveToolTable(ttfile,_tools);
                 sendLoadToolTable(ttfile);
+                sprintf(strbuf,"T%i M6 G43", tool );
+                mdicommand( strbuf );
                 add_offsetD = 0;
+                add_offsetZ = 0;
             }
             
-            if(  Menu.edited( &add_offsetZ ) )
-            {
-                _tools[ tool ].offset.tran.z += add_offsetZ;
-                saveToolTable(ttfile,_tools);
-                sendLoadToolTable(ttfile);
-                add_offsetZ = 0;
-            }    
-                    
-            if(  Menu.edited( &offsetD ) )
+            else if(  Menu.edited( &offsetD ) )
             {
                 sprintf(strbuf,"G10 L10 P%i X%f I%f J%f Q%i", 
                     tool,
