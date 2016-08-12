@@ -20,7 +20,8 @@ char estr[BUFFSIZE];
 extern char buf[BUFFSIZE];
 extern list<string> errors;
 int mode;
-double offsetX,offsetZ;
+double offsetD,offsetZ;
+double add_offsetD,add_offsetZ;
 static menu Menu;
 static int menuselect;
 bool show_messages;
@@ -82,11 +83,13 @@ static int saveToolTable(const char *filename,
 
 #define MENU_SHUTDOWN -666
 #define MENU_UPDATE -2
-#define MENU_BACK      -1
+#define MENU_BACK   -1
 
 static void createmenu()
 {
     Menu.clear();
+    add_offsetZ = 0;
+    add_offsetD = 0;
     
     if( mode == MODE_SELECT_TOOL )
     {
@@ -124,9 +127,12 @@ static void createmenu()
         Menu.begin( strbuf );
             Menu.select( &menuselect, MENU_BACK, "Back" );
             Menu.edit( ttcomments[tool], "Name:" );
-            Menu.edit( &_tools[ tool ].diameter, "Diameter " );
-            Menu.edit( &offsetX, "set X offset " );
-            Menu.edit( &offsetZ, "set Z offset " );
+            Menu.edit( &_tools[ tool ].diameter, "Tip Radius " );Menu.diameter_mode();
+            Menu.edit( &offsetD,     "set Diameter offset " );
+            Menu.edit( &offsetZ,     "set Z offset        " );
+            Menu.edit( &add_offsetD, "Adjust Diameter " );
+            Menu.edit( &add_offsetZ, "Adjust Z        " );           
+            
             Menu.edit( &_tools[ tool ].frontangle, "Frontangle " );
             Menu.edit( &_tools[ tool ].backangle, "Backangle " );
             Menu.edit( &_tools[ tool ].orientation, "Orientation " );
@@ -140,8 +146,10 @@ void set_init()
     currentline = 0;
     tool = currentline;
     mode = MODE_SELECT_TOOL;
-    offsetX = 0;
     offsetZ = 0;
+    offsetD = 0;
+    add_offsetZ = 0;
+    add_offsetD = 0;
     createmenu();
 }
 
@@ -250,13 +258,29 @@ void set_parse_serialdata()
                 createmenu(); 
                 saveToolTable(ttfile,_tools);
                 sendLoadToolTable(ttfile);
-            } 
+            }
+             
+            if(  Menu.edited( &add_offsetD ) )
+            {
+                _tools[ tool ].offset.tran.x += add_offsetD / 2.0;
+                saveToolTable(ttfile,_tools);
+                sendLoadToolTable(ttfile);
+                add_offsetD = 0;
+            }
             
-            if(  Menu.edited( &offsetX ) )
+            if(  Menu.edited( &add_offsetZ ) )
+            {
+                _tools[ tool ].offset.tran.z += add_offsetZ;
+                saveToolTable(ttfile,_tools);
+                sendLoadToolTable(ttfile);
+                add_offsetZ = 0;
+            }    
+                    
+            if(  Menu.edited( &offsetD ) )
             {
                 sprintf(strbuf,"G10 L10 P%i X%f I%f J%f Q%i", 
                     tool,
-                    offsetX,
+                    offsetD / 2.0,
                     _tools[ tool ].frontangle,
                     _tools[ tool ].backangle,
                     _tools[ tool ].orientation

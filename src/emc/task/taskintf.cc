@@ -1506,7 +1506,7 @@ int emcMotionUpdate(EMC_MOTION_STAT * stat)
     stat->debug = emcmotConfig.debug;
     
     stat->spindle.enabled = emcmotStatus.spindle.speed != 0;
-    stat->spindle.speed = emcmotStatus.spindle.css_factor != 0 ? emcmotStatus.spindleSpeedIn*60 : emcmotStatus.spindle.speed;
+    stat->spindle.speed = emcmotStatus.spindleSpeedIn*60;
     stat->spindle.brake = emcmotStatus.spindle.brake;
     stat->spindle.direction = emcmotStatus.spindle.direction;
     stat->spindle.orient_state = emcmotStatus.spindle.orient_state;
