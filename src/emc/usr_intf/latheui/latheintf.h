@@ -96,6 +96,7 @@ enum cut_type
 
 enum move_type
 {
+    MOV_NONE,
     MOV_FEED,
     MOV_RAPID,
     MOV_CONTOUR
@@ -415,7 +416,7 @@ struct machinestatus
 
 
 int get_line_intersection( vec2 S1P0, vec2 S1P1 , vec2 S2P0, vec2 S2P1, vec2 &I0 );
-
+double Segment_to_Segment( vec2 a1, vec2 a2, vec2 b1, vec2 b2);
 
 void init_opengl( int argc, char **argv );
 //void setcolor( int color );
@@ -496,7 +497,7 @@ void set_previewXoffset( double z );
 
 #include "menu/menu.h"
 #include "pathclass/path.h"
-#include "operationclass/operation.h"
+//#include "operationclass/operation.h"
 #include "operationclass_new/operation_new.h"
 
 

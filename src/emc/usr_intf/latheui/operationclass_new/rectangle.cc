@@ -108,7 +108,7 @@ void op_rectangle::update()
     rect_path.clear();
     if( Tool != NULL )
     {
-        rect_path.create( Tool->tl, begin, end, feed_dir );
+        rect_path.create_rectangle( Tool->tl, begin, end, feed_dir );
     }
 }
     

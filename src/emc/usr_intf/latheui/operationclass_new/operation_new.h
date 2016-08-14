@@ -81,7 +81,7 @@ class op_rectangle:public new_operation
     
     protected:
     
-    rectangle_path rect_path;
+    path rect_path;
     vec2 begin,end;
     int feed_dir;
     

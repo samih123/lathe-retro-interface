@@ -150,81 +150,6 @@ bool path::find_intersection( const vec2 a, const vec2 b, vec2 &cv,
     return col;
 }
 
-#define SMALL_NUM 0.00000001
-
-double Segment_to_Segment( vec2 a1, vec2 a2, vec2 b1, vec2 b2)
-{
-    vec2   u = a2 - a1;//S1P1 - S1P0;
-    vec2   v = b2 - b1;//S2P1 - S2P0;
-    vec2   w = a1 - b1;//S1P0 - S2P0;
-
-    double    a = u.dot(u);         // always >= 0
-    double    b = u.dot(v);
-    double    c = v.dot(v);         // always >= 0
-    double    d = u.dot(w);
-    double    e = v.dot(w);
-    double    D = a*c - b*b;        // always >= 0
-    double    sc, sN, sD = D;       // sc = sN / sD, default sD = D >= 0
-    double    tc, tN, tD = D;       // tc = tN / tD, default tD = D >= 0
-
-    // compute the line parameters of the two closest points
-    if (D < SMALL_NUM) { // the lines are almost parallel
-        sN = 0.0;         // force using point P0 on segment S1
-        sD = 1.0;         // to prevent possible division by 0.0 later
-        tN = e;
-        tD = c;
-    }
-    else {                 // get the closest points on the infinite lines
-        sN = (b*e - c*d);
-        tN = (a*e - b*d);
-        if (sN < 0.0) {        // sc < 0 => the s=0 edge is visible
-            sN = 0.0;
-            tN = e;
-            tD = c;
-        }
-        else if (sN > sD) {  // sc > 1  => the s=1 edge is visible
-            sN = sD;
-            tN = e + b;
-            tD = c;
-        }
-    }
-
-    if (tN < 0.0) {            // tc < 0 => the t=0 edge is visible
-        tN = 0.0;
-        // recompute sc for this edge
-        if (-d < 0.0)
-            sN = 0.0;
-        else if (-d > a)
-            sN = sD;
-        else {
-            sN = -d;
-            sD = a;
-        }
-    }
-    else if (tN > tD) {      // tc > 1  => the t=1 edge is visible
-        tN = tD;
-        // recompute sc for this edge
-        if ((-d + b) < 0.0)
-            sN = 0;
-        else if ((-d + b) > a)
-            sN = sD;
-        else {
-            sN = (-d +  b);
-            sD = a;
-        }
-    }
-    // finally do the division to get sc and tc
-    sc = (fabs(sN) < SMALL_NUM ? 0.0 : sN / sD);
-    tc = (fabs(tN) < SMALL_NUM ? 0.0 : tN / tD);
-
-    // get the difference of the two closest points
-    vec2   dP = w + (u *sc) - ( v*tc );  // =  S1(sc) - S2(tc)
-
-    return dP.length();   // return the closest distance
-}
-//===================================================================void
-
-
 
 double path::distance( const vec2 p1, const vec2 p2)
 {
@@ -367,6 +292,292 @@ void path::findminmax()
 }
 
 
+void path::copy( path &s, move_type t )
+{
+    for( list<struct mov>::iterator i = s.ml.begin(); i != s.ml.end(); i++)
+    {
+        if( i->start.dist( i->end ) > 0.001 || i == s.ml.begin() )
+        {
+            create_line( i->end, t == MOV_NONE ? i->type:t );
+            ml.back().start = i->start;
+            ml.back().end = i->end;
+        }
+
+    }
+}
 
 
 
+void path::buffer( double r, Side s )
+{
+    
+    vec2 n;
+    path tp;
+    ml.clear();
+    side = s;
+    
+    // copy to temp list
+    tp.copy( *this );
+    ml.clear();
+
+    // move normal direction
+    bool first = true;
+    for(list<struct mov>::iterator i = ++(tp.ml.begin()); i != tp.ml.end(); i++)
+    {
+        n = i->start.normal( i->end ) * r;
+        
+        if( side == INSIDE )
+        {
+            n = -n;
+        }
+        
+        i->start += n;
+        i->end += n;
+        
+        if( first ) // move a start point too.
+        {
+            first = false;
+            tp.ml.front().start += n;
+            tp.ml.front().end += n;
+        }
+        
+    }
+
+    // fix intersections
+    vec2 iv(0,0);
+    list<struct mov>::iterator i2 = ++(tp.ml.begin());
+    for( list<struct mov>::iterator i1 = tp.ml.begin(); i2 != tp.ml.end(); i1++,i2++)
+    {
+        i1->vel.x = i1->vel.z = 0;
+        if( get_line_intersection( i1->start, i1->end, i2->start, i2->end , iv ))
+        {
+            i1->end = iv;
+            i2->start = iv;
+        }
+    }
+
+    // close small gaps;
+    i2 = ++(tp.ml.begin());
+    for( list<struct mov>::iterator i1 = tp.ml.begin(); i2 != tp.ml.end(); i1++,i2++)
+    {
+        double l = i1->end.dist( i2->start ) ;
+        if( l < 0.01 )
+        {
+            i1->end = i2->start = (i1->end + i2->start) / 2.0;
+
+        }
+
+    }
+
+    // copy list & fill big gaps
+
+    vec2 start(0,0);
+    struct cut cutp;
+
+    i2 = ++(tp.ml.begin());
+    for( list<struct mov>::iterator i1 = tp.ml.begin(); i1 != tp.ml.end(); i1++,i2++)
+    {
+
+        create_line( i1->end, i1->type );
+        if(  i1 == tp.ml.begin() )  start = i1->start; // first start
+
+        double l = i1->end.dist( i2->start ) ;
+        if( l > 0.01 && i2 != tp.ml.end() )
+        {
+
+            if( l > 0.2 )
+            {
+                double r2 = fabs(r);
+                double l = i1->end.dist( i2->start ) + 0.00001f;
+                if( r2 < l/2.0f )  r2 = l/2.0f;
+                create_arc( cutp, i1->end, i2->start , r2, (r < 0), i1->type );
+            }
+            else
+            {
+                create_line( i2->start, i1->type );
+            }
+        }
+    }
+
+    // calc start/ends
+    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
+    {
+        i->start = start;
+        start =  i->end;
+    }
+
+    remove_knots();
+    findminmax();
+
+}
+
+
+
+void path::create_from_contour( path &c, double r, Side s, move_type mtype )
+{
+    
+    vec2 n;
+    path tp;
+    ml.clear();
+    side = s;
+    
+    // copy to temp list
+    for(list<struct mov>::iterator i = c.ml.begin(); i != c.ml.end(); i++)
+    {
+        if( i->start.dist( i->end ) > 0.001 || i == c.ml.begin() )
+        {
+            tp.create_line( i->end, mtype );
+            tp.ml.back().start = i->start;
+            tp.ml.back().end = i->end;
+        }
+
+    }
+
+    // move normal direction
+    bool first = true;
+    for(list<struct mov>::iterator i = ++(tp.ml.begin()); i != tp.ml.end(); i++)
+    {
+        n = i->start.normal( i->end ) * r;
+        
+        if( side == INSIDE )
+        {
+            n = -n;
+        }
+        
+        i->start += n;
+        i->end += n;
+        
+        if( first ) // move a start point too.
+        {
+            first = false;
+            tp.ml.front().start += n;
+            tp.ml.front().end += n;
+        }
+        
+    }
+
+    // fix intersections
+    vec2 iv(0,0);
+    list<struct mov>::iterator i2 = ++(tp.ml.begin());
+    for( list<struct mov>::iterator i1 = tp.ml.begin(); i2 != tp.ml.end(); i1++,i2++)
+    {
+        i1->vel.x = i1->vel.z = 0;
+        if( get_line_intersection( i1->start, i1->end, i2->start, i2->end , iv ))
+        {
+            i1->end = iv;
+            i2->start = iv;
+        }
+    }
+
+    // close small gaps;
+    i2 = ++(tp.ml.begin());
+    for( list<struct mov>::iterator i1 = tp.ml.begin(); i2 != tp.ml.end(); i1++,i2++)
+    {
+        double l = i1->end.dist( i2->start ) ;
+        if( l < 0.01 )
+        {
+            i1->end = i2->start = (i1->end + i2->start) / 2.0;
+
+        }
+
+    }
+
+    // copy list & fill big gaps
+
+    vec2 start(0,0);
+    struct cut cutp;
+
+    i2 = ++(tp.ml.begin());
+    for( list<struct mov>::iterator i1 = tp.ml.begin(); i1 != tp.ml.end(); i1++,i2++)
+    {
+
+        create_line( i1->end, mtype );
+        if(  i1 == tp.ml.begin() )  start = i1->start; // first start
+
+        double l = i1->end.dist( i2->start ) ;
+        if( l > 0.01 && i2 != tp.ml.end() )
+        {
+
+            if( l > 0.2 )
+            {
+                double r2 = fabs(r);
+                double l = i1->end.dist( i2->start ) + 0.00001f;
+                if( r2 < l/2.0f )  r2 = l/2.0f;
+                create_arc( cutp, i1->end, i2->start , r2, (r < 0), mtype);
+            }
+            else
+            {
+                create_line( i2->start, mtype );
+            }
+        }
+    }
+
+    // calc start/ends
+    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
+    {
+        i->start = start;
+        start =  i->end;
+    }
+
+    remove_knots();
+    findminmax();
+
+}
+
+
+void path::create_rectangle( const tool &tl, vec2 begin, vec2 end, int feedd )
+{
+
+    vec2 fdir;
+    vec2 ddir;
+    double flen;
+    double dlen;
+    
+    if( feedd == DIRX )
+    {
+        fdir = vec2( begin.x > end.x ? -1:1 ,0 );
+        ddir = vec2(0, begin.z > end.z ? -1:1 );
+        flen = fabs( end.x - begin.x);
+        dlen = fabs( end.z - begin.z);
+    }
+    else
+    {
+        fdir = vec2(0, begin.z > end.z ? -1:1 );
+        ddir = vec2( begin.x > end.x ? -1:1 ,0);
+        flen = fabs( end.z - begin.z);
+        dlen = fabs( end.x - begin.x);
+    }
+    
+    double tool_r = _tools[ tl.tooln ].diameter/2.0f;
+    ml.clear();
+   
+    int count =  dlen / tl.depth; 
+    
+    vec2 retv = -ddir * retract;
+    vec2 dv = ddir * tl.depth;
+    vec2 fv = fdir *flen;
+    vec2 trv = -ddir * tool_r - fdir * tool_r;
+        
+    create_line( begin + trv , MOV_RAPID );
+
+    while( count >= 0 )
+    {
+        vec2 v = begin + ddir*dlen - dv * (double)count + trv;
+        
+        create_line( v, MOV_FEED );
+        v += fv;
+        create_line( v, MOV_FEED );
+        v += retv;
+        create_line( v, MOV_FEED );
+        v -= fv;
+        create_line( v, MOV_RAPID );
+        v -= retv;
+        
+        --count; 
+    }
+    
+
+    move( tool_cpoint( tl.tooln ) ); 
+    findminmax();
+
+}
