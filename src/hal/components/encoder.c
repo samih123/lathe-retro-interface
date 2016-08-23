@@ -63,6 +63,7 @@
 #include "rtapi_app.h"		/* RTAPI realtime module decls */
 #include "rtapi_string.h"
 #include "hal.h"		/* HAL public API decls */
+#include <rtapi_math.h>
 
 /* module information */
 MODULE_AUTHOR("John Kasunich");
@@ -133,6 +134,12 @@ typedef struct {
     double old_scale;		/* c:rw stored scale value */
     double scale;		/* c:rw reciprocal value used for scaling */
     int counts_since_timeout;	/* c:rw used for velocity calcs */
+    
+    hal_float_t zvel;
+    rtapi_u32 ztime;
+    rtapi_u32 ztimer;
+    bool zhi;
+    
 } counter_t;
 
 static rtapi_u32 timebase;		/* master timestamp for all counters */
@@ -281,6 +288,11 @@ int rtapi_app_main(void)
 	cntr->old_scale = 1.0;
 	cntr->scale = 1.0;
 	cntr->counts_since_timeout = 0;
+    cntr->ztime = 0;
+    cntr->ztimer = 0;
+    cntr->zvel = 0;
+    cntr->zhi = true;
+    
     }
     /* export functions */
     retval = hal_export_funct("encoder.update-counters", update,
@@ -368,7 +380,7 @@ static void update(void *arg, long period)
 	    /* capture counts, reset Zmask */
 	    buf->index_count = *(cntr->raw_counts);
 	    buf->index_detected = 1;
-	    cntr->Zmask = 0;
+	    cntr->Zmask = 0; 
 	}
         /* test for latch enabled and desired edge on latch-in */
         latch = *(cntr->latch_in), old_latch = cntr->old_latch;
@@ -382,12 +394,27 @@ static void update(void *arg, long period)
         }
         cntr->old_latch = latch;
 
+        cntr->ztime += period;
+    
+        if( !cntr->zhi && *(cntr->phaseZ) )
+        {
+            cntr->ztimer = cntr->ztime;
+            cntr->ztime = 0;
+            cntr->zhi = true;
+        }
+        else if( cntr->zhi && ! *(cntr->phaseZ) )
+        {
+            cntr->zhi = false;
+        }
+
+
 	/* move on to next channel */
 	cntr++;
     }
     /* increment main timestamp counter */
     timebase += period;
-    /* done */
+    
+        /* done */
 }
 
 
@@ -410,6 +437,10 @@ static void capture(void *arg, long period)
 	} else {
 	    cntr->bp = &(cntr->buf[0]);
 	}
+    
+    
+    cntr->zvel = 1.0/ ((hal_float_t)cntr->ztimer*1e-9) ; 
+    
 	/* handle index */
 	if ( buf->index_detected ) {
 	    buf->index_detected = 0;
@@ -469,6 +500,11 @@ static void capture(void *arg, long period)
 	    } else {
 		vel = (delta_counts * cntr->scale ) / (delta_time * 1e-9);
 		*(cntr->vel) = vel;
+        
+        if( vel > 10 ) *(cntr->vel) = cntr->zvel;
+        if( vel < -10 ) *(cntr->vel) = -cntr->zvel;
+
+            
 	    }
 	} else {
 	    /* no count */
