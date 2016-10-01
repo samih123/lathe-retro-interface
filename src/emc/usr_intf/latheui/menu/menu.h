@@ -96,7 +96,6 @@ class menu
     menuitem rm;
     menuitem *cmi; // current menuitem
     bool usewheel;
-    bool point;
     int maxlines;
 };
 

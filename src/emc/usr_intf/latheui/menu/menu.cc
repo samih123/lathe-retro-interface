@@ -110,12 +110,11 @@ void menu::update_val( menuitem &m, int v )
         return;
     }
 
-
     m.edited = true;
     *(int *)m.val = (int)v;
     m.cur_val_i = v;
 
-    sprintf( m.str, "%d", *(int *)m.val * m.divider );
+    update_str( m );
 
 }
 
@@ -133,7 +132,7 @@ void menu::update_val( menuitem &m, double v )
     *(double *)m.val = (double)v;
     m.cur_val_d = v;
     
-    sprintf( m.str, "%.10g", *(double *)m.val * (double)m.divider );
+    update_str( m );
 
 }
 
@@ -614,39 +613,20 @@ bool menu::parse()
             }
         }
 
-
-        if( *c == '-' )
+        else if( *c == '-' )
         {
-            if( cmi->it->type == TYPEINT )
+            if( cmi->it->type == TYPEINT || cmi->it->type == TYPEDOUBLE || cmi->it->type == TYPECOORD )
             {
-                (*(int *)cmi->it->val) = -abs( (*(int *)cmi->it->val) );
-                update_str( *cmi->it );
-                cmi->it->edited = true;
-                return true;
-            }
-            if( cmi->it->type == TYPEDOUBLE || cmi->it->type == TYPECOORD )
-            {
-                (*(double *)cmi->it->val) = -fabs( (*(double *)cmi->it->val) );
-                update_str( *cmi->it );
-                cmi->it->edited = true;
-                return true;
-            }
-        }
-        else if( *c == '+' )
-        {
-            if( cmi->it->type == TYPEINT )
-            {
-                (*(int *)cmi->it->val) = abs( (*(int *)cmi->it->val) );
-                update_str( *cmi->it );
-                cmi->it->edited = true;
-                return true;
-            }
-            if( cmi->it->type == TYPEDOUBLE || cmi->it->type == TYPECOORD )
-            {
-                (*(double *)cmi->it->val) = fabs( (*(double *)cmi->it->val) );
-                update_str( *cmi->it );
-                cmi->it->edited = true;
-                return true;
+                int l = strlen( cmi->it->str );
+                if( cmi->it->str[ 0 ] != *c )
+                {
+                    memmove( cmi->it->str + 1, cmi->it->str, l + 1);
+                    cmi->it->str[ 0 ] = *c;
+                }
+                else
+                {
+                    memmove( cmi->it->str, cmi->it->str + 1, l );
+                }
             }
         }
 
@@ -662,7 +642,6 @@ bool menu::parse()
                 }
             }
         }
-       point = false;
     }
     return false;
 }
