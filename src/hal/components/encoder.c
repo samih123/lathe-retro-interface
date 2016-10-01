@@ -501,10 +501,12 @@ static void capture(void *arg, long period)
 		vel = (delta_counts * cntr->scale ) / (delta_time * 1e-9);
 		*(cntr->vel) = vel;
         
-        if( vel > 10 ) *(cntr->vel) = cntr->zvel;
-        if( vel < -10 ) *(cntr->vel) = -cntr->zvel;
+        if( cntr->zvel > fabs(vel)/2.0 && cntr->zvel < fabs(vel)*2.0 ) // sanity check
+        {
+            if( vel > 10 ) *(cntr->vel) = cntr->zvel;
+            if( vel < -10 ) *(cntr->vel) = -cntr->zvel;
+        }
 
-            
 	    }
 	} else {
 	    /* no count */
