@@ -31,8 +31,10 @@ op_drilling::~op_drilling()
 }
 
 const char* op_drilling::name()
-{
-    return "Drilling";
+{        
+    sprintf( Name, "Drilling: %.8g to %.8g pecking %.8g", begin.z, end.z, peck );
+    return Name;
+    //return "Drilling";
 }
 
 op_type op_drilling::type()
@@ -47,7 +49,14 @@ void op_drilling::draw( color c , bool drawpath )
 
 void op_drilling::save_program( FILE *fp )
 {
-    fprintf(fp, "(%s)\n", name() );
+    fprintf(fp, "(%s)\n", name() );  
+    fprintf(fp, "G0 X%.8g\n", begin.x );
+    fprintf(fp, "G28.1 (store start z)\n" );
+    fprintf(fp, "G0 Z%.8g\n", begin.z );
+    fprintf(fp, "G17\n" );
+    fprintf(fp, "G83 Z%.8g Q%.8g R%.8g (peck drilling)\n ", end.z, peck, begin.z );
+    fprintf(fp, "G18\n" );
+    fprintf(fp, "G28 (rapid to start z)\n" );
 }
 
 #define MENU_BACK 1
@@ -61,7 +70,11 @@ int op_drilling::parsemenu()
         {
             return OP_EXIT;
         }
-        
+        CLAMP( peck, 0.1, 1000 );
+        if( end.z > begin.z )
+        {
+            end.z = begin.z;
+        }
     }
     return OP_NOP;
 }
