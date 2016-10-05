@@ -13,7 +13,8 @@ op_tool::op_tool()
 
 op_tool::~op_tool()
 {
-    Menu.clean();
+    Menu.clear();
+    tagl.clear();
 }
 
 const char* op_tool::name()
