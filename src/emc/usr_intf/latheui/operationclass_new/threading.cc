@@ -24,10 +24,10 @@ op_threading::op_threading()
     spring_passes = 1;
     
     Tool = NULL;
-    
+    side = OUTSIDE;
+
     tagl.push_front( ftag( "BEGIN_X", &begin.x ) );
     tagl.push_front( ftag( "BEGIN_Z", &begin.z ) );
-    //tagl.push_front( ftag( "END_X", &end.x ) );
     tagl.push_front( ftag( "END_Z", &end.z ) );
     
     tagl.push_front( ftag( "PITCH", &pitch ) );
@@ -35,6 +35,7 @@ op_threading::op_threading()
     tagl.push_front( ftag( "COMPOUND_ANGLE", &compound_angle ) );
     tagl.push_front( ftag( "DEGRESSION", &degression ) );
     tagl.push_front( ftag( "SPING_PASSES", &spring_passes ) );
+    tagl.push_front( ftag( "SIDE", &side ) );
     
     createmenu();
 }
@@ -46,7 +47,7 @@ op_threading::~op_threading()
 
 const char* op_threading::name()
 {
-    sprintf( Name, "Threading %.8gx%.8g", begin.x*2.0, pitch );
+    sprintf( Name, "%s threading %.8gx%.8g", (side == INSIDE) ? "Inside":"Outside", begin.x*2.0, pitch );
     return Name;
 }
 
@@ -62,7 +63,8 @@ void op_threading::draw( color c, bool drawpath )
         if( ! Tool->tl.csspeed )
         {
             setcolor( c == NONE ? CONTOUR_LINE:c );
-            draw_thread( begin.z, -begin.x, end.z, -end.x, pitch, depth );
+            draw_thread( begin.z, -begin.x, end.z, -begin.x, pitch, (side == OUTSIDE) ?depth:-depth );
+            drawBox( begin, vec2( -begin.x,end.z ));
         }
     }
 }
@@ -71,15 +73,18 @@ void op_threading::save_program( FILE *fp )
 {
     if( Tool != NULL)
     {
-        double tool_r = _tools[ Tool->tl.tooln ].diameter/2.0f;
-        vec2 dv = vec2( tool_r, tool_r ) + tool_cpoint( Tool->tl.tooln );
-        vec2 v1 = begin + dv;
-        vec2 v2 = end + dv;
+        //double tool_r = _tools[ Tool->tl.tooln ].diameter/2.0f;
+        //vec2 dv = vec2( tool_r, tool_r ) + tool_cpoint( Tool->tl.tooln );
+        //vec2 v1 = begin + dv;
+        //vec2 v2 = end + dv;
+        
+        vec2 v1 = begin;
+        vec2 v2 = end;
         
         double Z = v2.z;
         double P = pitch;
         double Q = compound_angle;
-        double I = -retract;
+        double I = (side == OUTSIDE) ? -retract : retract;
         double K = depth;
         
         // exit taper 45 deg.
@@ -89,10 +94,9 @@ void op_threading::save_program( FILE *fp )
         double J = Tool->tl.depth;
         double R = degression;
         int H = spring_passes;
-        
-        
+
         fprintf(fp, "(%s)\n", name() );
-        fprintf(fp, "G0 X%.8g Z%.8g\n", v1.x + retract, v1.z );
+        fprintf(fp, "G0 X%.8g Z%.8g\n", v1.x - I, v1.z );
         fprintf(fp, "G76 " );
         fprintf(fp, "Z%.8g ", Z );
         fprintf(fp, "P%.8g ", P );
@@ -104,7 +108,8 @@ void op_threading::save_program( FILE *fp )
         fprintf(fp, "E%.8g ", E );
         fprintf(fp, "H%i ", H );
         fprintf(fp, "L%i\n", L );
-        
+        fprintf(fp, "G0 X%.8g Z%.8g\n", v1.x - I, v1.z );
+
     }
 }
 
@@ -166,6 +171,8 @@ void op_threading::createmenu()
         }
         else
         {
+            
+            Menu.radiobuttons( (int *)&side , "", (int)OUTSIDE, "Outside", (int)INSIDE, "Inside" );
             Menu.edit( &begin.x , "Diameter " );Menu.diameter_mode();
             Menu.edit( &begin.z, "Begin Z" );
             Menu.edit(&end.z, "End Z" );

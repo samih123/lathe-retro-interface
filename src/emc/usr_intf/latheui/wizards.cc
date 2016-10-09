@@ -40,7 +40,7 @@ int maxrpm;
 double stockdiameter;
 double scale = 1;
 static vec2 pos(0,0); 
-double retract = 1;
+double retract = 0.5;
 bool draw_wiz;
 
 #define  MENU_PHASE_NEW 1

@@ -129,7 +129,8 @@ enum t_type
     T_INT,
     T_DOUBLE,
     T_CHAR,
-    T_BOOL
+    T_BOOL,
+    T_SIDE
 };
 
 struct ftag
@@ -138,6 +139,7 @@ struct ftag
     ftag( const char *t, int *d )   { tag = t; val = (void*)d; type = T_INT; };
     ftag( const char *t, char *d )  { tag = t; val = (void*)d; type = T_CHAR; };
     ftag( const char *t, bool *d )  { tag = t; val = (void*)d; type = T_BOOL; };
+    ftag( const char *t, Side *d )  { tag = t; val = (void*)d; type = T_SIDE; };
     const char *tag;
     void *val;
     t_type type;

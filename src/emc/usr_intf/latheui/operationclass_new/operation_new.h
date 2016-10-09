@@ -109,6 +109,7 @@ class op_threading:public new_operation
     vec2 begin,end;
     double pitch, depth, degression, compound_angle, multip;
     int count, spring_passes;
+    Side side;
     
 };
 

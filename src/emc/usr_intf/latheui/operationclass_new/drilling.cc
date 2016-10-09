@@ -34,7 +34,6 @@ const char* op_drilling::name()
 {        
     sprintf( Name, "Drilling: %.8g to %.8g pecking %.8g", begin.z, end.z, peck );
     return Name;
-    //return "Drilling";
 }
 
 op_type op_drilling::type()
@@ -43,8 +42,16 @@ op_type op_drilling::type()
 }
 
 void op_drilling::draw( color c , bool drawpath )
-{
-    
+{   
+    if( Tool != NULL)
+    {
+        if( ! Tool->tl.csspeed )
+        {        
+            setcolor( c == NONE ? CONTOUR_LINE:c );
+            double tool_r = _tools[ Tool->tl.tooln ].diameter/2.0f;
+            drawBox( vec2(begin.x + tool_r, begin.z), vec2( -begin.x - tool_r, end.z ));
+        }
+    }
 }
 
 void op_drilling::save_program( FILE *fp )
