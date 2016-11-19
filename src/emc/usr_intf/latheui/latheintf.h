@@ -83,7 +83,7 @@ enum direction
 
 #define MAXTOOLS 20
 
-
+/*
 enum cut_type
 {
     CUT_BEGIN,
@@ -93,13 +93,15 @@ enum cut_type
     CUT_THREAD,
     CUT_END
 };
-
+*/
 enum move_type
 {
     MOV_NONE,
     MOV_FEED,
     MOV_RAPID,
-    MOV_CONTOUR
+    MOV_CONTOUR,
+    MOV_ARC_OUT,
+    MOV_ARC_IN
 };
 
 enum op_type

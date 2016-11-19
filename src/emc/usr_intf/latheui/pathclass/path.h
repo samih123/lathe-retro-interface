@@ -7,6 +7,7 @@ class path
     path()
     {
         temporary = false;
+        currentmov == ml.end();
     }
 
     ~path()
@@ -34,12 +35,19 @@ class path
     void save( FILE *fp );
     void findminmax();
     
+    void erase();
+    void next();
+    void previous();
+    
+    
     void create_rectangle( const tool &tl, vec2 start, vec2 end, int dir );
     void create_from_contour( path &c, double r, Side s, move_type mtype );
     
     protected:
-
+    
+    list<struct mov>::iterator currentmov;
     std::list<struct mov> ml;
+    
     vec2 min,max;    
     Side side;
     bool temporary;

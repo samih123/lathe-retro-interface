@@ -6,6 +6,33 @@ extern char strbuf[BUFFSIZE];
 extern const int maxrpm;
 
 
+void path::erase()
+{
+    if( ml.size() > 1 )
+    {
+         currentmov =  ml.erase( currentmov );
+         if( currentmov == ml.end() ) currentmov--;
+         //changed = true;
+    }
+}
+
+void path::previous()
+{
+    if(  currentmov != ml.begin() )
+    {
+        currentmov--;
+    }
+}
+
+void path::next()
+{
+    if( currentmov != --ml.end() )
+    {
+        currentmov++;
+    }
+}
+
+
 void path::create_line( const vec2 &v , const move_type t, const char *comment )
 {
     vec2 start;
@@ -23,6 +50,7 @@ void path::create_line( const vec2 &v , const move_type t, const char *comment )
     }
     ml.push_back( mov( vec2( v.x, v.z ) , t ) );
     ml.back().start = start;
+    currentmov = --ml.end();
     if( comment != NULL ) ml.back().comment = comment;
 }
 
@@ -171,7 +199,7 @@ void path::remove_knots()
     list<struct mov>::iterator i2,ie;
     for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
     {
-        if( find_intersection( i->start, i->end, vi, next(i,2), i2, false ) )
+        if( find_intersection( i->start, i->end, vi, std::next(i,2), i2, false ) )
         {
             //printf("intersec %f %f \n",vi.x,vi.z);
             ie = i;
