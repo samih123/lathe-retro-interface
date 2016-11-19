@@ -113,6 +113,8 @@ void create_main_menu()
                 create_new_operation_menu( THREADING, "Threading" );
                 create_new_operation_menu( RAPIDMOVE, "Rapid move" );
                 create_new_operation_menu( DRILL, "Drilling" );
+                create_new_operation_menu( SHAPE, "Shape" );
+                
 
                 /*
                 create_new_operation_menu( CONTOUR "");
@@ -303,6 +305,11 @@ void wizards_load( const char *name )
                 opl.push_back( new op_drilling() );
                 opl.back()->load( fp );
             }
+            else if( val == SHAPE )
+            {
+                opl.push_back( new op_shape() );
+                opl.back()->load( fp );
+            }
         }
 
         free(line);
@@ -434,11 +441,15 @@ void wizards_parse_serialdata()
                 {
                     opl.push_back( new op_threading() );
                 }
-                 else if( operationcreate == DRILL )
+                else if( operationcreate == DRILL )
                 {
                     opl.push_back( new op_drilling() );
                 }        
-                                       
+                else if( operationcreate == SHAPE )
+                {
+                    opl.push_back( new op_shape() );
+                }        
+                                                           
                 cur_op =  --opl.end();
                 clear_all_operations();
                 create_main_menu();
