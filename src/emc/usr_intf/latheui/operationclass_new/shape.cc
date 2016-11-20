@@ -10,7 +10,8 @@ extern struct machinestatus status;
 op_shape::op_shape()
 {
     createmenu();
-    p.create_line( p.end(), MOV_CONTOUR );
+    p.create_line( p.end(), MOV_LINE );
+    changed = false;
 }
 
 op_shape::~op_shape()
@@ -31,13 +32,17 @@ op_type op_shape::type()
 
 void op_shape::draw( color c, bool path )
 {
-    p.draw( NONE );
+    if( changed )
+    {
+        tp.create_from_shape( p );
+        changed = false;
+    }
+    tp.draw( NONE );
 }
 
 void op_shape::save_program( FILE *fp )
 {
     fprintf(fp, "(%s)\n", name() );
-    
 }
 
 #define MENU_BACK 1
@@ -56,6 +61,7 @@ int op_shape::parsemenu()
         {
             p.movecurpos( vec2( 0,status.jogged ));
         } 
+        changed = true;
     } 
     
     if( isprefix( "RIGH" ,NULL ) )
@@ -66,21 +72,26 @@ int op_shape::parsemenu()
     {
         p.next();
     } 
+    else if( isprefix( "UP" ,NULL ) )
+    {
+        p.setcurtype( (move_type)((int)p.curtype() + 1) );
+        changed = true;
+    } 
+    else if( isprefix( "DOWN" ,NULL ) )
+    {
+        p.setcurtype( (move_type)((int)p.curtype() - 1) );
+        changed = true;
+    }    
     
     const char *c = isprefix( "CH=" ,NULL );
     if( c )
     {
-        
-        if( *c == 'l' )
+        if( *c == 'n' )
         {
             printf("line\n");
-            p.create_line( p.end()-10, MOV_CONTOUR );
-        }
-        else if( *c == 'c' )
-        {
-            printf("arch\n");
-        }     
-          
+            p.create_line( p.end()-10, MOV_LINE );
+            changed = true;
+        }    
     }
     
     Menuselect = 0;

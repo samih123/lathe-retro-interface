@@ -43,6 +43,24 @@ void path::movecurpos( vec2 v )
     }
 }
 
+void path::setcurtype( move_type t )
+{
+   if( currentmov != ml.end() )
+   {
+       if( t < MOV_LINE ) t = MOV_LINE;
+       if( t > MOV_ARC_IN ) t = MOV_ARC_IN;
+       currentmov->type = t;
+   }
+}
+
+move_type path::curtype()
+{
+    if( ml.empty() )
+    {
+         return MOV_NONE;
+    }
+    return ml.back().type; 
+}
 
 vec2 path::end()
 {
@@ -74,11 +92,11 @@ void path::create_line( const vec2 &v , const move_type t, const char *comment )
     ml.back().start = start;
     currentmov = --ml.end();
     if( comment != NULL ) ml.back().comment = comment;
-    printf("createline %f,%f \n",v.x, v.z);
+    //printf("createline %f,%f \n",v.x, v.z);
 }
 
 
-void path::create_arc( struct cut &c, const vec2 v1, const vec2 v2, const double r, const bool side, move_type mtype )
+void path::create_arc( struct mov &c, const vec2 v1, const vec2 v2, const double r, const bool side, move_type mtype )
 {
 
     double x1 = v1.x;
@@ -238,11 +256,33 @@ void path::remove_knots()
     }
 }
 
+void path::create_from_shape( path &c )
+{
+    ml.clear();
+    struct mov cutp( vec2(0,0),MOV_NONE );
+    for(list<struct mov>::iterator i = ++(c.ml.begin()); i != c.ml.end(); i++)
+    {  
+        if( i->type == MOV_LINE )
+        {
+            create_line( i->end, MOV_CONTOUR );
+        }
+        
+        else if( i->type == MOV_ARC_OUT || i->type == MOV_ARC_IN )
+        {
+            double r2 = fabs(i->r);
+            double l = i->end.dist( i->start ) + 0.00001f;
+            if( r2 < l/2.0f )
+            {
+                i->r = l/2.0f;
+            }  
+            create_arc( cutp, i->start, i->end , i->r, i->type == MOV_ARC_OUT ? OUTSIDE:INSIDE, MOV_CONTOUR );
+        }
+              
+    }
+}
 
 void path::draw( color c )
 {
-    
-
     
     for(list<struct mov>::iterator i = ++(ml.begin()); i != ml.end(); i++)
     {
@@ -292,13 +332,13 @@ void path::draw( color c )
             }
 
         glEnd();    
-        
-        if( currentmov == i )
-        {
-            drawCross( i->end.z, -i->end.x , 3.0/scale);
-            drawCircle( i->end.z,-i->end.x, 3.0/scale);
-        }
 
+    }
+    
+    if( currentmov != ml.end() )
+    {
+        drawCross( currentmov->end.z, -currentmov->end.x , 3.0/scale);
+        drawCircle( currentmov->end.z,-currentmov->end.x, 3.0/scale);
     }
 
 }
@@ -429,7 +469,7 @@ void path::buffer( double r, Side s )
     // copy list & fill big gaps
 
     vec2 start(0,0);
-    struct cut cutp;
+    struct mov cutp( vec2(0,0),MOV_NONE );
 
     i2 = ++(tp.ml.begin());
     for( list<struct mov>::iterator i1 = tp.ml.begin(); i1 != tp.ml.end(); i1++,i2++)
@@ -542,7 +582,8 @@ void path::create_from_contour( path &c, double r, Side s, move_type mtype )
     // copy list & fill big gaps
 
     vec2 start(0,0);
-    struct cut cutp;
+    
+    struct mov cutp( vec2(0,0),MOV_NONE );
 
     i2 = ++(tp.ml.begin());
     for( list<struct mov>::iterator i1 = tp.ml.begin(); i1 != tp.ml.end(); i1++,i2++)

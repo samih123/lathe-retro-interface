@@ -17,7 +17,7 @@ class path
     
     void set_temporary(){ temporary = true; };
     void create_line( const vec2 &v , const move_type t, const char *comment = NULL );
-    void create_arc( struct cut &c, const vec2 v1, const vec2 v2, const double r, const bool side, const move_type t );
+    void create_arc( struct mov &c, const vec2 v1, const vec2 v2, const double r, const bool side, const move_type t );
     void rapid_move( const vec2 v );
     void remove_knots();
     void clear(){ ml.clear(); };
@@ -36,7 +36,8 @@ class path
     void save( FILE *fp );
     void findminmax();
     vec2 end();
-    
+    void setcurtype( move_type t );
+    move_type curtype();
     void erase();
     void next();
     void previous();
@@ -44,6 +45,7 @@ class path
     
     void create_rectangle( const tool &tl, vec2 start, vec2 end, int dir );
     void create_from_contour( path &c, double r, Side s, move_type mtype );
+    void create_from_shape( path &c );
     
     protected:
     

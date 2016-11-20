@@ -100,6 +100,7 @@ enum move_type
     MOV_FEED,
     MOV_RAPID,
     MOV_CONTOUR,
+    MOV_LINE,
     MOV_ARC_OUT,
     MOV_ARC_IN
 };
@@ -357,7 +358,7 @@ struct tool
     int tooln;
    
 };
-
+/*
 struct cut
 {
     cut()
@@ -372,7 +373,7 @@ struct cut
     double depth;
     vec2 end,start,center;
 };
-
+*/
 
 
 struct mov
@@ -391,8 +392,9 @@ struct mov
     }
 
     vec2 end,start;
-    vec2 vel;
+    vec2 center,vel;
     double pitch;
+    double r;
     double depth;
     double feed;
     move_type type;

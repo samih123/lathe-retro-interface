@@ -152,7 +152,8 @@ class op_shape:public new_operation
     void load( FILE *fp );
     void save( FILE *fp );
     protected:
-    path p;
+    path p,tp;
+    bool changed;
     
 };
 
