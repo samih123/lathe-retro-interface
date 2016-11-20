@@ -30,8 +30,8 @@ class new_operation
     
     void set_tool( op_tool *t ){ Tool = t; };
     void set_contour( op_contour *c ){ Contour = c; };
-    void load( FILE *fp );
-    void save( FILE *fp );
+    virtual void load( FILE *fp );
+    virtual void save( FILE *fp );
     
     protected:
     menu Menu;
@@ -149,8 +149,10 @@ class op_shape:public new_operation
     void createmenu();
     void drawmenu(int x,int y);   
     void update();
-    
+    void load( FILE *fp );
+    void save( FILE *fp );
     protected:
+    path p;
     
 };
 

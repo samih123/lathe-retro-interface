@@ -7,7 +7,7 @@ class path
     path()
     {
         temporary = false;
-        currentmov == ml.end();
+        currentmov = ml.end();
     }
 
     ~path()
@@ -31,9 +31,11 @@ class path
     void feed( path &colp, list<struct mov>::iterator fi, vec2 v, double len, const vec2 dir, const vec2 ret );
     void feed( path &colp, vec2 v, double len, const vec2 dir, const vec2 ret );
     void move( vec2 m );
+    void movecurpos( vec2 m );
     void draw( color c = NONE );
     void save( FILE *fp );
     void findminmax();
+    vec2 end();
     
     void erase();
     void next();

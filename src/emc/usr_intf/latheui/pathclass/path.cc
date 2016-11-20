@@ -4,7 +4,7 @@ extern const double retract;
 extern const double stockdiameter;
 extern char strbuf[BUFFSIZE];
 extern const int maxrpm;
-
+extern double scale;
 
 void path::erase()
 {
@@ -33,6 +33,28 @@ void path::next()
 }
 
 
+void path::movecurpos( vec2 v )
+{
+    currentmov->end += v;
+    if( currentmov != --ml.end() )
+    {
+        (++currentmov)->start += v;
+        --currentmov;
+    }
+}
+
+
+vec2 path::end()
+{
+    if( ml.empty() )
+    {
+         return vec2(0,0);
+    }
+    
+    return ml.back().end;
+    
+}
+
 void path::create_line( const vec2 &v , const move_type t, const char *comment )
 {
     vec2 start;
@@ -43,7 +65,7 @@ void path::create_line( const vec2 &v , const move_type t, const char *comment )
     else
     {
         start = ml.back().end;
-        if( start == v ) 
+        if( t != MOV_CONTOUR && start == v ) 
         {
             return; // zero movement
         }
@@ -52,6 +74,7 @@ void path::create_line( const vec2 &v , const move_type t, const char *comment )
     ml.back().start = start;
     currentmov = --ml.end();
     if( comment != NULL ) ml.back().comment = comment;
+    printf("createline %f,%f \n",v.x, v.z);
 }
 
 
@@ -268,7 +291,13 @@ void path::draw( color c )
                 glVertex2f( i->end.z, i->end.x );
             }
 
-        glEnd();
+        glEnd();    
+        
+        if( currentmov == i )
+        {
+            drawCross( i->end.z, -i->end.x , 3.0/scale);
+            drawCircle( i->end.z,-i->end.x, 3.0/scale);
+        }
 
     }
 
