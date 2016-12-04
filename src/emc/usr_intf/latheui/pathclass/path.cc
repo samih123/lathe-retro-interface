@@ -65,13 +65,22 @@ void path::setcurradius( double r )
    }
 }
 
+double path::curradius()
+{
+    if( currentmov == ml.end() )
+    {
+         return 0;
+    }
+    return currentmov->r; 
+}
+
 move_type path::curtype()
 {
-    if( ml.empty() )
+    if( currentmov == ml.end() )
     {
          return MOV_NONE;
     }
-    return ml.back().type; 
+    return currentmov->type; 
 }
 
 vec2 path::end()
@@ -401,35 +410,83 @@ void path::savemoves( FILE *fp )
 {
     if (fp == NULL) return;
     fprintf(fp, "MOVES\n");
-        fprintf(fp, "   SIDE %i\n", (int)side );
+    //fprintf(fp, "   SIDE %i\n", (int)side );
         
-        for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
+    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
+    {
+        switch( i->type )
         {
-            switch( i->type )
-            {
-                case MOV_NONE:
-                case MOV_FEED:
-                case MOV_RAPID:
-                case MOV_CONTOUR:
-                break;
-                
-                case MOV_LINE:
-                    fprintf(fp, "    LINE %.10g %.10g\n", i->end.x , i->end.z );
-                break;
-                
-                case MOV_ARC_OUT:
-                    fprintf(fp, "    ARC_OUT %.10g %.10g %.10g\n", i->end.x , i->end.z, i->r);
-                break;  
-                
-                case MOV_ARC_IN:
-                    fprintf(fp, "    ARC_IN %.10g %.10g %.10g\n", i->end.x , i->end.z, i->r);
-                break;
-            }
+            case MOV_NONE:
+            case MOV_FEED:
+            case MOV_RAPID:
+            case MOV_CONTOUR:
+            break;
+            
+            case MOV_LINE:
+                fprintf(fp, "    LINE %.10g %.10g\n", i->end.x , i->end.z );
+            break;
+            
+            case MOV_ARC_OUT:
+                fprintf(fp, "    ARC_OUT %.10g %.10g %.10g\n", i->end.x , i->end.z, i->r);
+            break;  
+            
+            case MOV_ARC_IN:
+                fprintf(fp, "    ARC_IN %.10g %.10g %.10g\n", i->end.x , i->end.z, i->r);
+            break;
+        }
+    }
+        
+    fprintf(fp, "ENDMOVES\n" );
+}
+
+void path::loadmoves( FILE *fp )
+{
+    if (fp == NULL) return;
+    ml.clear();
+        
+    char *line = NULL;
+    size_t len = 0;   
+    ssize_t read;
+    char tag[BUFFSIZE+1];
+    
+    double v1,v2,v3,v4,v5,v6;
+    
+    while ((read = getline( &line, &len, fp)) != -1)
+    {
+
+        printf("load %s", line);
+        v1 = v2 = v3 = v4 = v5 = v6 = 0;
+        
+        sscanf(line, "%s %lf %lf %lf %lf %lf %lf", tag, &v1, &v2, &v3, &v4, &v5, &v6 );
+            
+        if( strcmp( tag, "LINE") == 0 )
+        {
+            create_line( vec2( v1, v2 ), MOV_LINE );
         }
         
-        fprintf(fp, "ENDMOVES\n" );
- 
+        else if( strcmp( tag, "ARC_OUT") == 0 )
+        {
+            create_line( vec2( v1, v2 ), MOV_ARC_OUT );
+            currentmov->r = v3;
+        }      
+        
+        else if( strcmp( tag, "ARC_IN") == 0 )
+        {
+            create_line( vec2( v1, v2 ), MOV_ARC_IN );
+            currentmov->r = v3;
+        }   
+               
+        free(line);
+        line = NULL;
+        
+        if( strcmp( tag, "ENDMOVES" ) == 0 )
+        {
+            break;
+        }      
+        
+    } 
 }
+
 
 void path::findminmax()
 {

@@ -70,6 +70,10 @@ int op_shape::parsemenu()
         {
             p.movecurpos( vec2( 0,status.jogged ));
         } 
+        else if( status.axis == AXISC )
+        {
+            p.setcurradius( p.curradius() + status.jogged );
+        } 
         changed = true;
     } 
     
@@ -138,6 +142,7 @@ void op_shape::update()
 void op_shape::load( FILE *fp )
 {
     new_operation::load( fp );
+    p.loadmoves( fp );
     //loadtagl( fp, tagl );
 }
 

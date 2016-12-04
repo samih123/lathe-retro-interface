@@ -35,11 +35,13 @@ class path
     void draw( color c = NONE );
     void save( FILE *fp );
     void savemoves( FILE *fp );
+    void loadmoves( FILE *fp );
     void findminmax();
     vec2 end();
     vec2 current();
     void setcurtype( move_type t );
     void setcurradius( double r );
+    double curradius();
     move_type curtype();
     void erase();
     void next();
