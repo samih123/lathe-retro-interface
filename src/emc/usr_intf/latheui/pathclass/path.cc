@@ -36,20 +36,32 @@ void path::next()
 void path::movecurpos( vec2 v )
 {
     currentmov->end += v;
-    if( currentmov != --ml.end() )
+    if( currentmov != ml.end() )
     {
         (++currentmov)->start += v;
         --currentmov;
     }
 }
 
+
 void path::setcurtype( move_type t )
 {
-   if( currentmov != ml.end() )
+   if( currentmov != ml.end() && currentmov != ml.begin() )
    {
        if( t < MOV_LINE ) t = MOV_LINE;
        if( t > MOV_ARC_IN ) t = MOV_ARC_IN;
        currentmov->type = t;
+   }
+}
+
+void path::setcurradius( double r )
+{
+   if( currentmov != ml.end() )
+   {
+       if( r > 0 && (currentmov->type == MOV_ARC_IN || currentmov->type == MOV_ARC_OUT) )
+       {
+           currentmov->r = r;
+       }
    }
 }
 
@@ -72,6 +84,17 @@ vec2 path::end()
     return ml.back().end;
     
 }
+
+vec2 path::current()
+{
+    if( ml.empty() || currentmov == ml.end() )
+    {
+         return vec2(0,0);
+    }
+    
+    return currentmov->end; 
+}
+
 
 void path::create_line( const vec2 &v , const move_type t, const char *comment )
 {
@@ -260,7 +283,7 @@ void path::create_from_shape( path &c )
 {
     ml.clear();
     struct mov cutp( vec2(0,0),MOV_NONE );
-    for(list<struct mov>::iterator i = ++(c.ml.begin()); i != c.ml.end(); i++)
+    for(list<struct mov>::iterator i = c.ml.begin(); i != c.ml.end(); i++)
     {  
         if( i->type == MOV_LINE )
         {
@@ -334,13 +357,13 @@ void path::draw( color c )
         glEnd();    
 
     }
-    
+    /*
     if( currentmov != ml.end() )
     {
         drawCross( currentmov->end.z, -currentmov->end.x , 3.0/scale);
         drawCircle( currentmov->end.z,-currentmov->end.x, 3.0/scale);
     }
-
+    */
 }
 
 
@@ -356,6 +379,7 @@ void path::move( vec2 m )
 
 void path::save( FILE *fp )
 {
+    if (fp == NULL) return;
     for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
     {
 
@@ -371,6 +395,40 @@ void path::save( FILE *fp )
             strbuf
         );
     }
+}
+
+void path::savemoves( FILE *fp )
+{
+    if (fp == NULL) return;
+    fprintf(fp, "MOVES\n");
+        fprintf(fp, "   SIDE %i\n", (int)side );
+        
+        for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
+        {
+            switch( i->type )
+            {
+                case MOV_NONE:
+                case MOV_FEED:
+                case MOV_RAPID:
+                case MOV_CONTOUR:
+                break;
+                
+                case MOV_LINE:
+                    fprintf(fp, "    LINE %.10g %.10g\n", i->end.x , i->end.z );
+                break;
+                
+                case MOV_ARC_OUT:
+                    fprintf(fp, "    ARC_OUT %.10g %.10g %.10g\n", i->end.x , i->end.z, i->r);
+                break;  
+                
+                case MOV_ARC_IN:
+                    fprintf(fp, "    ARC_IN %.10g %.10g %.10g\n", i->end.x , i->end.z, i->r);
+                break;
+            }
+        }
+        
+        fprintf(fp, "ENDMOVES\n" );
+ 
 }
 
 void path::findminmax()

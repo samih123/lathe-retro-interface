@@ -5,19 +5,22 @@ extern const double stockdiameter;
 extern char strbuf[BUFFSIZE];
 extern const int maxrpm;
 extern struct machinestatus status;
+extern double scale;
 
 
 op_shape::op_shape()
-{
+{    
+    //tagl.push_front( ftag( "SIDE", &side ) );
     createmenu();
-    p.create_line( p.end(), MOV_LINE );
-    changed = false;
+    p.create_line( vec2(0,0), MOV_LINE );
+    changed = true;
 }
 
 op_shape::~op_shape()
 {
     Menu.clear();
     tagl.clear();
+    p.clear();
 }
 
 const char* op_shape::name()
@@ -38,6 +41,12 @@ void op_shape::draw( color c, bool path )
         changed = false;
     }
     tp.draw( NONE );
+    
+    
+    drawCross( p.current().z, -p.current().x , 3.0/scale);
+    drawCircle( p.current().z,-p.current().x, 3.0/scale);
+    
+ 
 }
 
 void op_shape::save_program( FILE *fp )
@@ -128,13 +137,16 @@ void op_shape::update()
 
 void op_shape::load( FILE *fp )
 {
-    loadtagl( fp, tagl );
+    new_operation::load( fp );
+    //loadtagl( fp, tagl );
 }
 
 void op_shape::save( FILE *fp )
 {
-    if (fp == NULL) return;
-    fprintf(fp, "OPERATION %i %s\n", type(), name() );
-    savetagl( fp, tagl );
+    new_operation::save( fp );
+    p.savemoves( fp );
+    //if (fp == NULL) return;
+    //fprintf(fp, "OPERATION %i %s\n", type(), name() );
+    //savetagl( fp, tagl );
 }
 
