@@ -29,7 +29,7 @@ class new_operation
     virtual void update(){};
     
     void set_tool( op_tool *t ){ Tool = t; };
-    void set_contour( op_contour *c ){ Contour = c; };
+   // void set_contour( op_contour *c ){ //Contour = c; };
     virtual void load( FILE *fp );
     virtual void save( FILE *fp );
     
@@ -37,7 +37,7 @@ class new_operation
     menu Menu;
     int Menuselect;
     op_tool *Tool;
-    op_contour *Contour;
+    //op_contour *Contour;
     char Name[BUFFSIZE]; 
     list <ftag> tagl;
     
@@ -156,6 +156,6 @@ class op_shape:public new_operation
     path p,tp,fp[MAX_FINISH+1];
     int fcount;
     bool changed;
-    
+    Side side;
 };
 

@@ -361,9 +361,16 @@ void path::draw( color c )
             {
                 glVertex2f( i->start.z, i->start.x );
                 glVertex2f( i->end.z, i->end.x );
+                
+                glVertex2f( i->start.z, i->start.x );
+                glVertex2f( i->start.z, -i->start.x );
+                
             }
 
-        glEnd();    
+        glEnd();
+        
+        
+          
 
     }
     /*

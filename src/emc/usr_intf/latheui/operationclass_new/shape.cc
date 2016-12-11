@@ -10,7 +10,7 @@ extern double scale;
 
 op_shape::op_shape()
 {    
-    //tagl.push_front( ftag( "SIDE", &side ) );
+    tagl.push_front( ftag( "SIDE", &side ) );
     tagl.push_front( ftag( "FINISH_COUNT", &fcount ) );
     createmenu();
     p.create_line( vec2(0,0), MOV_LINE );
@@ -39,15 +39,23 @@ void op_shape::draw( color c, bool path )
     if( changed )
     {
         tp.create_from_shape( p );
+        if( Tool != NULL )
+        {
+            double tool_r = _tools[ Tool->tl.tooln ].diameter/2.0f;
+            for( int i = 0; i < fcount; i++ )
+            {
+                fp[i].create_from_contour( tp, tool_r + ((double)i) * Tool->tl.depth, side, MOV_FEED );
+            }
+        }
         changed = false;
     }
     tp.draw( NONE );
-    
-    
+    for( int i = 0; i < fcount; i++ )
+    {
+        fp[i].draw( NONE );
+    }
     drawCross( p.current().z, -p.current().x , 3.0/scale);
     drawCircle( p.current().z,-p.current().x, 3.0/scale);
-    
- 
 }
 
 void op_shape::save_program( FILE *fp )
@@ -144,7 +152,7 @@ void op_shape::createmenu()
             Menu.begin( "Edit" );
                 Menu.back( "Back " );
             Menu.end();
-            
+            Menu.radiobuttons( (int *)&side , "Side", (int)OUTSIDE, "Outside", (int)INSIDE, "Inside" );
             Menu.edit( &fcount, "Finishing passes " );
         }
     Menu.end();

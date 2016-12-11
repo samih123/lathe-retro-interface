@@ -22,7 +22,7 @@ static list<new_operation *> opl;
 static list<ftag> tagl;
 
 list<new_operation *>::iterator cur_op;
-list<new_operation *>::iterator cur_contour;
+//list<new_operation *>::iterator cur_contour;
 list<new_operation *>::iterator cur_tool;
 
 static char Name[BUFFSIZE];
@@ -58,7 +58,7 @@ void create_operation_select_menus()
     int n = 1;
     for(list<new_operation *>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-        sprintf(strbuf,"  %d:%s%s", n, (*i)->type() > CONTOUR ? "  " : "", (*i)->name() );
+        sprintf(strbuf,"  %d:%s%s", n, (*i)->type() > TOOL ? "  " : "", (*i)->name() );
         Menu.select( &operationselect, n, strbuf );
         if( cur_op == i )
         {
@@ -143,14 +143,10 @@ void create_main_menu()
 
 void clear_all_operations()
 {
-    cur_contour = cur_tool = opl.end();
+    cur_tool = opl.end();
 
     for(list<new_operation *>::iterator i = opl.begin(); i != opl.end(); i++)
     {
-        if( (*i)->type() == CONTOUR )
-        {
-            cur_contour = i;
-        }
 
         if( (*i)->type() == TOOL )
         {
@@ -165,15 +161,6 @@ void clear_all_operations()
         {
             (*i)->set_tool( NULL );
         }
-        
-        if( cur_contour != opl.end() )
-        {
-            (*i)->set_contour( (op_contour*)*cur_contour );
-        }
-        else
-        {
-            (*i)->set_contour( NULL );
-        }       
         
         (*i)->update();
     }
@@ -202,24 +189,18 @@ void save_program(const char *name )
     {
         (*i)->save_program( fp ); // must call in order! 
         
-        if( (*i)->type() != CONTOUR &&
-            (*i)->type() != INSIDE_CONTOUR
-        )
+        bool b = true;
+        if( std::next(i) != opl.end() )
         {
-            
-            bool b = true;
-            if( std::next(i) != opl.end() )
+            if( (*std::next(i))->type() == RAPIDMOVE ) 
             {
-                if( (*std::next(i))->type() == RAPIDMOVE ) 
-                {
-                    b = false;
-                }
+                b = false;
             }
-            
-            if(b)
-            {
-                fprintf(fp, "G0 X%.10g Z%.10g (start position)\n", start_position.x, start_position.z );
-            }
+        }
+        
+        if(b)
+        {
+            fprintf(fp, "G0 X%.10g Z%.10g (start position)\n", start_position.x, start_position.z );
         }
         
     }
@@ -353,7 +334,7 @@ void wizards_init()
         stockdiameter = 20;
         start_position.x = stockdiameter/2.0;
         start_position.z = 20;
-        cur_contour = cur_op = cur_tool= opl.end();
+        cur_op = cur_tool= opl.end();
         strcpy( initcommands, "G18 G8 G21 G95 G40 G64 P0.01 Q0.01" );
         draw_wiz = false;
     }
@@ -403,7 +384,7 @@ void wizards_parse_serialdata()
             if( menuselect == MENU_PHASE_DELETE && cur_op !=  opl.end() )
             {
                 opl.erase( cur_op );
-                cur_contour = cur_op = cur_tool = opl.end();
+                cur_op = cur_tool = opl.end();
                 clear_all_operations();
                 create_main_menu();
                 return;
@@ -460,7 +441,7 @@ void wizards_parse_serialdata()
             else if( Menu.edited( &operationselect ) )
             {
                 int n = 1;
-                cur_contour = cur_op = cur_tool = opl.end();
+                cur_op = cur_tool = opl.end();
                 for(list<new_operation *>::iterator i = opl.begin(); i != opl.end(); i++)
                 {
                     if( n++ == operationselect )
@@ -518,12 +499,7 @@ void wizards_parse_serialdata()
                         (*i)->set_tool( (op_tool*)*cur_op );
                         (*i)->update();
                     }
-                    
-                    else if( t == CONTOUR )
-                    {
-                        (*i)->set_contour( (op_contour*)*cur_op );
-                        (*i)->update();
-                    }                  
+                                     
                 }
             }
             
