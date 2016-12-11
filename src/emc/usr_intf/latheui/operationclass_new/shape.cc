@@ -44,9 +44,20 @@ void op_shape::draw( color c, bool path )
             double tool_r = _tools[ Tool->tl.tooln ].diameter/2.0f;
             for( int i = 0; i < fcount; i++ )
             {
+                
                 fp[i].create_from_contour( tp, tool_r + ((double)i) * Tool->tl.depth, side, MOV_FEED );
+                //fp[i].move( tool_cpoint( Tool->tl.tooln ) ); 
+                
+                if( i>0)
+                { 
+                    fp[i].rapid_move( fp[i-1].start() );
+                }
+                
             }
         }
+        
+        rp.create_rough_from_contour( tp, Tool->tl, side );
+        
         changed = false;
     }
     tp.draw( NONE );
@@ -54,6 +65,7 @@ void op_shape::draw( color c, bool path )
     {
         fp[i].draw( NONE );
     }
+    rp.draw( NONE );
     drawCross( p.current().z, -p.current().x , 3.0/scale);
     drawCircle( p.current().z,-p.current().x, 3.0/scale);
 }

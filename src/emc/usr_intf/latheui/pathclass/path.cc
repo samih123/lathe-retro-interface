@@ -91,8 +91,17 @@ vec2 path::end()
     }
     
     return ml.back().end;
-    
 }
+vec2 path::start()
+{
+    if( ml.empty() )
+    {
+         return vec2(0,0);
+    }
+    
+    return ml.front().start;
+}
+
 
 vec2 path::current()
 {
@@ -359,12 +368,15 @@ void path::draw( color c )
 
             if( i->type == MOV_CONTOUR )
             {
+    
                 glVertex2f( i->start.z, i->start.x );
                 glVertex2f( i->end.z, i->end.x );
                 
-                glVertex2f( i->start.z, i->start.x );
-                glVertex2f( i->start.z, -i->start.x );
-                
+                //if( fabs( i->start.z- i->end.z ) > 1.0 )
+                {
+                    glVertex2f( i->start.z, i->start.x );
+                    glVertex2f( i->start.z, -i->start.x );
+                }
             }
 
         glEnd();
@@ -800,4 +812,56 @@ void path::create_rectangle( const tool &tl, vec2 begin, vec2 end, int feedd )
     move( tool_cpoint( tl.tooln ) ); 
     findminmax();
 
+}
+
+void path::create_rough_from_contour( path &c, const tool &tl, Side s )
+{
+    
+    double tool_r = _tools[ tl.tooln ].diameter/2.0f;
+    
+    side = s;
+    path tc;
+    tc.create_from_contour( c, tool_r, side, MOV_CONTOUR );
+    tc.temporary = true;
+    
+    double x;
+    double min_z = tc.min.z;
+    double max_z = tc.max.z + tool_r + retract ;
+    double len = fabs( min_z - max_z );
+    ml.clear();
+    
+    if( tc.ml.empty() )
+    {
+        return;
+    }
+    
+    if( side == OUTSIDE )
+    {
+        x = std::max( tc.max.x, stockdiameter/2.0 ) - tl.depth;
+        create_line( vec2( x, max_z ), MOV_RAPID );
+        
+        while( x > tc.ml.front().start.x + 0.001 )
+        {
+            feed( tc, vec2( x, max_z ), len, vec2( 0,-1 ), vec2( 1,1 ) );
+            x -= tl.depth;
+        }
+        
+    }
+    
+    else if( side == INSIDE )
+    {
+        x = tc.min.x + tl.depth;
+        create_line( vec2( x, max_z ), MOV_RAPID );
+        
+        while( x < tc.ml.front().start.x - 0.001 )
+        {
+            feed( tc, vec2( x, max_z ), len, vec2( 0,-1 ), vec2( -1,1 ) );
+            x += tl.depth;
+        }
+        
+    }
+    //move( tool_cpoint( tl.tooln ) ); 
+    //printf( "toolxy %f,%f ", )
+    findminmax();
+        
 }

@@ -153,7 +153,7 @@ class op_shape:public new_operation
     void load( FILE *fp );
     void save( FILE *fp );
     protected:
-    path p,tp,fp[MAX_FINISH+1];
+    path p,tp,rp,fp[MAX_FINISH+1];
     int fcount;
     bool changed;
     Side side;

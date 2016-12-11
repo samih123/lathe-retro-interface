@@ -38,6 +38,7 @@ class path
     void loadmoves( FILE *fp );
     void findminmax();
     vec2 end();
+    vec2 start();
     vec2 current();
     void setcurtype( move_type t );
     void setcurradius( double r );
@@ -51,6 +52,9 @@ class path
     void create_rectangle( const tool &tl, vec2 start, vec2 end, int dir );
     void create_from_contour( path &c, double r, Side s, move_type mtype );
     void create_from_shape( path &c );
+    
+    void create_rough_from_contour( path &c, const tool &tl, Side s );
+
     
     protected:
     
