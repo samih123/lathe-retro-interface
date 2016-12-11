@@ -11,6 +11,7 @@ extern double scale;
 op_shape::op_shape()
 {    
     //tagl.push_front( ftag( "SIDE", &side ) );
+    tagl.push_front( ftag( "FINISH_COUNT", &fcount ) );
     createmenu();
     p.create_line( vec2(0,0), MOV_LINE );
     changed = true;
@@ -58,53 +59,55 @@ void op_shape::save_program( FILE *fp )
 
 int op_shape::parsemenu()
 { 
-    
-    if( status.jogged != 0 )
+    if( Menu.current_menu( "Edit" ) )
     {
-        printf("jog\n");
-        if( status.axis == AXISX )
+        if( status.jogged != 0 )
         {
-            p.movecurpos( vec2( status.jogged, 0 ));
+            printf("jog\n");
+            if( status.axis == AXISX )
+            {
+                p.movecurpos( vec2( status.jogged, 0 ));
+            }
+            else if( status.axis == AXISZ )
+            {
+                p.movecurpos( vec2( 0,status.jogged ));
+            } 
+            else if( status.axis == AXISC )
+            {
+                p.setcurradius( p.curradius() + status.jogged );
+            } 
+            changed = true;
+        } 
+        
+        if( isprefix( "RIGH" ,NULL ) )
+        {
+            p.previous();
         }
-        else if( status.axis == AXISZ )
+        else if( isprefix( "LEFT" ,NULL ) )
         {
-            p.movecurpos( vec2( 0,status.jogged ));
+            p.next();
         } 
-        else if( status.axis == AXISC )
+        else if( isprefix( "UP" ,NULL ) )
         {
-            p.setcurradius( p.curradius() + status.jogged );
+            p.setcurtype( (move_type)((int)p.curtype() + 1) );
+            changed = true;
         } 
-        changed = true;
-    } 
-    
-    if( isprefix( "RIGH" ,NULL ) )
-    {
-        p.previous();
-    }
-    else if( isprefix( "LEFT" ,NULL ) )
-    {
-        p.next();
-    } 
-    else if( isprefix( "UP" ,NULL ) )
-    {
-        p.setcurtype( (move_type)((int)p.curtype() + 1) );
-        changed = true;
-    } 
-    else if( isprefix( "DOWN" ,NULL ) )
-    {
-        p.setcurtype( (move_type)((int)p.curtype() - 1) );
-        changed = true;
-    }    
-    
-    const char *c = isprefix( "CH=" ,NULL );
-    if( c )
-    {
-        if( *c == 'n' )
+        else if( isprefix( "DOWN" ,NULL ) )
         {
-            printf("line\n");
-            p.create_line( p.end()-10, MOV_LINE );
+            p.setcurtype( (move_type)((int)p.curtype() - 1) );
             changed = true;
         }    
+        
+        const char *c = isprefix( "CH=" ,NULL );
+        if( c )
+        {
+            if( *c == 'n' )
+            {
+                printf("line\n");
+                p.create_line( p.end()-10, MOV_LINE );
+                changed = true;
+            }    
+        }
     }
     
     Menuselect = 0;
@@ -113,6 +116,13 @@ int op_shape::parsemenu()
         if( Menuselect == MENU_BACK )
         {
             return OP_EXIT;
+        }
+        
+        if( Tool != NULL)
+        {
+            CLAMP( fcount,1,MAX_FINISH );
+            changed = true;
+            return OP_EDITED;
         }
         
     }
@@ -125,6 +135,18 @@ void op_shape::createmenu()
     Menuselect = 0;
     Menu.begin( name() );
         Menu.select(&Menuselect, MENU_BACK, "Back" );
+        if( Tool == NULL )
+        {
+            Menu.comment( "Missing Tool!" );
+        }
+        else
+        {
+            Menu.begin( "Edit" );
+                Menu.back( "Back " );
+            Menu.end();
+            
+            Menu.edit( &fcount, "Finishing passes " );
+        }
     Menu.end();
 } 
 

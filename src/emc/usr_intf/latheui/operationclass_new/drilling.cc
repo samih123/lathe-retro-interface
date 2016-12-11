@@ -91,7 +91,9 @@ void op_drilling::createmenu()
     Menu.clear();
     Menuselect = 0;
     Menu.begin( name() );
-        Menu.select(&Menuselect, MENU_BACK, "Back" );        if( Tool == NULL )
+        Menu.select(&Menuselect, MENU_BACK, "Back" ); 
+        
+        if( Tool == NULL )
         {
             Menu.comment( "Missing Tool!" );
         }

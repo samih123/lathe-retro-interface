@@ -135,6 +135,7 @@ class op_drilling:public new_operation
     
 };
 
+#define MAX_FINISH 5
 
 class op_shape:public new_operation
 {
@@ -152,7 +153,8 @@ class op_shape:public new_operation
     void load( FILE *fp );
     void save( FILE *fp );
     protected:
-    path p,tp;
+    path p,tp,fp[MAX_FINISH+1];
+    int fcount;
     bool changed;
     
 };
