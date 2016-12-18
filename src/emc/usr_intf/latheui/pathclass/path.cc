@@ -6,13 +6,29 @@ extern char strbuf[BUFFSIZE];
 extern const int maxrpm;
 extern double scale;
 
-void path::erase()
+
+
+void path::sanitize()
 {
     if( ml.size() > 1 )
     {
-         currentmov =  ml.erase( currentmov );
-         if( currentmov == ml.end() ) currentmov--;
-         //changed = true;
+        vec2 v = ml.begin()->start;
+        for( list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
+        {
+            i->start = v;
+            v = i->end;
+        } 
+    }
+}
+
+
+void path::erase()
+{
+    if( ml.size() > 1 && currentmov != ml.begin() )
+    {
+        currentmov =  ml.erase( currentmov );
+        if( currentmov == ml.end() ) currentmov--;
+        sanitize();
     }
 }
 
@@ -316,10 +332,11 @@ void path::create_from_shape( path &c )
             {
                 i->r = l/2.0f;
             }  
-            create_arc( cutp, i->start, i->end , i->r, i->type == MOV_ARC_OUT ? OUTSIDE:INSIDE, MOV_CONTOUR );
+            create_arc( *i, i->start, i->end , i->r, i->type == MOV_ARC_OUT ? OUTSIDE:INSIDE, MOV_CONTOUR );
         }
               
     }
+    findminmax();
 }
 
 void path::draw( color c )
@@ -372,26 +389,43 @@ void path::draw( color c )
                 glVertex2f( i->start.z, i->start.x );
                 glVertex2f( i->end.z, i->end.x );
                 
-                //if( fabs( i->start.z- i->end.z ) > 1.0 )
-                {
-                    glVertex2f( i->start.z, i->start.x );
-                    glVertex2f( i->start.z, -i->start.x );
-                }
             }
 
         glEnd();
         
+    }
+
+}
+
+
+
+void path::drawshadows( color c )
+{
+    
+    for(list<struct mov>::iterator i = ml.begin(); i != ml.end(); i++)
+    {
+
+        if( c != NONE )
+        {
+            setcolor( c );
+        }
         
-          
+        glBegin(GL_LINES);
+            glVertex2f( i->start.z, i->start.x );
+            glVertex2f( i->start.z, -i->start.x );
+            glVertex2f( i->end.z, i->end.x );
+            glVertex2f( i->end.z, -i->end.x );          
+        glEnd();
+        
+        if( i->type == MOV_ARC_IN || i->type == MOV_ARC_OUT )
+        {
+            setcolor( CROSS );
+            drawCross( i->center.z, i->center.x, 3.0/scale );
+            drawCross( i->center.z, -i->center.x, 3.0/scale );
+        }
 
     }
-    /*
-    if( currentmov != ml.end() )
-    {
-        drawCross( currentmov->end.z, -currentmov->end.x , 3.0/scale);
-        drawCircle( currentmov->end.z,-currentmov->end.x, 3.0/scale);
-    }
-    */
+
 }
 
 
@@ -860,8 +894,66 @@ void path::create_rough_from_contour( path &c, const tool &tl, Side s )
         }
         
     }
-    //move( tool_cpoint( tl.tooln ) ); 
-    //printf( "toolxy %f,%f ", )
+    
+    move( tool_cpoint( tl.tooln ) ); 
     findminmax();
         
 }
+
+
+void path::create_undercut_from_contour( path &c, const tool &tl, Side s )
+{
+    side = s;
+    double depth = tl.depth;
+    double tool_r =  _tools[ tl.tooln ].diameter/2.0f;
+    path tc;
+    tc.create_from_contour( c, tool_r, side, MOV_CONTOUR );
+    tc.temporary = true;
+    
+    bool up = false;
+    double x = 0;
+    ml.clear();
+    if( ! tc.ml.empty() )
+    {
+        for(list<struct mov>::iterator i = tc.ml.begin(); i != tc.ml.end(); i++)
+        {
+    
+            if( i->end.x > i->start.x ) // uphill
+            {
+                while( x < i->end.x ) x += depth;
+                up = true;
+            }
+            else  // downhill
+            {
+                while( x > i->start.x ) x -= depth;
+                if( i->end.x < x )
+                {
+                    double dx = i->end.x - i->start.x;
+                    double dz = i->end.z - i->start.z;
+        
+                    while( x > i->end.x )
+                    {
+                        double z = i->start.z + dz * (x - i->start.x) / dx;
+                        if( z > tc.min.z )
+                        {
+                            if( up )
+                            {
+                                rapid_move( vec2( x+1, z )  );
+                                create_line( vec2( x, z ), MOV_FEED );
+                                up = false;
+                            }
+                            
+                            feed( tc, std::next(i,1), vec2( x, z ), fabs( c.min.z -z ), vec2( 0,-1 ), vec2( 1,0 ) );
+                        }
+                        x -= depth;
+                    }
+                    
+                }
+            }
+        }
+    }
+    
+    move( tool_cpoint( tl.tooln ) ); 
+    findminmax();
+}
+

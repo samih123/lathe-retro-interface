@@ -33,6 +33,7 @@ class path
     void move( vec2 m );
     void movecurpos( vec2 m );
     void draw( color c = NONE );
+    void drawshadows( color c = NONE );
     void save( FILE *fp );
     void savemoves( FILE *fp );
     void loadmoves( FILE *fp );
@@ -47,6 +48,7 @@ class path
     void erase();
     void next();
     void previous();
+    void sanitize();
     
     
     void create_rectangle( const tool &tl, vec2 start, vec2 end, int dir );
@@ -54,7 +56,7 @@ class path
     void create_from_shape( path &c );
     
     void create_rough_from_contour( path &c, const tool &tl, Side s );
-
+    void create_undercut_from_contour( path &c, const tool &tl, Side s );
     
     protected:
     

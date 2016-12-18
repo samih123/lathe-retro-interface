@@ -46,7 +46,7 @@ void op_shape::draw( color c, bool path )
             {
                 
                 fp[i].create_from_contour( tp, tool_r + ((double)i) * Tool->tl.depth, side, MOV_FEED );
-                //fp[i].move( tool_cpoint( Tool->tl.tooln ) ); 
+                fp[i].move( tool_cpoint( Tool->tl.tooln ) ); 
                 
                 if( i>0)
                 { 
@@ -56,16 +56,22 @@ void op_shape::draw( color c, bool path )
             }
         }
         
-        rp.create_rough_from_contour( tp, Tool->tl, side );
-        
+        rp.create_rough_from_contour( fp[fcount-1], Tool->tl, side );
+        up.create_undercut_from_contour( fp[fcount-1], Tool->tl, side );
+        rp.rapid_move( up.start() );
         changed = false;
     }
+    
+    p.drawshadows( DISABLED );
     tp.draw( NONE );
+    
     for( int i = 0; i < fcount; i++ )
     {
         fp[i].draw( NONE );
     }
     rp.draw( NONE );
+    up.draw( NONE );
+    
     drawCross( p.current().z, -p.current().x , 3.0/scale);
     drawCircle( p.current().z,-p.current().x, 3.0/scale);
 }
@@ -117,6 +123,11 @@ int op_shape::parsemenu()
             p.setcurtype( (move_type)((int)p.curtype() - 1) );
             changed = true;
         }    
+        else if( isprefix( "DEL" ,NULL ) )
+        {
+            p.erase();
+            changed = true;
+        }         
         
         const char *c = isprefix( "CH=" ,NULL );
         if( c )
