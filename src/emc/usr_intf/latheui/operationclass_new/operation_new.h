@@ -135,7 +135,7 @@ class op_drilling:public new_operation
     
 };
 
-#define MAX_FINISH 5
+#define MAX_FINISH 50
 
 class op_shape:public new_operation
 {
