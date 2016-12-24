@@ -61,7 +61,7 @@ void path::movecurpos( vec2 v )
 }
 
 
-void path::setcurtype( move_type t )
+void path::setcur_type( move_type t )
 {
    if( currentmov != ml.end() && currentmov != ml.begin() )
    {
@@ -82,7 +82,7 @@ void path::setcurradius( double r )
    }
 }
 
-double path::curradius()
+double path::cur_radius()
 {
     if( currentmov == ml.end() )
     {
@@ -91,7 +91,25 @@ double path::curradius()
     return currentmov->r; 
 }
 
-move_type path::curtype()
+vec2 path::cur_end()
+{
+    if( currentmov == ml.end() )
+    {
+         return 0;
+    }
+    return currentmov->end; 
+}
+
+vec2 path::cur_start()
+{
+    if( currentmov == ml.end() )
+    {
+         return 0;
+    }
+    return currentmov->start; 
+}
+
+move_type path::cur_type()
 {
     if( currentmov == ml.end() )
     {
@@ -141,7 +159,7 @@ void path::create_line( const vec2 &v , const move_type t, const char *comment )
     else
     {
         start = ml.back().end;
-        if( t != MOV_CONTOUR && start == v ) 
+        if( t != MOV_LINE && start == v ) 
         {
             return; // zero movement
         }

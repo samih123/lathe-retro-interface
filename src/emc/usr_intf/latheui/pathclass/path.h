@@ -41,10 +41,12 @@ class path
     vec2 end();
     vec2 start();
     vec2 current();
-    void setcurtype( move_type t );
+    void setcur_type( move_type t );
     void setcurradius( double r );
-    double curradius();
-    move_type curtype();
+    double cur_radius();
+    vec2 cur_end();
+    vec2 cur_start();
+    move_type cur_type();
     void erase();
     void next();
     void previous();

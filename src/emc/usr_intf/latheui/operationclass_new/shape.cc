@@ -81,6 +81,12 @@ void op_shape::draw( color c, bool path )
         drawCross( p.current().z, -p.current().x , 3.0/scale);
         drawCircle( p.current().z,-p.current().x, 3.0/scale);
     }
+    
+    sprintf(strbuf,"X%4.2f Z%4.2f", p.cur_start().x, p.cur_start().z  ); println( strbuf, 40, 55, 40, TEXT );  
+     println( "TEXTI" );
+     println( "TEXTI" );
+     println( "TEXTI" );
+    
 }
 
 void op_shape::save_program( FILE *f )
@@ -112,7 +118,7 @@ int op_shape::parsemenu()
             printf("jog\n");
             if( status.axis == AXISX )
             {
-                p.movecurpos( vec2( status.jogged, 0 ));
+                p.movecurpos( vec2( status.jogged / 2.0, 0 ));
             }
             else if( status.axis == AXISZ )
             {
@@ -120,7 +126,7 @@ int op_shape::parsemenu()
             } 
             else if( status.axis == AXISC )
             {
-                p.setcurradius( p.curradius() + status.jogged );
+                p.setcurradius( p.cur_radius() + status.jogged );
             } 
             changed = true;
         } 
@@ -135,12 +141,12 @@ int op_shape::parsemenu()
         } 
         else if( isprefix( "UP" ,NULL ) )
         {
-            p.setcurtype( (move_type)((int)p.curtype() + 1) );
+            p.setcur_type( (move_type)((int)p.cur_type() + 1) );
             changed = true;
         } 
         else if( isprefix( "DOWN" ,NULL ) )
         {
-            p.setcurtype( (move_type)((int)p.curtype() - 1) );
+            p.setcur_type( (move_type)((int)p.cur_type() - 1) );
             changed = true;
         }    
         else if( isprefix( "DEL" ,NULL ) )
@@ -155,7 +161,7 @@ int op_shape::parsemenu()
             if( *c == 'n' )
             {
                 printf("line\n");
-                p.create_line( p.end()-10, MOV_LINE );
+                p.create_line( p.end(), MOV_LINE );
                 changed = true;
             }    
         }
@@ -204,6 +210,17 @@ void op_shape::createmenu()
 void op_shape::drawmenu(int x,int y)
 {
     Menu.draw(x,y);
+    
+    if( Menu.current_menu( "Edit" ) )
+    {
+        sprintf(strbuf,"start D%4.2f Z%4.2f", p.cur_start().x*2.0, p.cur_start().z  ); println( strbuf, 450, 55, 20, TEXT );  
+        sprintf(strbuf,"end   D%4.2f Z%4.2f", p.cur_end().x*2.0, p.cur_end().z  ); println( strbuf );  
+        sprintf(strbuf,"rel   D%4.2f Z%4.2f", p.cur_end().x*2.0 - p.cur_start().x*2.0, p.cur_end().z - p.cur_start().z  ); println( strbuf );  
+        if( p.cur_type() == MOV_ARC_OUT || p.cur_type() == MOV_ARC_IN ) 
+        {
+            sprintf(strbuf,"R%4.2f", p.cur_radius() ); println( strbuf ); 
+        } 
+    }
 } 
 
 void op_shape::update()
