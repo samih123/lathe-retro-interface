@@ -57,6 +57,7 @@ void path::movecurpos( vec2 v )
         (++currentmov)->start += v;
         --currentmov;
     }
+    findminmax();
 }
 
 
@@ -911,7 +912,8 @@ void path::create_undercut_from_contour( path &c, const tool &tl, Side s )
     tc.temporary = true;
     
     bool up = false;
-    double x = 0;
+
+    double x = tc.ml.begin()->start.x;
     ml.clear();
     if( ! tc.ml.empty() )
     {
@@ -920,12 +922,20 @@ void path::create_undercut_from_contour( path &c, const tool &tl, Side s )
     
             if( i->end.x > i->start.x ) // uphill
             {
-                while( x < i->end.x ) x += depth;
+                while( x < i->end.x )
+                {
+                    x += depth;
+                }
                 up = true;
             }
             else  // downhill
             {
-                while( x > i->start.x ) x -= depth;
+                while( x > i->start.x )
+                {
+                     x -= depth;
+                }
+                
+            
                 if( i->end.x < x )
                 {
                     double dx = i->end.x - i->start.x;
@@ -936,13 +946,14 @@ void path::create_undercut_from_contour( path &c, const tool &tl, Side s )
                         double z = i->start.z + dz * (x - i->start.x) / dx;
                         if( z > tc.min.z )
                         {
+                            
                             if( up )
                             {
                                 rapid_move( vec2( x+1, z )  );
                                 create_line( vec2( x, z ), MOV_FEED );
                                 up = false;
                             }
-                            
+                           
                             feed( tc, std::next(i,1), vec2( x, z ), fabs( c.min.z -z ), vec2( 0,-1 ), vec2( 1,0 ) );
                         }
                         x -= depth;
