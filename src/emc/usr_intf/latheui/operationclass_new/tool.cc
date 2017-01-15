@@ -114,6 +114,8 @@ void op_tool::createmenu()
 void op_tool::drawmenu(int x,int y)
 {
     Menu.draw(x,y);
+    println("");
+    println( ttcomments[ tl.tooln ] );
 } 
 
 void op_tool::update()
