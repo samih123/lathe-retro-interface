@@ -116,6 +116,13 @@ void op_tool::drawmenu(int x,int y)
     Menu.draw(x,y);
     println("");
     println( ttcomments[ tl.tooln ] );
+    
+    glPushMatrix();
+        glTranslatef(150,150 , 0);
+        glScalef(10,10,10);
+        draw_tool( tl.tooln );
+    glPopMatrix();
+    
 } 
 
 void op_tool::update()
