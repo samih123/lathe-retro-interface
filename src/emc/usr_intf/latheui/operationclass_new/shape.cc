@@ -225,7 +225,7 @@ void op_shape::drawmenu(int x,int y)
 
 void op_shape::update()
 {
-
+    changed = true;
 }
 
 

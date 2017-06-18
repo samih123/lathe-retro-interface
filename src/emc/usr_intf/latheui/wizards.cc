@@ -458,9 +458,11 @@ void wizards_parse_serialdata()
                     main_menu = false;
                     (*cur_op)->createmenu();
                 }
-               
+                
             }
     
+            clear_all_operations();
+            
         }
         
             
