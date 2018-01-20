@@ -117,7 +117,7 @@ enum op_type
     THREADING,
     RECTANGLE,
     DRILL,
-    PARTING,
+    GROOVING,
     RAPIDMOVE
 };
 

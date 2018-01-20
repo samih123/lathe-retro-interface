@@ -8,6 +8,7 @@ class op_contour;
 class op_rectangle;
 class op_threading;
 class op_drilling;
+class op_grooving;
 class op_shape;
 
 class new_operation
@@ -49,6 +50,7 @@ class op_tool:public new_operation
     friend op_rectangle;
     friend op_threading;
     friend op_drilling;
+    friend op_grooving;
     friend op_shape;
     public:
     op_tool();
@@ -135,6 +137,25 @@ class op_drilling:public new_operation
     
 };
 
+class op_grooving:public new_operation
+{
+    public:
+    op_grooving();
+    ~op_grooving();
+    const char* name() ;
+    op_type type();
+    void draw( color c=NONE, bool path = true  );
+    void save_program( FILE *fp );
+    int parsemenu();
+    void createmenu();
+    void drawmenu(int x,int y);   
+    void update();
+    
+    protected:
+    vec2 begin,end;
+    double peck;
+    
+};
 #define MAX_FINISH 50
 
 class op_shape:public new_operation

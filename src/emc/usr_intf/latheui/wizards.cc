@@ -113,6 +113,7 @@ void create_main_menu()
                 create_new_operation_menu( THREADING, "Threading" );
                 create_new_operation_menu( RAPIDMOVE, "Rapid move" );
                 create_new_operation_menu( DRILL, "Drilling" );
+                create_new_operation_menu( GROOVING, "Grooving" );
                 create_new_operation_menu( SHAPE, "Shape" );
                 
 
@@ -286,7 +287,11 @@ void wizards_load( const char *name )
                 opl.push_back( new op_drilling() );
                 opl.back()->load( fp );
             }
-            else if( val == SHAPE )
+            else if( val == GROOVING )
+            {
+                opl.push_back( new op_grooving() );
+                opl.back()->load( fp );
+            }            else if( val == SHAPE )
             {
                 opl.push_back( new op_shape() );
                 opl.back()->load( fp );
@@ -426,6 +431,10 @@ void wizards_parse_serialdata()
                 {
                     opl.push_back( new op_drilling() );
                 }        
+                else if( operationcreate == GROOVING )
+                {
+                    opl.push_back( new op_grooving() );
+                }      
                 else if( operationcreate == SHAPE )
                 {
                     opl.push_back( new op_shape() );
