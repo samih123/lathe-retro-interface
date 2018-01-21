@@ -53,8 +53,8 @@ void op_grooving::draw( color c , bool drawpath )
             setcolor( c == NONE ? CONTOUR_LINE:c );
             double w = _tools[ Tool->tl.tooln ].diameter;
             if ( w < width ) w = width;
-            drawBox( vec2(begin.x, begin.z), vec2( end.x, begin.z + w) );
-            drawBox( vec2(-begin.x, begin.z), vec2( -end.x, begin.z + w) );
+            drawBox( vec2(begin.x, begin.z), vec2( end.x, begin.z - w) );
+            drawBox( vec2(-begin.x, begin.z), vec2( -end.x, begin.z - w) );
         }
     }
 }
@@ -64,7 +64,7 @@ void op_grooving::save_program( FILE *fp )
     fprintf(fp, "(%s)\n", name() );
     
     fprintf(fp, "G0 X%.8g\n", begin.x + retract );
-    fprintf(fp, "G0 Z%.8g\n", begin.z );
+    fprintf(fp, "G0 Z%.8g\n", begin.z - _tools[ Tool->tl.tooln ].diameter);
     
     double x = begin.x;
     
