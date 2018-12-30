@@ -8,6 +8,8 @@
 #include "latheintf.h"
 #include <list>
 #include <string>
+#include <iostream>
+
 using namespace std;
 
 extern struct machinestatus status;
