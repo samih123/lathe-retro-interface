@@ -154,6 +154,7 @@ class op_grooving:public new_operation
     protected:
     vec2 begin,end;
     double peck;
+    double finish;
     
 };
 #define MAX_FINISH 50
