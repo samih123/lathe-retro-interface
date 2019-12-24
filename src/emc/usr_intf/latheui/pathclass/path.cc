@@ -235,9 +235,27 @@ void path::rapid_move( const vec2 v )
     if( r < v.x ) r = v.x;
     create_line( vec2( r, ml.back().end.z ), MOV_RAPID );
     create_line( vec2( r, v.z ), MOV_RAPID );
-    create_line( v, MOV_RAPID );
+    create_line( v , MOV_RAPID );
 }
 
+
+void path::rapid_move_and_feed_close( const vec2 v )
+{
+	vec2 v2 = v;
+	if( side == OUTSIDE )
+	{
+		v2.x += retract;
+		v2.z += retract;
+	}
+	else if( side == INSIDE )
+	{
+		v2.x -= retract;
+		v2.z += retract;
+	}
+	
+	rapid_move( v2 );
+	create_line( v , MOV_FEED );
+}
 
 
 void path::feed( path &colp, vec2 v, double len, const vec2 dir, const vec2 ret)

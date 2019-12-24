@@ -56,12 +56,12 @@ void op_shape::draw( color c, bool path )
             fp[i].move( tool_cpoint( Tool->tl.tooln ) );
             if( i>0)
             { 
-                fp[i].rapid_move( fp[i-1].start() );
+                fp[i].rapid_move_and_feed_close( fp[i-1].start() );
             }
         }
         
         rp.rapid_move( up.start() );
-        up.rapid_move( fp[ fcount-1 ].start() );
+        up.rapid_move_and_feed_close( fp[ fcount-1 ].start() );
         
         changed = false;
     }
