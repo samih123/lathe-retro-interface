@@ -19,7 +19,7 @@ class path
     void create_line( const vec2 &v , const move_type t, const char *comment = NULL );
     void create_arc( struct mov &c, const vec2 v1, const vec2 v2, const double r, const bool side, const move_type t );
     void rapid_move( const vec2 v );
-    void rapid_move_and_feed_close( const vec2 v );
+    void rapid_move_and_feed_close( path &nextp );
     void remove_knots();
     void clear(){ ml.clear(); };
     void copy( path &s, move_type t = MOV_NONE );

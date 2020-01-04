@@ -239,23 +239,33 @@ void path::rapid_move( const vec2 v )
 }
 
 
-void path::rapid_move_and_feed_close( const vec2 v )
+void path::rapid_move_and_feed_close( path &nextp )
 {
-	vec2 v2 = v;
-	if( side == OUTSIDE )
-	{
-		v2.x += retract;
-		v2.z += retract;
-	}
-	else if( side == INSIDE )
-	{
-		v2.x -= retract;
-		v2.z += retract;
-	}
 	
-	rapid_move( v2 );
-	create_line( v , MOV_FEED );
+	vec2 s = end();
+	vec2 d = nextp.start();
+
+	double x;
+	double z;
+	
+	if( side == INSIDE )
+	{
+		x = min.x - retract;
+		z = max.z + retract;
+	}
+	else
+	{
+		x = max.x + retract;
+		z = max.z + retract;
+	}
+
+	create_line( vec2( x, s.z ), MOV_RAPID );
+	create_line( vec2( x, z ), MOV_RAPID );
+    create_line( vec2( d.x, z ), MOV_RAPID );
+	create_line( d, MOV_FEED );
+	
 }
+
 
 
 void path::feed( path &colp, vec2 v, double len, const vec2 dir, const vec2 ret)
@@ -473,6 +483,7 @@ void path::move( vec2 m )
         i->end += m;
         i->start += m;
     }
+    findminmax();
 }
 
 
@@ -803,10 +814,13 @@ void path::create_from_contour( path &c, double r, Side s, move_type mtype )
 
             if( l > 0.2 )
             {
+				vec2 v1 = i1->start - i1->end;
+				vec2 v2 = i2->start - i2->end;
+				double a = v1.angle(v2);
                 double r2 = fabs(r);
                 double l = i1->end.dist( i2->start ) + 0.00001f;
                 if( r2 < l/2.0f )  r2 = l/2.0f;
-                create_arc( cutp, i1->end, i2->start , r2, (r < 0), mtype);
+                create_arc( cutp, i1->end, i2->start , r2, a > 0 , mtype);
             }
             else
             {
@@ -922,10 +936,10 @@ void path::create_rough_from_contour( path &c, const tool &tl, Side s )
     else if( side == INSIDE )
     {
         x = tc.min.x + tl.depth;
+       // x = 0;
         create_line( vec2( x, max_z ), MOV_RAPID );
         
-        while( x < tc.ml.front().start.x - 0.001 )
-        {
+        while( x < tc.ml.front().start.x - 0.001 )        {
             feed( tc, vec2( x, max_z ), len, vec2( 0,-1 ), vec2( -1,1 ) );
             x += tl.depth;
         }
