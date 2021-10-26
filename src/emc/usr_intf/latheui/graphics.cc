@@ -305,7 +305,7 @@ color axiscolor( int n )
 void draw_dro( vec2 *cpos )
 {
             
-    char label[10];
+    char label[100];
     if( emcStatus->task.g5x_index < 7 )
         sprintf( label, "G5%d", emcStatus->task.g5x_index + 3 );
     else

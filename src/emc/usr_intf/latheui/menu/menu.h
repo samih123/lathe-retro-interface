@@ -92,7 +92,7 @@ class menu
     void update_val( menuitem &m, int v );
     void update_val( menuitem &m, double v );
     
-    char strbuf[BUFFSIZE];
+    char strbuf[BUFFSIZE*2];
     menuitem rm;
     menuitem *cmi; // current menuitem
     bool usewheel;

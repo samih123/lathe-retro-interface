@@ -48,9 +48,9 @@ void op_shape::draw( color c, bool path )
             }
         }
         
-     //   rp.create_rough_from_contour( fp[fcount-1], Tool->tl, side );
+        rp.create_rough_from_contour( fp[fcount-1], Tool->tl, side );
         
-     //   if(side == OUTSIDE) up.create_undercut_from_contour( fp[fcount-1], Tool->tl, side );
+        if(side == OUTSIDE) up.create_undercut_from_contour( fp[fcount-1], Tool->tl, side );
         
         for( int i = 0; i < fcount; i++ )
         {
@@ -61,10 +61,10 @@ void op_shape::draw( color c, bool path )
             }
         }
         
-        fp[0].rapid_move_and_feed_close( fp[0] );
+     //   fp[0].rapid_move_and_feed_close( fp[0] );
         
         rp.rapid_move( up.start() );
-        
+      //  up.rapid_move( fp[ fcount-1 ] );
         up.rapid_move_and_feed_close( fp[ fcount-1 ] );
         
         changed = false;
@@ -79,8 +79,8 @@ void op_shape::draw( color c, bool path )
         {
             fp[i].draw( NONE );
         }
-     //   rp.draw( NONE );
-       // up.draw( NONE );
+        rp.draw( NONE );
+        up.draw( NONE );
         
         drawCross( p.current().z, -p.current().x , 3.0/scale);
         drawCircle( p.current().z,-p.current().x, 3.0/scale);
@@ -98,10 +98,10 @@ void op_shape::save_program( FILE *f )
     fprintf(f, "(%s)\n", name() );
     
     fprintf(f, "(rough)\n" );
-    //rp.save( f );
+    rp.save( f );
   
-   // fprintf(f, "(undercut)\n" );
-   // up.save( f );   
+    fprintf(f, "(undercut)\n" );
+    up.save( f );   
     
     for( int i = fcount-1 ; i >= 0; i-- )
     {

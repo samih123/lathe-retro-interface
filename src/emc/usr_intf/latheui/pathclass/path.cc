@@ -231,7 +231,7 @@ void path::create_arc( struct mov &c, const vec2 v1, const vec2 v2, const double
 void path::rapid_move( const vec2 v )
 {
     double r = stockdiameter/2.0f + retract;
-    if( side == OUTSIDE && r < ml.back().end.x ) r = ml.back().end.x;
+   // if( side == OUTSIDE && r < ml.back().end.x ) r = ml.back().end.x;
     if( r < v.x ) r = v.x;
     create_line( vec2( r, ml.back().end.z ), MOV_RAPID );
     create_line( vec2( r, v.z ), MOV_RAPID );
@@ -244,25 +244,20 @@ void path::rapid_move_and_feed_close( path &nextp )
 	
 	vec2 s = end();
 	vec2 d = nextp.start();
-
-	double x;
-	double z;
 	
 	if( side == INSIDE )
 	{
-		x = min.x - retract;
-		z = max.z + retract;
+		d.x -= retract;
+		d.z += retract;
 	}
 	else
 	{
-		x = max.x + retract;
-		z = max.z + retract;
+		d.x += retract;
+		d.z += retract;
 	}
-
-	create_line( vec2( x, s.z ), MOV_RAPID );
-	create_line( vec2( x, z ), MOV_RAPID );
-    create_line( vec2( d.x, z ), MOV_RAPID );
-	create_line( d, MOV_FEED );
+	
+	rapid_move( d );
+	create_line( nextp.start(), MOV_FEED );
 	
 }
 
@@ -285,7 +280,7 @@ void path::feed( path &colp, list<struct mov>::iterator fi, vec2 v, double len, 
     create_line( v2 , MOV_FEED );
     create_line( v2 + ret , MOV_FEED );
     create_line( v + ret, MOV_RAPID );
-    create_line( v, MOV_RAPID );
+    create_line( v, MOV_FEED );
 }
 
 
@@ -927,7 +922,7 @@ void path::create_rough_from_contour( path &c, const tool &tl, Side s )
         
         while( x > tc.ml.front().start.x + 0.001 )
         {
-            feed( tc, vec2( x, max_z ), len, vec2( 0,-1 ), vec2( 1,1 ) );
+            feed( tc, vec2( x, max_z ), len, vec2( 0,-1 ), vec2( 1,0 ) );
             x -= tl.depth;
         }
         
@@ -940,7 +935,7 @@ void path::create_rough_from_contour( path &c, const tool &tl, Side s )
         create_line( vec2( x, max_z ), MOV_RAPID );
         
         while( x < tc.ml.front().start.x - 0.001 )        {
-            feed( tc, vec2( x, max_z ), len, vec2( 0,-1 ), vec2( -1,1 ) );
+            feed( tc, vec2( x, max_z ), len, vec2( 0,-1 ), vec2( -1,0 ) );
             x += tl.depth;
         }
         
