@@ -50,14 +50,11 @@ void op_grooving::draw( color c , bool drawpath )
 {
     if( Tool != NULL)
     {
-        if( ! Tool->tl.csspeed )
-        {
-            setcolor( c == NONE ? CONTOUR_LINE:c );
-            double w = _tools[ Tool->tl.tooln ].diameter;
-            if ( w < width ) w = width;
-            drawBox( vec2(begin.x, begin.z), vec2( end.x, begin.z - w) );
-            drawBox( vec2(-begin.x, begin.z), vec2( -end.x, begin.z - w) );
-        }
+		setcolor( c == NONE ? CONTOUR_LINE:c );
+		double w = _tools[ Tool->tl.tooln ].diameter;
+		if ( w < width ) w = width;
+		drawBox( vec2(begin.x, begin.z), vec2( end.x, begin.z - w) );
+		drawBox( vec2(-begin.x, begin.z), vec2( -end.x, begin.z - w) ); 
     }
 }
 
@@ -136,6 +133,7 @@ int op_grooving::parsemenu()
         CLAMP( end.x , 0, begin.x );
         CLAMP( width , _tools[ Tool->tl.tooln ].diameter, 1000 );
         CLAMP( finish  , 0, 1 );
+        return OP_EDITED;
         
     }
     return OP_NOP;
