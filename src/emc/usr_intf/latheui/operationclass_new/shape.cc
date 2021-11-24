@@ -49,8 +49,12 @@ void op_shape::draw( color c, bool path )
         }
         
         rp.create_rough_from_contour( fp[fcount-1], Tool->tl, side );
+        //rp.move( tool_cpoint( Tool->tl.tooln ) );
         
-        if(side == OUTSIDE) up.create_undercut_from_contour( fp[fcount-1], Tool->tl, side );
+        if(side == OUTSIDE){
+			up.create_undercut_from_contour( fp[fcount-1], Tool->tl, side );
+			//up.move( tool_cpoint( Tool->tl.tooln ) );
+		}
         
         for( int i = 0; i < fcount; i++ )
         {

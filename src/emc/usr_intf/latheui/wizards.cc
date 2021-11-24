@@ -201,11 +201,12 @@ void save_program(const char *name )
         
         if(b)
         {
-            fprintf(fp, "G0 X%.10g Z%.10g (start position)\n", start_position.x, start_position.z );
+        //    fprintf(fp, "G0 X%.10g Z%.10g (start position)\n", start_position.x, start_position.z );
         }
         
     }
-        
+    
+    fprintf(fp, "G0 X%.10g Z%.10g (start position)\n", start_position.x, start_position.z );
     fprintf(fp, "M5 (stop spindle)\n");
     fprintf(fp, "M2\n");
     

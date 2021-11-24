@@ -68,6 +68,8 @@ void op_grooving::save_program( FILE *fp )
     double z = begin.z - toolw;
     double endz = begin.z - end.z;
     double endx = end.x; 
+    vec2 toolp = tool_cpoint( Tool->tl.tooln );
+    toolp += toolw/2.0;
     
     if( end.z > toolw )
     {
@@ -82,15 +84,15 @@ void op_grooving::save_program( FILE *fp )
     {
 		
 		x = begin.x;
-		fprintf(fp, "G0 X%.8g\n", x + retract );
-        fprintf(fp, "G0 Z%.8g\n", z );
+		fprintf(fp, "G0 X%.8g\n", x + retract + toolp.x );
+        fprintf(fp, "G0 Z%.8g\n", z + toolp.z );
         
 		while( x > endx )
 		{
 			x -= ( peck <= 0 ? 1000:peck ); // 0 -> no pecking
 			if( x < endx ) x = endx;
-			fprintf(fp, "G1 X%.8g\n", x );
-			fprintf(fp, "G0 X%.8g\n", begin.x + retract );
+			fprintf(fp, "G1 X%.8g\n", x  + toolp.x );
+			fprintf(fp, "G0 X%.8g\n", begin.x + retract + toolp.x );
 		}
 		
 		if( z <= endz ) break;
@@ -99,23 +101,23 @@ void op_grooving::save_program( FILE *fp )
 	}
 	
 	
-	if( end.z > toolw )
+	if( end.z > toolw && 0)
 	{
 		double midz = ( begin.z - toolw + begin.z - end.z ) /2.0;
-		fprintf(fp, "G0 X%.8g\n", begin.x + retract );
-		fprintf(fp, "G0 Z%.8g\n", begin.z - toolw);
-		fprintf(fp, "G1 X%.8g\n", end.x );
-		fprintf(fp, "G1 Z%.8g\n", midz );
+		fprintf(fp, "G0 X%.8g\n", begin.x + retract  + toolp.x );
+		fprintf(fp, "G0 Z%.8g\n", begin.z + toolp.z );
+		fprintf(fp, "G1 X%.8g\n", end.x + toolp.x  );
+		fprintf(fp, "G1 Z%.8g\n", midz  + toolp.z );
 		
-		fprintf(fp, "G0 X%.8g\n", begin.x + retract );
-		fprintf(fp, "G0 Z%.8g\n", begin.z - end.z);
-		fprintf(fp, "G1 X%.8g\n", end.x );
-		fprintf(fp, "G1 Z%.8g\n", midz );
+		fprintf(fp, "G0 X%.8g\n", begin.x + retract  + toolp.x );
+		fprintf(fp, "G0 Z%.8g\n", begin.z - end.z + toolp.z );
+		fprintf(fp, "G1 X%.8g\n", end.x + toolp.x  );
+		fprintf(fp, "G1 Z%.8g\n", midz + toolp.z );
 		
-		fprintf(fp, "G0 X%.8g\n", begin.x + retract );
+		fprintf(fp, "G0 X%.8g\n", begin.x + retract + toolp.x  );
 	}
     
-    fprintf(fp, "G0 X%.8g\n", begin.x + retract );
+    fprintf(fp, "G0 X%.8g\n", begin.x + retract + toolp.x );
 }
 
 #define MENU_BACK 1
