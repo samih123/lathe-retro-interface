@@ -84,15 +84,15 @@ void op_grooving::save_program( FILE *fp )
     {
 		
 		x = begin.x;
-		fprintf(fp, "G0 X%.8g\n", x + retract + toolp.x );
-        fprintf(fp, "G0 Z%.8g\n", z + toolp.z );
+	//	fprintf(fp, "G0 X%.8g\n", x + retract + toolp.x );
+    //    fprintf(fp, "G0 Z%.8g\n", z + toolp.z );
         
 		while( x > endx )
 		{
 			x -= ( peck <= 0 ? 1000:peck ); // 0 -> no pecking
 			if( x < endx ) x = endx;
-			fprintf(fp, "G1 X%.8g\n", x  + toolp.x );
-			fprintf(fp, "G0 X%.8g\n", begin.x + retract + toolp.x );
+		//	fprintf(fp, "G1 X%.8g\n", x  + toolp.x );
+		//	fprintf(fp, "G0 X%.8g\n", begin.x + retract + toolp.x );
 		}
 		
 		if( z <= endz ) break;
@@ -101,20 +101,20 @@ void op_grooving::save_program( FILE *fp )
 	}
 	
 	
-	if( end.z > toolw && 0)
+	if( end.z > toolw )
 	{
 		double midz = ( begin.z - toolw + begin.z - end.z ) /2.0;
-		fprintf(fp, "G0 X%.8g\n", begin.x + retract  + toolp.x );
-		fprintf(fp, "G0 Z%.8g\n", begin.z + toolp.z );
-		fprintf(fp, "G1 X%.8g\n", end.x + toolp.x  );
-		fprintf(fp, "G1 Z%.8g\n", midz  + toolp.z );
+	//	fprintf(fp, "G0 X%.8g\n", begin.x + retract  + toolp.x - toolw/2.0 );
+	//	fprintf(fp, "G0 Z%.8g\n", begin.z + toolp.z - toolw/2.0);
+	//	fprintf(fp, "G1 X%.8g\n", end.x + toolp.x - toolw/2.0 );
+	//	fprintf(fp, "G1 Z%.8g\n", midz  + toolp.z - toolw/2.0);
 		
-		fprintf(fp, "G0 X%.8g\n", begin.x + retract  + toolp.x );
-		fprintf(fp, "G0 Z%.8g\n", begin.z - end.z + toolp.z );
-		fprintf(fp, "G1 X%.8g\n", end.x + toolp.x  );
-		fprintf(fp, "G1 Z%.8g\n", midz + toolp.z );
+		fprintf(fp, "G0 X%.8g\n", begin.x + retract  + toolp.x+ toolw/2.0  );
+		fprintf(fp, "G0 Z%.8g\n", begin.z - end.z + toolp.z + toolw/2.0 );
+		fprintf(fp, "G1 X%.8g\n", end.x + toolp.x + toolw/2.0  );
+		fprintf(fp, "G1 Z%.8g\n", midz + toolp.z + toolw/2.0 );
 		
-		fprintf(fp, "G0 X%.8g\n", begin.x + retract + toolp.x  );
+		fprintf(fp, "G0 X%.8g\n", begin.x + retract + toolp.x - toolw/2.0  );
 	}
     
     fprintf(fp, "G0 X%.8g\n", begin.x + retract + toolp.x );
