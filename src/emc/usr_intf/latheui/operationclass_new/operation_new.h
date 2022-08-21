@@ -179,5 +179,6 @@ class op_shape:public new_operation
     int fcount;
     bool changed;
     Side side;
+    FeedDirection feedd;
 };
 

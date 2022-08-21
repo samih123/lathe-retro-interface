@@ -12,6 +12,8 @@ op_shape::op_shape()
 {    
     tagl.push_front( ftag( "SIDE", &side ) );
     tagl.push_front( ftag( "FINISH_COUNT", &fcount ) );
+    tagl.push_front( ftag( "FEED_DIR", &feedd ) );
+    
     createmenu();
     p.create_line( vec2(0,0), MOV_LINE );
     changed = true;
@@ -22,6 +24,7 @@ op_shape::~op_shape()
     Menu.clear();
     tagl.clear();
     p.clear();
+    
 }
 
 const char* op_shape::name()
@@ -48,28 +51,37 @@ void op_shape::draw( color c, bool path )
             }
         }
         
-        rp.create_rough_from_contour( fp[fcount-1], Tool->tl, side );
-        rp.move( tool_cpoint( Tool->tl.tooln ) );
+       if( feedd == X )
+       { 
+		   rp.create_Xfeed_from_contour( fp[fcount-1], Tool->tl, side );
+		   rp.move( tool_cpoint( Tool->tl.tooln ) );
+	   }
+	   else
+	   {
         
-        if(side == OUTSIDE){
-			up.create_undercut_from_contour( fp[fcount-1], Tool->tl, side );
-			up.move( tool_cpoint( Tool->tl.tooln ) );
+			rp.create_rough_from_contour( fp[fcount-1], Tool->tl, side );
+			rp.move( tool_cpoint( Tool->tl.tooln ) );
+        
+			if(side == OUTSIDE){
+				up.create_undercut_from_contour( fp[fcount-1], Tool->tl, side );
+				up.move( tool_cpoint( Tool->tl.tooln ) );
+			}     
 		}
-        
+		
         for( int i = 0; i < fcount; i++ )
         {
             fp[i].move( tool_cpoint( Tool->tl.tooln ) );
             if( i>0)
             { 
                 fp[i].rapid_move_and_feed_close( fp[i-1] );
-            }
+            }  
         }
         
-     //   fp[0].rapid_move_and_feed_close( fp[0] );
+        fp[0].rapid_move_and_feed_close( fp[0] );
         
         rp.rapid_move( up.start() );
       //  up.rapid_move( fp[ fcount-1 ] );
-        up.rapid_move_and_feed_close( fp[ fcount-1 ] );
+        if( feedd == Z ) up.rapid_move_and_feed_close( fp[ fcount-1 ] );
         
         changed = false;
     }
@@ -104,8 +116,10 @@ void op_shape::save_program( FILE *f )
     fprintf(f, "(rough)\n" );
     rp.save( f );
   
-    fprintf(f, "(undercut)\n" );
-    up.save( f );   
+    if( feedd == Z ){
+		fprintf(f, "(undercut)\n" );
+        up.save( f );   
+	}
     
     for( int i = fcount-1 ; i >= 0; i-- )
     {
@@ -210,6 +224,7 @@ void op_shape::createmenu()
                 Menu.back( "Back " );
             Menu.end();
             Menu.radiobuttons( (int *)&side , "Side", (int)OUTSIDE, "Outside", (int)INSIDE, "Inside" );
+            Menu.radiobuttons( (int *)&feedd , "Feed direction", (int)X, "X", (int)Z, "Z" );
             Menu.edit( &fcount, "Finishing passes " );
         }
     Menu.end();

@@ -60,7 +60,8 @@ class path
     
     void create_rough_from_contour( path &c, const tool &tl, Side s );
     void create_undercut_from_contour( path &c, const tool &tl, Side s );
-    
+    void create_Xfeed_from_contour( path &c, const tool &tl, Side s );
+
     protected:
     
     list<struct mov>::iterator currentmov;

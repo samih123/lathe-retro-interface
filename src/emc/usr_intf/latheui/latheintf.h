@@ -127,13 +127,20 @@ enum Side
     INSIDE
 };
 
+enum FeedDirection
+{
+    X,
+    Z
+};
+
 enum t_type
 {
     T_INT,
     T_DOUBLE,
     T_CHAR,
     T_BOOL,
-    T_SIDE
+    T_SIDE,
+    T_DIR
 };
 
 struct ftag
@@ -143,6 +150,8 @@ struct ftag
     ftag( const char *t, char *d )  { tag = t; val = (void*)d; type = T_CHAR; };
     ftag( const char *t, bool *d )  { tag = t; val = (void*)d; type = T_BOOL; };
     ftag( const char *t, Side *d )  { tag = t; val = (void*)d; type = T_SIDE; };
+    ftag( const char *t, FeedDirection *d )  { tag = t; val = (void*)d; type = T_DIR; };
+
     const char *tag;
     void *val;
     t_type type;

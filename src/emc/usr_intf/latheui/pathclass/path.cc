@@ -946,7 +946,58 @@ void path::create_rough_from_contour( path &c, const tool &tl, Side s )
         
 }
 
-
+void path::create_Xfeed_from_contour( path &c, const tool &tl, Side s )
+{
+    
+    double tool_r = _tools[ tl.tooln ].diameter/2.0f;
+    
+    side = s;
+    path tc;
+    tc.create_from_contour( c, tool_r, side, MOV_CONTOUR );
+    tc.temporary = true;
+    
+    double z,x;
+    double min_x = tc.min.x;
+    double max_x = tc.max.x + tool_r + retract ;
+    double len = fabs( min_x - max_x );
+    ml.clear();
+    
+    if( tc.ml.empty() )
+    {
+        return;
+    }
+    
+  
+    if( side == OUTSIDE )
+    {
+		z = tc.max.z - 0.1;
+        x = std::max( tc.max.x, stockdiameter/2.0 );
+        //create_line( vec2( x, z ), MOV_RAPID );
+        
+        while( 1 )
+        {
+            feed( tc, vec2( x, z ), len, vec2( -1,0 ), vec2( 1,0 ) );
+            z -= tool_r*2.0;
+            if( z <= tc.min.z )
+            {
+				  z = tc.min.z + 0.1;
+				  feed( tc, vec2( x, z ), len, vec2( -1,0 ), vec2( 1,0 ) );
+				  break; 
+			}
+        }
+        
+    }
+    
+    else if( side == INSIDE )
+    {
+     
+        
+    }
+    //printf( "move %f,%f\n",tool_cpoint( tl.tooln ).x ,tool_cpoint( tl.tooln ).z); 
+    move( tool_cpoint( tl.tooln ) ); 
+    findminmax();
+        
+}
 void path::create_undercut_from_contour( path &c, const tool &tl, Side s )
 {
     side = s;
