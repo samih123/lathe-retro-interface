@@ -84,7 +84,7 @@ int op_tool::parsemenu()
         CLAMP( tl.depth, 0.01, 10 );
         CLAMP( tl.feed, 0, 1000 );
         CLAMP( tl.speed, 0, maxrpm );
-        CLAMP( tl.tooln, 0, MAXTOOLS );
+        CLAMP( tl.tooln, 1, MAXTOOLS );
         
         if( Menu.edited( &tl.csspeed ) )
         {
