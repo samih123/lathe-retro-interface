@@ -239,6 +239,10 @@ void op_shape::drawmenu(int x,int y)
         sprintf(strbuf,"start D%4.2f Z%4.2f", p.cur_start().x*2.0, p.cur_start().z  ); println( strbuf, 450, 55, 20, TEXT );  
         sprintf(strbuf,"end   D%4.2f Z%4.2f", p.cur_end().x*2.0, p.cur_end().z  ); println( strbuf );  
         sprintf(strbuf,"rel   D%4.2f Z%4.2f", p.cur_end().x*2.0 - p.cur_start().x*2.0, p.cur_end().z - p.cur_start().z  ); println( strbuf );  
+        
+        double angle = atan2( fabs( p.cur_start().x - p.cur_end().x ) , fabs( p.cur_start().z - p.cur_end().z) )* 180.0f / M_PI;
+        sprintf(strbuf,"Angle %g", angle );println( strbuf );      
+          
         if( p.cur_type() == MOV_ARC_OUT || p.cur_type() == MOV_ARC_IN ) 
         {
             sprintf(strbuf,"R%4.2f", p.cur_radius() ); println( strbuf ); 
