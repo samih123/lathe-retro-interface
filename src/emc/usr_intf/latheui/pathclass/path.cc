@@ -958,11 +958,11 @@ void path::create_Xfeed_from_contour( path &c, const tool &tl, Side s )
     
     double z,x;
     double min_x = tc.min.x;
-    double max_x = tc.max.x + tool_r + retract ;
-    double len = fabs( min_x );
+    double max_x = tc.max.x;
     
-    len = 10000.0;
+    max_x = fmax( max_x, stockdiameter/2.0 ) + tool_r + retract;
     
+    double len = fabs( min_x - max_x );
     ml.clear();
     
     if( tc.ml.empty() )
@@ -974,7 +974,7 @@ void path::create_Xfeed_from_contour( path &c, const tool &tl, Side s )
     if( side == OUTSIDE )
     {
 		z = tc.max.z - 0.1;
-        x = std::max( tc.max.x, stockdiameter/2.0 );
+        x = max_x;
         //create_line( vec2( x, z ), MOV_RAPID );
         
         while( 1 )
