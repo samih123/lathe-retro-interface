@@ -959,7 +959,10 @@ void path::create_Xfeed_from_contour( path &c, const tool &tl, Side s )
     double z,x;
     double min_x = tc.min.x;
     double max_x = tc.max.x + tool_r + retract ;
-    double len = fabs( min_x - max_x );
+    double len = fabs( min_x );
+    
+    len = 10000.0;
+    
     ml.clear();
     
     if( tc.ml.empty() )
