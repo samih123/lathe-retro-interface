@@ -951,6 +951,12 @@ void path::create_Xfeed_from_contour( path &c, const tool &tl, Side s )
     
     double tool_r = _tools[ tl.tooln ].diameter/2.0f;
     
+    if( tool_r <= 0.0 )
+		{
+			tool_r = 0.1; 
+		}
+		
+    
     side = s;
     path tc;
     tc.create_from_contour( c, tool_r, side, MOV_CONTOUR );
@@ -975,7 +981,7 @@ void path::create_Xfeed_from_contour( path &c, const tool &tl, Side s )
     {
 		z = tc.max.z - 0.1;
         x = max_x;
-        //create_line( vec2( x, z ), MOV_RAPID );
+       // create_line( vec2( x, z ), MOV_RAPID );
         
         while( 1 )
         {
