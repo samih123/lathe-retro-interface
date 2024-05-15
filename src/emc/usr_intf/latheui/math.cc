@@ -250,6 +250,7 @@ void loadtagl( FILE *fp, list<ftag> &tagl )
             {
                 switch( i->type )
                 {
+                    case T_DIR:
                     case T_INT:
                     case T_SIDE:
                         *(int*)i->val = (int)val;
@@ -289,6 +290,7 @@ void savetagl( FILE *fp, list<ftag> &tagl )
     {
         switch( i->type )
         {
+            case T_DIR:
             case T_INT:
             case T_SIDE:
                 fprintf(fp, "   %s %i\n", i->tag, *(int*)i->val );
