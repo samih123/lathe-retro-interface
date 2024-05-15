@@ -635,7 +635,7 @@ void init_opengl( int argc, char **argv )
     glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA | GLUT_MULTISAMPLE);
     glutInitWindowPosition(0,0);
     glutInitWindowSize(800,600);
-    glutCreateWindow("SAMICNC 0.01");
+    glutCreateWindow("SAMICNC 0.011");
     //glutFullScreen();
     //glutPositionWindow(0,0);
     glutDisplayFunc( updatescreen );
