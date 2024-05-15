@@ -233,6 +233,10 @@ void path::rapid_move( const vec2 v )
     double r = stockdiameter/2.0f + retract;
    // if( side == OUTSIDE && r < ml.back().end.x ) r = ml.back().end.x;
     if( r < v.x ) r = v.x;
+    if( side == INSIDE )
+    {
+		r = min.x - retract;
+	}
     create_line( vec2( r, ml.back().end.z ), MOV_RAPID );
     create_line( vec2( r, v.z ), MOV_RAPID );
     create_line( v , MOV_RAPID );
