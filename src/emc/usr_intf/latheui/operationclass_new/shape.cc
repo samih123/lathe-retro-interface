@@ -47,27 +47,36 @@ void op_shape::draw( color c, bool path )
             double tool_r = _tools[ Tool->tl.tooln ].diameter/2.0f;
             if( tool_r <= 0.0 ) tool_r = 0.01; 
             
-            for( int i = 0; i < fcount; i++ )
+            fp[0].create_from_contour( tp, tool_r , side, MOV_FEED );  
+            for( int i = 1; i < fcount; i++ )
             {
-                fp[i].create_from_contour( tp, tool_r + ((double)i) * Tool->tl.depth, side, MOV_FEED );
+                fp[i].create_from_contour( fp[i-1], Tool->tl.depth, side, MOV_FEED );
             }
+            
+			tp2.create_from_contour( fp[fcount-1], -tool_r, side, MOV_FEED );
+			
         }
+		
+		
+        
         
        if( feedd == X )
        { 
-		   rp.create_Xfeed_from_contour( fp[fcount-1], Tool->tl, side );
+		   rp.create_Xfeed_from_contour( tp2, Tool->tl, side );
 		   rp.move( tool_cpoint( Tool->tl.tooln ) );
 	   }
 	   else
 	   {
-        
-			rp.create_rough_from_contour( fp[fcount-1], Tool->tl, side );
+            rp.create_rough_from_contour( tp2, Tool->tl, side );
+		//	rp.create_rough_from_contour( fp[fcount-1], Tool->tl, side );
 			rp.move( tool_cpoint( Tool->tl.tooln ) );
         
 			if(side == OUTSIDE){
-				up.create_undercut_from_contour( fp[fcount-1], Tool->tl, side );
+				//up.create_undercut_from_contour( fp[fcount-1], Tool->tl, side );
+				up.create_undercut_from_contour( tp2, Tool->tl, side );
+
 				up.move( tool_cpoint( Tool->tl.tooln ) );
-			}     
+			}    
 		}
 		
         for( int i = 0; i < fcount; i++ )

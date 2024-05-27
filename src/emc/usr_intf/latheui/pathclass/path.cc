@@ -945,7 +945,7 @@ void path::create_rough_from_contour( path &c, const tool &tl, Side s )
         
     }
     
-    move( tool_cpoint( tl.tooln ) ); 
+    //move( tool_cpoint( tl.tooln ) ); 
     findminmax();
         
 }
@@ -1007,7 +1007,7 @@ void path::create_Xfeed_from_contour( path &c, const tool &tl, Side s )
         
     }
     //printf( "move %f,%f\n",tool_cpoint( tl.tooln ).x ,tool_cpoint( tl.tooln ).z); 
-    move( tool_cpoint( tl.tooln ) ); 
+    //move( tool_cpoint( tl.tooln ) ); 
     findminmax();
         
 }
@@ -1073,7 +1073,7 @@ void path::create_undercut_from_contour( path &c, const tool &tl, Side s )
         }
     }
     
-    move( tool_cpoint( tl.tooln ) ); 
+  //  move( tool_cpoint( tl.tooln ) ); 
     findminmax();
 }
 
